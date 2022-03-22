@@ -84,7 +84,7 @@ following command to install:
 
 .. code-block:: shell
 
-    circup install httpserver
+    circup install adafruit_httpserver
 
 Or the following command to update an existing version:
 
