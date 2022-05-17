@@ -26,7 +26,6 @@ except ImportError:
 
 from errno import EAGAIN, ECONNRESET
 import os
-import re
 
 __version__ = "0.0.0-auto.0"
 __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_HTTPServer.git"
@@ -60,8 +59,6 @@ HTTPStatus.INTERNAL_SERVER_ERROR = HTTPStatus(500, "Internal Server Error")
 
 
 class _HTTPRequest:
-    _REQUEST_RE = re.compile(r"(\S+)\s+(\S+)\s")
-
     def __init__(
         self, path: str = "", method: str = "", raw_request: bytes = None
     ) -> None:
@@ -70,12 +67,12 @@ class _HTTPRequest:
             self.method = method
         else:
             # Parse request data from raw request
-            match = self._REQUEST_RE.match(raw_request.decode("utf8"))
-            if match:
-                self.path = match.group(2)
-                self.method = match.group(1)
-            else:
-                raise ValueError("Unparseable raw_request:", raw_request)
+            request_text = raw_request.decode('utf8')
+            first_line = request_text[:request_text.find('\n')]
+            try:
+                (self.method, self.path, _httpversion) = first_line.split()
+            except ValueError:
+                raise ValueError("Unparseable raw_request: ", raw_request)
 
     def __hash__(self) -> int:
         return hash(self.method) ^ hash(self.path)
