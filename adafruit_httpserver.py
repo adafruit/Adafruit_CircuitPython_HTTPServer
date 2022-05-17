@@ -67,12 +67,12 @@ class _HTTPRequest:
             self.method = method
         else:
             # Parse request data from raw request
-            request_text = raw_request.decode('utf8')
-            first_line = request_text[:request_text.find('\n')]
+            request_text = raw_request.decode("utf8")
+            first_line = request_text[: request_text.find("\n")]
             try:
                 (self.method, self.path, _httpversion) = first_line.split()
-            except ValueError:
-                raise ValueError("Unparseable raw_request: ", raw_request)
+            except ValueError as exc:
+                raise ValueError("Unparseable raw_request: ", raw_request) from exc
 
     def __hash__(self) -> int:
         return hash(self.method) ^ hash(self.path)
