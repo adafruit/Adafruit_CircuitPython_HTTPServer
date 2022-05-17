@@ -263,7 +263,7 @@ class HTTPResponse:
 class HTTPServer:
     """A basic socket-based HTTP server."""
 
-    def __init__(self, socket_source: Any) -> None:
+    def __init__(self, socket_source: Any, request_buffer_size=1024) -> None:
         # TODO: Use a Protocol for the type annotation.
         # The Protocol could be refactored from adafruit_requests.
         """Create a server, and get it ready to run.
@@ -271,7 +271,7 @@ class HTTPServer:
         :param socket: An object that is a source of sockets. This could be a `socketpool`
           in CircuitPython or the `socket` module in CPython.
         """
-        self._buffer = bytearray(1024)
+        self._buffer = bytearray(request_buffer_size)
         self.routes = {}
         self._socket_source = socket_source
         self._sock = None
