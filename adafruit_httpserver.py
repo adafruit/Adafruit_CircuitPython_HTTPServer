@@ -334,7 +334,7 @@ class HTTPServer:
         """
         conn, _ = self._sock.accept()
         with conn:
-            length, remaddr = conn.recvfrom_into(self._buffer)
+            length, _ = conn.recvfrom_into(self._buffer)
 
             request = _HTTPRequest(raw_request=self._buffer[:length])
 
