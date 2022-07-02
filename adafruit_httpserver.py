@@ -303,7 +303,7 @@ class HTTPServer:
         :param int port: port
         :param str root: root directory to serve files from
         """
-        self.start(host,port,root)
+        self.start(host, port, root)
 
         while True:
             try:
@@ -322,7 +322,9 @@ class HTTPServer:
         """
         self.root_path = root
 
-        self._sock = self._socket_source.socket(self._socket_source.AF_INET, self._socket_source.SOCK_STREAM)
+        self._sock = self._socket_source.socket(
+            self._socket_source.AF_INET, self._socket_source.SOCK_STREAM
+        )
         self._sock.bind((host, port))
         self._sock.listen(10)
 
