@@ -302,33 +302,48 @@ class HTTPServer:
         :param int port: port
         :param str root: root directory to serve files from
         """
-        self._sock = self._socket_source.socket(
-            self._socket_source.AF_INET, self._socket_source.SOCK_STREAM
-        )
-        self._sock.bind((host, port))
-        self._sock.listen(1)
+        self.start_server(host,port,root)
 
         while True:
             try:
-                conn, _ = self._sock.accept()
+                self.poll_server()
             except OSError:
                 continue
-            with conn:
-                # If reading fails, close connection and retry.
-                try:
-                    length, _ = conn.recvfrom_into(self._buffer)
-                except OSError:
-                    continue
 
-                request = _HTTPRequest(raw_request=self._buffer[:length])
+    def start(self, host: str, port: int = 80, root: str = "") -> None:
+        """
+        Start the HTTP server at the given host and port. Requires calling
+        poll() in a while loop to handle incoming requests.
 
-                # If a route exists for this request, call it. Otherwise try to serve a file.
-                route = self.routes.get(request, None)
-                if route:
-                    response = route(request)
-                elif request.method == "GET":
-                    response = HTTPResponse(filename=request.path, root=root)
-                else:
-                    response = HTTPResponse(status=HTTPStatus.INTERNAL_SERVER_ERROR)
+        :param str host: host name or IP address
+        :param int port: port
+        :param str root: root directory to serve files from
+        """
+        self.root_path = root
 
-                response.send(conn)
+        self._sock = self._socket_source.socket(self._socket_source.AF_INET, self._socket_source.SOCK_STREAM)
+        self._sock.bind((host, port))
+        self._sock.listen(10)
+
+    def poll(self):
+        """
+        Call this method inside your main event loop to get the server to
+        check for new incoming client requests. When a request comes in,
+        the application callable will be invoked.
+        """
+        conn, _ = self._sock.accept()
+        with conn:
+            length, remaddr = conn.recvfrom_into(self._buffer)
+
+            request = _HTTPRequest(raw_request=self._buffer[:length])
+
+            # If a route exists for this request, call it. Otherwise try to serve a file.
+            route = self.routes.get(request, None)
+            if route:
+                response = route(request)
+            elif request.method == "GET":
+                response = HTTPResponse(filename=request.path, root=self.root_path)
+            else:
+                response = HTTPResponse(status=HTTPStatus.INTERNAL_SERVER_ERROR)
+
+            response.send(conn)
