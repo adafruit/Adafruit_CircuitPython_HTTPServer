@@ -275,6 +275,7 @@ class HTTPServer:
         self.routes = {}
         self._socket_source = socket_source
         self._sock = None
+        self.root_path = "/"
 
     def route(self, path: str, method: str = "GET"):
         """Decorator used to add a route.
@@ -302,11 +303,11 @@ class HTTPServer:
         :param int port: port
         :param str root: root directory to serve files from
         """
-        self.start_server(host,port,root)
+        self.start(host,port,root)
 
         while True:
             try:
-                self.poll_server()
+                self.poll()
             except OSError:
                 continue
 
