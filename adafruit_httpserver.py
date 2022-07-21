@@ -355,9 +355,9 @@ class HTTPServer:
         except OSError as ex:
             # handle EAGAIN and ECONNRESET
             if ex.errno == EAGAIN:
-                # there is no data available right now, try again later".
+                # there is no data available right now, try again later.
                 return
             if ex.errno == ECONNRESET:
-                # connection reset by peer, try again later".
+                # connection reset by peer, try again later.
                 return
             raise
