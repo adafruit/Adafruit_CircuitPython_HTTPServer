@@ -174,7 +174,7 @@ class MIMEType:
 
 
 class HTTPResponse:
-    """Details of an HTTP response. Use in @`HTTPServer.route` decorator functions."""
+    """Details of an HTTP response. Use in `HTTPServer.route` decorator functions."""
 
     _HEADERS_FORMAT = (
         "HTTP/1.1 {}\r\n"
@@ -365,8 +365,8 @@ class HTTPServer:
     @property
     def requestbuffersize(self) -> int:
         """
-        The maximum size of the incoming request buffer. If the default size isn't 
-        adequate to handle your incoming data you can set this after creating the 
+        The maximum size of the incoming request buffer. If the default size isn't
+        adequate to handle your incoming data you can set this after creating the
         server instance.
 
         Default size is 1024 bytes.
