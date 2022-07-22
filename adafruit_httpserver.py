@@ -361,3 +361,25 @@ class HTTPServer:
                 # connection reset by peer, try again later.
                 return
             raise
+
+    @property
+    def requestbuffersize(self) -> int:
+        """
+        The maximum size of the incoming request buffer. If the default size isn't 
+        adequate to handle your incoming data you can set this after creating the 
+        server instance.
+
+        Default size is 1024 bytes.
+
+        Example::
+
+            server = HTTPServer(pool)
+            server.requestbuffersize = 2048
+
+            server.serve_forever(str(wifi.radio.ipv4_address))
+        """
+        return len(self._buffer)
+
+    @requestbuffersize.setter
+    def requestbuffersize(self, value: int) -> None:
+        self._buffer = bytearray(value)
