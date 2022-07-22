@@ -327,6 +327,7 @@ class HTTPServer:
         )
         self._sock.bind((host, port))
         self._sock.listen(10)
+        self._sock.setblocking(False)  # non-blocking socket
 
     def poll(self):
         """
@@ -334,19 +335,29 @@ class HTTPServer:
         check for new incoming client requests. When a request comes in,
         the application callable will be invoked.
         """
-        conn, _ = self._sock.accept()
-        with conn:
-            length, _ = conn.recvfrom_into(self._buffer)
+        try:
+            conn, _ = self._sock.accept()
+            with conn:
+                length, _ = conn.recvfrom_into(self._buffer)
 
-            request = _HTTPRequest(raw_request=self._buffer[:length])
+                request = _HTTPRequest(raw_request=self._buffer[:length])
 
-            # If a route exists for this request, call it. Otherwise try to serve a file.
-            route = self.routes.get(request, None)
-            if route:
-                response = route(request)
-            elif request.method == "GET":
-                response = HTTPResponse(filename=request.path, root=self.root_path)
-            else:
-                response = HTTPResponse(status=HTTPStatus.INTERNAL_SERVER_ERROR)
+                # If a route exists for this request, call it. Otherwise try to serve a file.
+                route = self.routes.get(request, None)
+                if route:
+                    response = route(request)
+                elif request.method == "GET":
+                    response = HTTPResponse(filename=request.path, root=self.root_path)
+                else:
+                    response = HTTPResponse(status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
-            response.send(conn)
+                response.send(conn)
+        except OSError as ex:
+            # handle EAGAIN and ECONNRESET
+            if ex.errno == EAGAIN:
+                # there is no data available right now, try again later.
+                return
+            if ex.errno == ECONNRESET:
+                # connection reset by peer, try again later.
+                return
+            raise
