@@ -363,7 +363,7 @@ class HTTPServer:
             raise
 
     @property
-    def requestbuffersize(self) -> int:
+    def request_buffer_size(self) -> int:
         """
         The maximum size of the incoming request buffer. If the default size isn't
         adequate to handle your incoming data you can set this after creating the
@@ -380,6 +380,6 @@ class HTTPServer:
         """
         return len(self._buffer)
 
-    @requestbuffersize.setter
-    def requestbuffersize(self, value: int) -> None:
+    @request_buffer_size.setter
+    def request_buffer_size(self, value: int) -> None:
         self._buffer = bytearray(value)

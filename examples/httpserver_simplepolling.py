@@ -30,8 +30,11 @@ server.start(str(wifi.radio.ipv4_address))
 
 while True:
     try:
-        # do something useful in this section
-        # processing any waiting requests
+        # do something useful in this section,
+        # for example read a sensor and capture an average,
+        # or a running total of the last 10 samples
+
+        # process any waiting requests
         server.poll()
     except OSError:
         continue
