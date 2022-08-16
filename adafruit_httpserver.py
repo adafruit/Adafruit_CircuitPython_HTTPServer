@@ -289,7 +289,7 @@ class HTTPServer:
             @server.route(path, method)
             def route_func(request):
                 raw_text = request.raw_request.decode("utf8")
-                print("Received a request of length", len(raw_test), "bytes")
+                print("Received a request of length", len(raw_text), "bytes")
                 return HTTPResponse(body="hello world")
 
         """
