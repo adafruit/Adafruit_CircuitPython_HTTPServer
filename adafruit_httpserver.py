@@ -62,6 +62,7 @@ class _HTTPRequest:
     def __init__(
         self, path: str = "", method: str = "", raw_request: bytes = None
     ) -> None:
+        self.raw_request = raw_request
         if raw_request is None:
             self.path = path
             self.method = method
@@ -287,7 +288,10 @@ class HTTPServer:
 
             @server.route(path, method)
             def route_func(request):
+                raw_text = request.raw_request.decode("utf8")
+                print("Received a request of length", len(raw_text), "bytes")
                 return HTTPResponse(body="hello world")
+
         """
 
         def route_decorator(func: Callable) -> Callable:
