@@ -50,8 +50,14 @@ master_doc = "index"
 
 # General information about the project.
 project = "Adafruit CircuitPython HTTPServer Library"
+creation_year = "2022"
 current_year = str(datetime.datetime.now().year)
-copyright = current_year + " Dan Halbert"
+year_duration = (
+    current_year
+    if current_year == creation_year
+    else creation_year + " - " + current_year
+)
+copyright = year_duration + " Dan Halbert"
 author = "Dan Halbert"
 
 # The version info for the project you're documenting, acts as replacement for
