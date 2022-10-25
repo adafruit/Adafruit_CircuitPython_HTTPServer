@@ -342,6 +342,7 @@ class HTTPServer:
         try:
             conn, _ = self._sock.accept()
             with conn:
+                conn.setblocking(True)
                 length, _ = conn.recvfrom_into(self._buffer)
 
                 request = _HTTPRequest(raw_request=self._buffer[:length])
