@@ -247,7 +247,7 @@ class HTTPResponse:
             while bytes_read := file.read(2048):
                 self._send_bytes(conn, bytes_read)
 
-    def _send_bytes(self, conn, buf):  # pylint: disable=no-self-use
+    def _send_bytes(self, conn, buf):
         bytes_sent = 0
         bytes_to_send = len(buf)
         view = memoryview(buf)
