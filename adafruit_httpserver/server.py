@@ -9,7 +9,7 @@ from .methods import HTTPMethod
 from .request import HTTPRequest
 from .response import HTTPResponse
 from .route import HTTPRoute
-from .status import HTTPStatus
+from .status import BAD_REQUEST_400
 
 class HTTPServer:
     """A basic socket-based HTTP server."""
@@ -107,9 +107,9 @@ class HTTPServer:
                 elif request.method == HTTPMethod.GET:
                     response = HTTPResponse(filename=request.path, root=self.root_path)
 
-                # If no handler exists and request method is not GET, return 500 Internal Server Error.
+                # If no handler exists and request method is not GET, return 400 Bad Request.
                 else:
-                    response = HTTPResponse(status=HTTPStatus.INTERNAL_SERVER_ERROR)
+                    response = HTTPResponse(status=BAD_REQUEST_400)
 
                 response.send(conn)
         except OSError as ex:
