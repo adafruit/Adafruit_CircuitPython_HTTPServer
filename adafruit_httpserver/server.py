@@ -8,6 +8,7 @@ from errno import EAGAIN, ECONNRESET
 from .methods import HTTPMethod
 from .request import HTTPRequest
 from .response import HTTPResponse
+from .route import HTTPRoute
 from .status import HTTPStatus
 
 class HTTPServer:
@@ -22,7 +23,7 @@ class HTTPServer:
           in CircuitPython or the `socket` module in CPython.
         """
         self._buffer = bytearray(1024)
-        self.routes = {}
+        self.route_handlers = {}
         self._socket_source = socket_source
         self._sock = None
         self.root_path = "/"
@@ -44,7 +45,7 @@ class HTTPServer:
         """
 
         def route_decorator(func: Callable) -> Callable:
-            self.routes[_HTTPRequest(path, method)] = func
+            self.route_handlers[HTTPRoute(path, method)] = func
             return func
 
         return route_decorator
@@ -96,12 +97,17 @@ class HTTPServer:
 
                 request = HTTPRequest(raw_request=self._buffer[:length])
 
-                # If a route exists for this request, call it. Otherwise try to serve a file.
-                route = self.routes.get(request, None)
-                if route:
-                    response = route(request)
+                handler = self.route_handlers.get(HTTPRoute(request.path, request.method), None)
+
+                # If a handler for route exists, call it.
+                if handler:
+                    response = handler(request)
+
+                # If no handler exists and request method is GET, try to serve a file.
                 elif request.method == HTTPMethod.GET:
                     response = HTTPResponse(filename=request.path, root=self.root_path)
+
+                # If no handler exists and request method is not GET, return 500 Internal Server Error.
                 else:
                     response = HTTPResponse(status=HTTPStatus.INTERNAL_SERVER_ERROR)
 
