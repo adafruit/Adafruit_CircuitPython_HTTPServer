@@ -6,7 +6,7 @@ except ImportError:
 from errno import EAGAIN, ECONNRESET
 
 from .methods import HTTPMethod
-from .request import _HTTPRequest
+from .request import HTTPRequest
 from .response import HTTPResponse
 from .status import HTTPStatus
 
@@ -94,7 +94,7 @@ class HTTPServer:
                 conn.setblocking(True)
                 length, _ = conn.recvfrom_into(self._buffer)
 
-                request = _HTTPRequest(raw_request=self._buffer[:length])
+                request = HTTPRequest(raw_request=self._buffer[:length])
 
                 # If a route exists for this request, call it. Otherwise try to serve a file.
                 route = self.routes.get(request, None)
