@@ -5,6 +5,7 @@ except ImportError:
 
 from errno import EAGAIN, ECONNRESET
 
+from .methods import HTTPMethod
 from .request import _HTTPRequest
 from .response import HTTPResponse
 from .status import HTTPStatus
@@ -26,11 +27,11 @@ class HTTPServer:
         self._sock = None
         self.root_path = "/"
 
-    def route(self, path: str, method: str = "GET"):
+    def route(self, path: str, method: HTTPMethod = HTTPMethod.GET):
         """Decorator used to add a route.
 
         :param str path: filename path
-        :param str method: HTTP method: "GET", "POST", etc.
+        :param HTTPMethod method: HTTP method: HTTPMethod.GET, HTTPMethod.POST, etc.
 
         Example::
 
@@ -99,7 +100,7 @@ class HTTPServer:
                 route = self.routes.get(request, None)
                 if route:
                     response = route(request)
-                elif request.method == "GET":
+                elif request.method == HTTPMethod.GET:
                     response = HTTPResponse(filename=request.path, root=self.root_path)
                 else:
                     response = HTTPResponse(status=HTTPStatus.INTERNAL_SERVER_ERROR)
