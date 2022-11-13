@@ -1,7 +1,7 @@
 class HTTPStatus:  # pylint: disable=too-few-public-methods
     """HTTP status codes."""
 
-    def __init__(self, code, text):
+    def __init__(self, code: int, text: str):
         """Define a status code.
 
         :param int value: Numeric value: 200, 404, etc.

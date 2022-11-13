@@ -80,7 +80,7 @@ class MIMEType:
 
 
     @staticmethod
-    def from_file_name(filename):
+    def from_file_name(filename: str):
         """Return the mime type for the given filename. If not known, return "text/plain"."""
         attr_name = filename.split(".")[-1].upper()
 
