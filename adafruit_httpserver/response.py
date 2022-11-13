@@ -1,97 +1,158 @@
 try:
-    from typing import Any, Optional
+    from typing import Optional, Dict, Union
+    from socket import socket
 except ImportError:
     pass
 
 from errno import EAGAIN, ECONNRESET
 import os
 
+from socketpool import SocketPool
+
 from .mime_type import MIMEType
-from .status import HTTPStatus
+from .status import HTTPStatus, OK_200, NOT_FOUND_404
 
 class HTTPResponse:
     """Details of an HTTP response. Use in `HTTPServer.route` decorator functions."""
 
-    _HEADERS_FORMAT = (
-        "HTTP/1.1 {}\r\n"
-        "Content-Type: {}\r\n"
-        "Content-Length: {}\r\n"
-        "Connection: close\r\n"
-        "\r\n"
-    )
+    http_version: str
+    status: HTTPStatus
+    headers: Dict[str, str]
+    content_type: str
+
+    filename: Optional[str]
+    root_directory: str
+
+    body: str
 
     def __init__(
         self,
-        *,
-        status: tuple = HTTPStatus.OK,
-        content_type: str = MIMEType.TEXT_PLAIN,
+        status: HTTPStatus = OK_200,
         body: str = "",
+        headers: Dict[str, str] = None,
+        content_type: str = MIMEType.TEXT_PLAIN,
         filename: Optional[str] = None,
-        root: str = "",
+        root_directory: str = "",
+        http_version: str = "HTTP/1.1"
     ) -> None:
-        """Create an HTTP response.
-
-        :param tuple status: The HTTP status code to return, as a tuple of (int, "message").
-          Common statuses are available in `HTTPStatus`.
-        :param str content_type: The MIME type of the data being returned.
-          Common MIME types are available in `MIMEType`.
-        :param Union[str|bytes] body:
-          The data to return in the response body, if ``filename`` is not ``None``.
-        :param str filename: If not ``None``,
-          return the contents of the specified file, and ignore ``body``.
-        :param str root: root directory for filename, without a trailing slash
         """
+        Creates an HTTP response.
+
+        Returns `body` if `filename` is `None`, otherwise returns the contents of `filename`.
+        """
+
         self.status = status
+        self.body = body
+        self.headers = headers or {}
         self.content_type = content_type
-        self.body = body.encode() if isinstance(body, str) else body
         self.filename = filename
+        self.root_directory = root_directory
+        self.http_version = http_version
 
-        self.root = root
-
-    def send(self, conn: Any) -> None:
-        # TODO: Use Union[SocketPool.Socket | socket.socket] for the type annotation in some way.
+    @staticmethod
+    def _construct_response_bytes(
+        http_version: str = "HTTP/1.1",
+        status: HTTPStatus = OK_200,
+        content_type: str = "text/plain",
+        content_length: Union[int, None] = None,
+        headers: Dict[str, str] = None,
+        body: str = "",
+    ) -> str:
         """Send the constructed response over the given socket."""
-        if self.filename:
+
+        response = f"{http_version} {status.code} {status.text}\r\n"
+
+        headers = headers or {}
+
+        headers["Content-Type"] = content_type
+        headers["Content-Length"] = content_length if content_length is not None else len(body)
+        headers["Connection"] = "close"
+
+        for header, value in headers.items():
+            response += f"{header}: {value}\r\n"
+
+        response += f"\r\n{body}"
+
+        return response
+
+    def send(self, conn: Union[SocketPool.Socket, socket.socket]) -> None:
+        """
+        Send the constructed response over the given socket.
+        """
+
+        if self.filename is not None:
             try:
-                file_length = os.stat(self.root + self.filename)[6]
-                self._send_file_response(conn, self.filename, self.root, file_length)
+                file_length = os.stat(self.root_directory + self.filename)[6]
+                self._send_file_response(
+                    conn,
+                    filename = self.filename,
+                    root_directory = self.root_directory,
+                    file_length = file_length
+                )
             except OSError:
                 self._send_response(
                     conn,
-                    HTTPStatus.NOT_FOUND,
-                    MIMEType.TEXT_PLAIN,
-                    f"{HTTPStatus.NOT_FOUND} {self.filename}\r\n",
+                    status = NOT_FOUND_404,
+                    content_type = MIMEType.TEXT_PLAIN,
+                    body = f"{NOT_FOUND_404} {self.filename}",
                 )
         else:
-            self._send_response(conn, self.status, self.content_type, self.body)
+            self._send_response(
+                conn,
+                status = self.status,
+                content_type = self.content_type,
+                headers = self.headers,
+                body = self.body,
+            )
 
-    def _send_response(self, conn, status, content_type, body):
-        self._send_bytes(
-            conn, self._HEADERS_FORMAT.format(status, content_type, len(body))
-        )
-        self._send_bytes(conn, body)
-
-    def _send_file_response(self, conn, filename, root, file_length):
+    def _send_response(
+        self,
+        conn: Union[SocketPool.Socket, socket.socket],
+        status: HTTPStatus,
+        content_type: str,
+        body: str,
+        headers: Dict[str, str] = None
+    ):
         self._send_bytes(
             conn,
-            self._HEADERS_FORMAT.format(
-                self.status, MIMEType.mime_type(filename), file_length
+            self._construct_response_bytes(
+                status = status,
+                content_type = content_type,
+                headers = headers,
+                body = body,
+            )
+        )
+
+    def _send_file_response(
+        self,
+        conn: Union[SocketPool.Socket, socket.socket],
+        filename: str,
+        root_directory: str,
+        file_length: int
+    ):
+        self._send_bytes(
+            conn,
+            self._construct_response_bytes(
+                status = self.status,
+                content_type = MIMEType.mime_type(filename),
+                content_length = file_length
             ),
         )
-        with open(root + filename, "rb") as file:
+        with open(root_directory + filename, "rb") as file:
             while bytes_read := file.read(2048):
                 self._send_bytes(conn, bytes_read)
 
     @staticmethod
-    def _send_bytes(conn, buf):
+    def _send_bytes(
+        conn: Union[SocketPool.Socket, socket.socket],
+        buffer: Union[bytes, bytearray, memoryview],
+    ):
         bytes_sent = 0
-        bytes_to_send = len(buf)
-        view = memoryview(buf)
+        bytes_to_send = len(buffer)
+        view = memoryview(buffer)
         while bytes_sent < bytes_to_send:
             try:
                 bytes_sent += conn.send(view[bytes_sent:])
             except OSError as exc:
-                if exc.errno == EAGAIN:
-                    continue
-                if exc.errno == ECONNRESET:
-                    return
+                if exc.errno == EAGAIN: continue
+                if exc.errno == ECONNRESET: return
