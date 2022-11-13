@@ -1,14 +1,17 @@
-from typing import Dict, Tuple
+try:
+    from typing import Dict, Tuple
+except ImportError:
+    pass
 
 
 class HTTPRequest:
 
     method: str
     path: str
-    query_params: Dict[str, str] = {}
+    query_params: Dict[str, str]
     http_version: str
 
-    headers: Dict[str, str] = {}
+    headers: Dict[str, str]
     body: bytes | None
 
     raw_request: bytes
@@ -21,15 +24,15 @@ class HTTPRequest:
         if raw_request is None: raise ValueError("raw_request cannot be None")
 
         try:
-            self.method, self.path, self.query_params, self.http_version = self.parse_start_line(raw_request)
-            self.headers = self.parse_headers(raw_request)
-            self.body = self.parse_body(raw_request)
+            self.method, self.path, self.query_params, self.http_version = self._parse_start_line(raw_request)
+            self.headers = self._parse_headers(raw_request)
+            self.body = self._parse_body(raw_request)
         except Exception as error:
             raise ValueError("Unparseable raw_request: ", raw_request) from error
 
 
     @staticmethod
-    def parse_start_line(raw_request: bytes) -> Tuple(str, str, Dict[str, str], str):
+    def _parse_start_line(raw_request: bytes) -> Tuple(str, str, Dict[str, str], str):
         """Parse HTTP Start line to method, path, query_params and http_version."""
 
         start_line = raw_request.decode("utf8").splitlines()[0]
@@ -45,7 +48,7 @@ class HTTPRequest:
 
 
     @staticmethod
-    def parse_headers(raw_request: bytes) -> Dict[str, str]:
+    def _parse_headers(raw_request: bytes) -> Dict[str, str]:
         """Parse HTTP headers from raw request."""
         parsed_request_lines = raw_request.decode("utf8").splitlines()
         empty_line = parsed_request_lines.index("")
@@ -54,7 +57,7 @@ class HTTPRequest:
 
 
     @staticmethod
-    def parse_body(raw_request: bytes) -> Dict[str, str]:
+    def _parse_body(raw_request: bytes) -> Dict[str, str]:
         """Parse HTTP body from raw request."""
         parsed_request_lines = raw_request.decode("utf8").splitlines()
         empty_line = parsed_request_lines.index("")

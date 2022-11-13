@@ -1,5 +1,5 @@
 try:
-    from typing import Any, Callable
+    from typing import Callable, Protocol
 except ImportError:
     pass
 
@@ -14,9 +14,7 @@ from .status import BAD_REQUEST_400
 class HTTPServer:
     """A basic socket-based HTTP server."""
 
-    def __init__(self, socket_source: Any) -> None:
-        # TODO: Use a Protocol for the type annotation.
-        # The Protocol could be refactored from adafruit_requests.
+    def __init__(self, socket_source: Protocol) -> None:
         """Create a server, and get it ready to run.
 
         :param socket: An object that is a source of sockets. This could be a `socketpool`
@@ -99,8 +97,8 @@ class HTTPServer:
 
                 handler = self.route_handlers.get(HTTPRoute(request.path, request.method), None)
 
-                # If a handler for route exists, call it.
-                if handler:
+                # If a handler for route exists and is callable, call it.
+                if handler is not None and callable(handler):
                     response = handler(request)
 
                 # If no handler exists and request method is GET, try to serve a file.

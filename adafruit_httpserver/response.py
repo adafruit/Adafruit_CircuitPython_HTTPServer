@@ -53,7 +53,7 @@ class HTTPResponse:
     def _construct_response_bytes(
         http_version: str = "HTTP/1.1",
         status: HTTPStatus = OK_200,
-        content_type: str = "text/plain",
+        content_type: str = MIMEType.TEXT_PLAIN,
         content_length: Union[int, None] = None,
         headers: Dict[str, str] = None,
         body: str = "",
@@ -64,9 +64,9 @@ class HTTPResponse:
 
         headers = headers or {}
 
-        headers["Content-Type"] = content_type
-        headers["Content-Length"] = content_length if content_length is not None else len(body)
-        headers["Connection"] = "close"
+        headers.setdefault("Content-Type", content_type)
+        headers.setdefault("Content-Length", content_length if content_length is not None else len(body))
+        headers.setdefault("Connection", "close")
 
         for header, value in headers.items():
             response += f"{header}: {value}\r\n"
