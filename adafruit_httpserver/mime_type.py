@@ -1,3 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries
+#
+# SPDX-License-Identifier: MIT
+"""
+`adafruit_httpserver.mime_type.MIMEType`
+====================================================
+* Author(s): Dan Halbert, Michał Pokusa
+"""
+
 class MIMEType:
     """Common MIME types.
     From https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
@@ -78,12 +87,12 @@ class MIMEType:
     ZIP = "application/zip"
     _7Z = "application/x-7z-compressed"
 
-
     @staticmethod
     def from_file_name(filename: str):
         """Return the mime type for the given filename. If not known, return "text/plain"."""
         attr_name = filename.split(".")[-1].upper()
 
-        if attr_name[0].isdigit(): attr_name = "_" + attr_name
+        if attr_name[0].isdigit():
+            attr_name = "_" + attr_name
 
         return getattr(MIMEType, attr_name, MIMEType.TXT)

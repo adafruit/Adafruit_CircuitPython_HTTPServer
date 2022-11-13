@@ -1,3 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries
+#
+# SPDX-License-Identifier: MIT
+"""
+`adafruit_httpserver.server.HTTPServer`
+====================================================
+* Author(s): Dan Halbert
+"""
+
 try:
     from typing import Callable, Protocol
 except ImportError:
@@ -8,8 +17,9 @@ from errno import EAGAIN, ECONNRESET
 from .methods import HTTPMethod
 from .request import HTTPRequest
 from .response import HTTPResponse
-from .route import HTTPRoute
+from .route import _HTTPRoute
 from .status import CommonHTTPStatus
+
 
 class HTTPServer:
     """A basic socket-based HTTP server."""
@@ -43,7 +53,7 @@ class HTTPServer:
         """
 
         def route_decorator(func: Callable) -> Callable:
-            self.route_handlers[HTTPRoute(path, method)] = func
+            self.route_handlers[_HTTPRoute(path, method)] = func
             return func
 
         return route_decorator
@@ -94,7 +104,9 @@ class HTTPServer:
 
                 request = HTTPRequest(raw_request=self._buffer[:length])
 
-                handler = self.route_handlers.get(HTTPRoute(request.path, request.method), None)
+                handler = self.route_handlers.get(
+                    _HTTPRoute(request.path, request.method), None
+                )
 
                 # If a handler for route exists and is callable, call it.
                 if handler is not None and callable(handler):
@@ -102,11 +114,15 @@ class HTTPServer:
 
                 # If no handler exists and request method is GET, try to serve a file.
                 elif request.method == HTTPMethod.GET:
-                    response = HTTPResponse(filename=request.path, root_path=self.root_path)
+                    response = HTTPResponse(
+                        filename=request.path, root_path=self.root_path
+                    )
 
                 # If no handler exists and request method is not GET, return 400 Bad Request.
                 else:
-                    response = HTTPResponse(status=CommonHTTPStatus.BAD_REQUEST_400)
+                    response = HTTPResponse(
+                        status=CommonHTTPStatus.BAD_REQUEST_400
+                    )
 
                 response.send(conn)
         except OSError as ex:

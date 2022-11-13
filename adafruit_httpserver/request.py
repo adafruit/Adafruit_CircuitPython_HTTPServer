@@ -1,3 +1,12 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries
+#
+# SPDX-License-Identifier: MIT
+"""
+`adafruit_httpserver.request.HTTPRequest`
+====================================================
+* Author(s): Dan Halbert, Michał Pokusa
+"""
+
 try:
     from typing import Dict, Tuple
 except ImportError:
@@ -5,23 +14,44 @@ except ImportError:
 
 
 class HTTPRequest:
+    """
+    Incoming request, constructed from raw incoming bytes, that is passed as first argument to route handlers.
+    """
 
     method: str
+    """Request method e.g. "GET" or "POST"."""
+
     path: str
+    """Path of the request."""
+
     query_params: Dict[str, str]
+    """
+    Query/GET parameters in the request.
+
+    Example::
+
+            request  = HTTPRequest(raw_request=b"GET /?foo=bar HTTP/1.1...")
+            request.query_params
+            # {"foo": "bar"}
+    """
+
     http_version: str
+    """HTTP version, e.g. "HTTP/1.1"."""
 
     headers: Dict[str, str]
-    body: bytes | None
+    """Headers from the request."""
+
+    body: bytes
+    """Body of the request, as bytes."""
 
     raw_request: bytes
+    """Raw bytes passed to the constructor."""
 
-    def __init__(
-        self, raw_request: bytes = None
-    ) -> None:
+    def __init__(self, raw_request: bytes = None) -> None:
         self.raw_request = raw_request
 
-        if raw_request is None: raise ValueError("raw_request cannot be None")
+        if raw_request is None:
+            raise ValueError("raw_request cannot be None")
 
         empty_line_index = raw_request.find(b"\r\n\r\n")
 
@@ -35,7 +65,6 @@ class HTTPRequest:
         except Exception as error:
             raise ValueError("Unparseable raw_request: ", raw_request) from error
 
-
     @staticmethod
     def _parse_start_line(header_bytes: bytes) -> Tuple[str, str, Dict[str, str], str]:
         """Parse HTTP Start line to method, path, query_params and http_version."""
@@ -44,7 +73,8 @@ class HTTPRequest:
 
         method, path, http_version = start_line.split()
 
-        if "?" not in path: path += "?"
+        if "?" not in path:
+            path += "?"
 
         path, query_string = path.split("?", 1)
 
@@ -57,7 +87,6 @@ class HTTPRequest:
                 query_params[query_param] = ""
 
         return method, path, query_params, http_version
-
 
     @staticmethod
     def _parse_headers(header_bytes: bytes) -> Dict[str, str]:

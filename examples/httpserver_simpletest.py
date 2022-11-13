@@ -7,7 +7,8 @@ from secrets import secrets  # pylint: disable=no-name-in-module
 import socketpool
 import wifi
 
-from adafruit_httpserver import HTTPServer, HTTPResponse
+from adafruit_httpserver.server import HTTPServer
+from adafruit_httpserver.response import HTTPResponse
 
 ssid = secrets["ssid"]
 print("Connecting to", ssid)

@@ -1,16 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries
+#
+# SPDX-License-Identifier: MIT
+"""
+`adafruit_httpserver.response.HTTPResponse`
+====================================================
+* Author(s): Dan Halbert, Michał Pokusa
+"""
+
 try:
     from typing import Optional, Dict, Union
     from socket import socket
+    from socketpool import SocketPool
 except ImportError:
     pass
 
 from errno import EAGAIN, ECONNRESET
 import os
 
-from socketpool import SocketPool
 
 from .mime_type import MIMEType
 from .status import HTTPStatus, CommonHTTPStatus
+
 
 class HTTPResponse:
     """Details of an HTTP response. Use in `HTTPServer.route` decorator functions."""
@@ -33,7 +43,7 @@ class HTTPResponse:
         content_type: str = MIMEType.TXT,
         filename: Optional[str] = None,
         root_path: str = "",
-        http_version: str = "HTTP/1.1"
+        http_version: str = "HTTP/1.1",
     ) -> None:
         """
         Creates an HTTP response.
@@ -65,7 +75,7 @@ class HTTPResponse:
         headers = headers or {}
 
         headers.setdefault("Content-Type", content_type)
-        headers.setdefault("Content-Length", content_length if content_length is not None else len(body))
+        headers.setdefault("Content-Length", content_length or len(body))
         headers.setdefault("Connection", "close")
 
         for header, value in headers.items():
@@ -75,7 +85,7 @@ class HTTPResponse:
 
         return response
 
-    def send(self, conn: Union[SocketPool.Socket, socket.socket]) -> None:
+    def send(self, conn: Union["SocketPool.Socket", "socket.socket"]) -> None:
         """
         Send the constructed response over the given socket.
         """
@@ -85,60 +95,60 @@ class HTTPResponse:
                 file_length = os.stat(self.root_path + self.filename)[6]
                 self._send_file_response(
                     conn,
-                    filename = self.filename,
-                    root_path = self.root_path,
-                    file_length = file_length,
-                    headers = self.headers,
+                    filename=self.filename,
+                    root_path=self.root_path,
+                    file_length=file_length,
+                    headers=self.headers,
                 )
             except OSError:
                 self._send_response(
                     conn,
-                    status = CommonHTTPStatus.NOT_FOUND_404,
-                    content_type = MIMEType.TXT,
-                    body = f"{CommonHTTPStatus.NOT_FOUND_404} {self.filename}",
+                    status=CommonHTTPStatus.NOT_FOUND_404,
+                    content_type=MIMEType.TXT,
+                    body=f"{CommonHTTPStatus.NOT_FOUND_404} {self.filename}",
                 )
         else:
             self._send_response(
                 conn,
-                status = self.status,
-                content_type = self.content_type,
-                headers = self.headers,
-                body = self.body,
+                status=self.status,
+                content_type=self.content_type,
+                headers=self.headers,
+                body=self.body,
             )
 
     def _send_response(
         self,
-        conn: Union[SocketPool.Socket, socket.socket],
+        conn: Union["SocketPool.Socket", "socket.socket"],
         status: HTTPStatus,
         content_type: str,
         body: str,
-        headers: Dict[str, str] = None
+        headers: Dict[str, str] = None,
     ):
         self._send_bytes(
             conn,
             self._construct_response_bytes(
-                status = status,
-                content_type = content_type,
-                headers = headers,
-                body = body,
-            )
+                status=status,
+                content_type=content_type,
+                headers=headers,
+                body=body,
+            ),
         )
 
     def _send_file_response(
         self,
-        conn: Union[SocketPool.Socket, socket.socket],
+        conn: Union["SocketPool.Socket", "socket.socket"],
         filename: str,
         root_path: str,
         file_length: int,
-        headers: Dict[str, str] = None
+        headers: Dict[str, str] = None,
     ):
         self._send_bytes(
             conn,
             self._construct_response_bytes(
-                status = self.status,
-                content_type = MIMEType.from_file_name(filename),
-                content_length = file_length,
-                headers = headers,
+                status=self.status,
+                content_type=MIMEType.from_file_name(filename),
+                content_length=file_length,
+                headers=headers,
             ),
         )
         with open(root_path + filename, "rb") as file:
@@ -147,7 +157,7 @@ class HTTPResponse:
 
     @staticmethod
     def _send_bytes(
-        conn: Union[SocketPool.Socket, socket.socket],
+        conn: Union["SocketPool.Socket", "socket.socket"],
         buffer: Union[bytes, bytearray, memoryview],
     ):
         bytes_sent = 0
@@ -157,5 +167,7 @@ class HTTPResponse:
             try:
                 bytes_sent += conn.send(view[bytes_sent:])
             except OSError as exc:
-                if exc.errno == EAGAIN: continue
-                if exc.errno == ECONNRESET: return
+                if exc.errno == EAGAIN:
+                    continue
+                if exc.errno == ECONNRESET:
+                    return

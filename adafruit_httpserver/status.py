@@ -1,11 +1,20 @@
+# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries
+#
+# SPDX-License-Identifier: MIT
+"""
+`adafruit_httpserver.status.HTTPStatus`
+====================================================
+* Author(s): Dan Halbert, Michał Pokusa
+"""
+
 class HTTPStatus:  # pylint: disable=too-few-public-methods
     """HTTP status codes."""
 
     def __init__(self, code: int, text: str):
         """Define a status code.
 
-        :param int value: Numeric value: 200, 404, etc.
-        :param str phrase: Short phrase: "OK", "Not Found', etc.
+        :param int code: Numeric value: 200, 404, etc.
+        :param str text: Short phrase: "OK", "Not Found', etc.
         """
         self.code = code
         self.text = text
