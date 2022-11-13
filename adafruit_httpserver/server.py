@@ -50,14 +50,14 @@ class HTTPServer:
 
         return route_decorator
 
-    def serve_forever(self, host: str, port: int = 80, root: str = "") -> None:
+    def serve_forever(self, host: str, port: int = 80, root_path: str = "") -> None:
         """Wait for HTTP requests at the given host and port. Does not return.
 
         :param str host: host name or IP address
         :param int port: port
         :param str root: root directory to serve files from
         """
-        self.start(host, port, root)
+        self.start(host, port, root_path)
 
         while True:
             try:
@@ -65,7 +65,7 @@ class HTTPServer:
             except OSError:
                 continue
 
-    def start(self, host: str, port: int = 80, root: str = "") -> None:
+    def start(self, host: str, port: int = 80, root_path: str = "") -> None:
         """
         Start the HTTP server at the given host and port. Requires calling
         poll() in a while loop to handle incoming requests.
@@ -74,7 +74,7 @@ class HTTPServer:
         :param int port: port
         :param str root: root directory to serve files from
         """
-        self.root_path = root
+        self.root_path = root_path
 
         self._sock = self._socket_source.socket(
             self._socket_source.AF_INET, self._socket_source.SOCK_STREAM
@@ -105,7 +105,7 @@ class HTTPServer:
 
                 # If no handler exists and request method is GET, try to serve a file.
                 elif request.method == HTTPMethod.GET:
-                    response = HTTPResponse(filename=request.path, root=self.root_path)
+                    response = HTTPResponse(filename=request.path, root_path=self.root_path)
 
                 # If no handler exists and request method is not GET, return 400 Bad Request.
                 else:

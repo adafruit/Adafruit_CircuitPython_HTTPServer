@@ -21,7 +21,7 @@ class HTTPResponse:
     content_type: str
 
     filename: Optional[str]
-    root_directory: str
+    root_path: str
 
     body: str
 
@@ -32,7 +32,7 @@ class HTTPResponse:
         headers: Dict[str, str] = None,
         content_type: str = MIMEType.TEXT_PLAIN,
         filename: Optional[str] = None,
-        root_directory: str = "",
+        root_path: str = "",
         http_version: str = "HTTP/1.1"
     ) -> None:
         """
@@ -46,7 +46,7 @@ class HTTPResponse:
         self.headers = headers or {}
         self.content_type = content_type
         self.filename = filename
-        self.root_directory = root_directory
+        self.root_path = root_path
         self.http_version = http_version
 
     @staticmethod
@@ -82,11 +82,11 @@ class HTTPResponse:
 
         if self.filename is not None:
             try:
-                file_length = os.stat(self.root_directory + self.filename)[6]
+                file_length = os.stat(self.root_path + self.filename)[6]
                 self._send_file_response(
                     conn,
                     filename = self.filename,
-                    root_directory = self.root_directory,
+                    root_path = self.root_path,
                     file_length = file_length
                 )
             except OSError:
@@ -127,7 +127,7 @@ class HTTPResponse:
         self,
         conn: Union[SocketPool.Socket, socket.socket],
         filename: str,
-        root_directory: str,
+        root_path: str,
         file_length: int
     ):
         self._send_bytes(
@@ -138,7 +138,7 @@ class HTTPResponse:
                 content_length = file_length
             ),
         )
-        with open(root_directory + filename, "rb") as file:
+        with open(root_path + filename, "rb") as file:
             while bytes_read := file.read(2048):
                 self._send_bytes(conn, bytes_read)
 
