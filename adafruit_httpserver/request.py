@@ -47,7 +47,14 @@ class HTTPRequest:
         if "?" not in path: path += "?"
 
         path, query_string = path.split("?", 1)
-        query_params = dict([param.split("=", 1) for param in query_string.split("&")]) if query_string else {}
+
+        query_params = {}
+        for query_param in query_string.split("&"):
+            if "=" in query_param:
+                key, value = query_param.split("=", 1)
+                query_params[key] = value
+            else:
+                query_params[query_param] = ""
 
         return method, path, query_params, http_version
 
