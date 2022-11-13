@@ -23,19 +23,24 @@ class HTTPRequest:
 
         if raw_request is None: raise ValueError("raw_request cannot be None")
 
+        empty_line_index = raw_request.find(b"\r\n\r\n")
+
+        header_bytes = raw_request[:empty_line_index]
+        body_bytes = raw_request[empty_line_index + 4:]
+
         try:
-            self.method, self.path, self.query_params, self.http_version = self._parse_start_line(raw_request)
-            self.headers = self._parse_headers(raw_request)
-            self.body = self._parse_body(raw_request)
+            self.method, self.path, self.query_params, self.http_version = self._parse_start_line(header_bytes)
+            self.headers = self._parse_headers(header_bytes)
+            self.body = body_bytes
         except Exception as error:
             raise ValueError("Unparseable raw_request: ", raw_request) from error
 
 
     @staticmethod
-    def _parse_start_line(raw_request: bytes) -> Tuple(str, str, Dict[str, str], str):
+    def _parse_start_line(header_bytes: bytes) -> Tuple[str, str, Dict[str, str], str]:
         """Parse HTTP Start line to method, path, query_params and http_version."""
 
-        start_line = raw_request.decode("utf8").splitlines()[0]
+        start_line = header_bytes.decode("utf8").splitlines()[0]
 
         method, path, http_version = start_line.split()
 
@@ -48,20 +53,8 @@ class HTTPRequest:
 
 
     @staticmethod
-    def _parse_headers(raw_request: bytes) -> Dict[str, str]:
+    def _parse_headers(header_bytes: bytes) -> Dict[str, str]:
         """Parse HTTP headers from raw request."""
-        parsed_request_lines = raw_request.decode("utf8").splitlines()
-        empty_line = parsed_request_lines.index("")
+        header_lines = header_bytes.decode("utf8").splitlines()[1:]
 
-        return dict([header.split(": ", 1) for header in parsed_request_lines[1:empty_line]])
-
-
-    @staticmethod
-    def _parse_body(raw_request: bytes) -> Dict[str, str]:
-        """Parse HTTP body from raw request."""
-        parsed_request_lines = raw_request.decode("utf8").splitlines()
-        empty_line = parsed_request_lines.index("")
-
-        if empty_line == len(parsed_request_lines) - 1:
-            return None
-        return "\r\n".join(parsed_request_lines[empty_line+1:])
+        return dict([header.split(": ", 1) for header in header_lines[1:]])
