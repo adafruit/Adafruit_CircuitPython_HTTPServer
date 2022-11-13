@@ -87,7 +87,8 @@ class HTTPResponse:
                     conn,
                     filename = self.filename,
                     root_path = self.root_path,
-                    file_length = file_length
+                    file_length = file_length,
+                    headers = self.headers,
                 )
             except OSError:
                 self._send_response(
@@ -128,14 +129,16 @@ class HTTPResponse:
         conn: Union[SocketPool.Socket, socket.socket],
         filename: str,
         root_path: str,
-        file_length: int
+        file_length: int,
+        headers: Dict[str, str] = None
     ):
         self._send_bytes(
             conn,
             self._construct_response_bytes(
                 status = self.status,
                 content_type = MIMEType.from_file_name(filename),
-                content_length = file_length
+                content_length = file_length,
+                headers = headers,
             ),
         )
         with open(root_path + filename, "rb") as file:
