@@ -17,7 +17,16 @@ class HTTPStatus:  # pylint: disable=too-few-public-methods
         return f"{self.code} {self.text}"
 
 
-OK_200 = HTTPStatus(200, "OK")
-BAD_REQUEST_400 = HTTPStatus(400, "Bad Request")
-NOT_FOUND_404 = HTTPStatus(404, "Not Found")
-INTERNAL_SERVER_ERROR_500 = HTTPStatus(500, "Internal Server Error")
+class CommonHTTPStatus(HTTPStatus):
+
+    OK_200 = HTTPStatus(200, "OK")
+    """200 OK"""
+
+    BAD_REQUEST_400 = HTTPStatus(400, "Bad Request")
+    """400 Bad Request"""
+
+    NOT_FOUND_404 = HTTPStatus(404, "Not Found")
+    """404 Not Found"""
+
+    INTERNAL_SERVER_ERROR_500 = HTTPStatus(500, "Internal Server Error")
+    """500 Internal Server Error"""

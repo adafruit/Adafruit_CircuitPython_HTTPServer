@@ -9,7 +9,7 @@ from .methods import HTTPMethod
 from .request import HTTPRequest
 from .response import HTTPResponse
 from .route import HTTPRoute
-from .status import BAD_REQUEST_400
+from .status import CommonHTTPStatus
 
 class HTTPServer:
     """A basic socket-based HTTP server."""
@@ -106,7 +106,7 @@ class HTTPServer:
 
                 # If no handler exists and request method is not GET, return 400 Bad Request.
                 else:
-                    response = HTTPResponse(status=BAD_REQUEST_400)
+                    response = HTTPResponse(status=CommonHTTPStatus.BAD_REQUEST_400)
 
                 response.send(conn)
         except OSError as ex:

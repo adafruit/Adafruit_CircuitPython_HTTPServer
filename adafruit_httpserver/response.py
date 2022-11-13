@@ -10,7 +10,7 @@ import os
 from socketpool import SocketPool
 
 from .mime_type import MIMEType
-from .status import HTTPStatus, OK_200, NOT_FOUND_404
+from .status import HTTPStatus, CommonHTTPStatus
 
 class HTTPResponse:
     """Details of an HTTP response. Use in `HTTPServer.route` decorator functions."""
@@ -27,7 +27,7 @@ class HTTPResponse:
 
     def __init__(
         self,
-        status: HTTPStatus = OK_200,
+        status: HTTPStatus = CommonHTTPStatus.OK_200,
         body: str = "",
         headers: Dict[str, str] = None,
         content_type: str = MIMEType.TXT,
@@ -52,7 +52,7 @@ class HTTPResponse:
     @staticmethod
     def _construct_response_bytes(
         http_version: str = "HTTP/1.1",
-        status: HTTPStatus = OK_200,
+        status: HTTPStatus = CommonHTTPStatus.OK_200,
         content_type: str = MIMEType.TXT,
         content_length: Union[int, None] = None,
         headers: Dict[str, str] = None,
@@ -93,9 +93,9 @@ class HTTPResponse:
             except OSError:
                 self._send_response(
                     conn,
-                    status = NOT_FOUND_404,
+                    status = CommonHTTPStatus.NOT_FOUND_404,
                     content_type = MIMEType.TXT,
-                    body = f"{NOT_FOUND_404} {self.filename}",
+                    body = f"{CommonHTTPStatus.NOT_FOUND_404} {self.filename}",
                 )
         else:
             self._send_response(
