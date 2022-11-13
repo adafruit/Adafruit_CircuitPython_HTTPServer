@@ -30,7 +30,7 @@ class HTTPResponse:
         status: HTTPStatus = OK_200,
         body: str = "",
         headers: Dict[str, str] = None,
-        content_type: str = MIMEType.TEXT_PLAIN,
+        content_type: str = MIMEType.TXT,
         filename: Optional[str] = None,
         root_path: str = "",
         http_version: str = "HTTP/1.1"
@@ -53,7 +53,7 @@ class HTTPResponse:
     def _construct_response_bytes(
         http_version: str = "HTTP/1.1",
         status: HTTPStatus = OK_200,
-        content_type: str = MIMEType.TEXT_PLAIN,
+        content_type: str = MIMEType.TXT,
         content_length: Union[int, None] = None,
         headers: Dict[str, str] = None,
         body: str = "",
@@ -93,7 +93,7 @@ class HTTPResponse:
                 self._send_response(
                     conn,
                     status = NOT_FOUND_404,
-                    content_type = MIMEType.TEXT_PLAIN,
+                    content_type = MIMEType.TXT,
                     body = f"{NOT_FOUND_404} {self.filename}",
                 )
         else:
@@ -134,7 +134,7 @@ class HTTPResponse:
             conn,
             self._construct_response_bytes(
                 status = self.status,
-                content_type = MIMEType.mime_type(filename),
+                content_type = MIMEType.from_file_name(filename),
                 content_length = file_length
             ),
         )
