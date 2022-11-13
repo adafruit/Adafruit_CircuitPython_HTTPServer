@@ -7,6 +7,7 @@
 * Author(s): Dan Halbert, Michał Pokusa
 """
 
+
 class HTTPStatus:  # pylint: disable=too-few-public-methods
     """HTTP status codes."""
 
@@ -26,7 +27,8 @@ class HTTPStatus:  # pylint: disable=too-few-public-methods
         return f"{self.code} {self.text}"
 
 
-class CommonHTTPStatus(HTTPStatus):
+class CommonHTTPStatus(HTTPStatus):  # pylint: disable=too-few-public-methods
+    """Common HTTP status codes."""
 
     OK_200 = HTTPStatus(200, "OK")
     """200 OK"""

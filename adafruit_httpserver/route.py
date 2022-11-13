@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 """
-`adafruit_httpserver.route.HTTPRoute`
+`adafruit_httpserver.route._HTTPRoute`
 ====================================================
 * Author(s): Dan Halbert, Michał Pokusa
 """
@@ -11,7 +11,7 @@ from .methods import HTTPMethod
 
 
 class _HTTPRoute:
-    """Route definition for different paths, see `HTTPServer.route`."""
+    """Route definition for different paths, see `adafruit_httpserver.server.HTTPServer.route`."""
 
     def __init__(self, path: str = "", method: HTTPMethod = HTTPMethod.GET) -> None:
 

@@ -35,12 +35,12 @@ class HTTPResponse:
 
     body: str
 
-    def __init__(
+    def __init__(  # pylint: disable=too-many-arguments
         self,
         status: HTTPStatus = CommonHTTPStatus.OK_200,
         body: str = "",
         headers: Dict[str, str] = None,
-        content_type: str = MIMEType.TXT,
+        content_type: str = MIMEType.TYPE_TXT,
         filename: Optional[str] = None,
         root_path: str = "",
         http_version: str = "HTTP/1.1",
@@ -48,7 +48,7 @@ class HTTPResponse:
         """
         Creates an HTTP response.
 
-        Returns `body` if `filename` is `None`, otherwise returns the contents of `filename`.
+        Returns ``body`` if ``filename`` is ``None``, otherwise returns contents of ``filename``.
         """
 
         self.status = status
@@ -60,10 +60,10 @@ class HTTPResponse:
         self.http_version = http_version
 
     @staticmethod
-    def _construct_response_bytes(
+    def _construct_response_bytes(  # pylint: disable=too-many-arguments
         http_version: str = "HTTP/1.1",
         status: HTTPStatus = CommonHTTPStatus.OK_200,
-        content_type: str = MIMEType.TXT,
+        content_type: str = MIMEType.TYPE_TXT,
         content_length: Union[int, None] = None,
         headers: Dict[str, str] = None,
         body: str = "",
@@ -104,7 +104,7 @@ class HTTPResponse:
                 self._send_response(
                     conn,
                     status=CommonHTTPStatus.NOT_FOUND_404,
-                    content_type=MIMEType.TXT,
+                    content_type=MIMEType.TYPE_TXT,
                     body=f"{CommonHTTPStatus.NOT_FOUND_404} {self.filename}",
                 )
         else:
@@ -116,7 +116,7 @@ class HTTPResponse:
                 body=self.body,
             )
 
-    def _send_response(
+    def _send_response(  # pylint: disable=too-many-arguments
         self,
         conn: Union["SocketPool.Socket", "socket.socket"],
         status: HTTPStatus,
@@ -134,7 +134,7 @@ class HTTPResponse:
             ),
         )
 
-    def _send_file_response(
+    def _send_file_response(  # pylint: disable=too-many-arguments
         self,
         conn: Union["SocketPool.Socket", "socket.socket"],
         filename: str,

@@ -19,9 +19,6 @@
 .. automodule:: adafruit_httpserver.response
     :members:
 
-.. automodule:: adafruit_httpserver.route
-    :private-members:
-
 .. automodule:: adafruit_httpserver.server
     :members:
 

@@ -13,9 +13,10 @@ except ImportError:
     pass
 
 
-class HTTPRequest:
+class HTTPRequest:  # pylint: disable=too-few-public-methods
     """
-    Incoming request, constructed from raw incoming bytes, that is passed as first argument to route handlers.
+    Incoming request, constructed from raw incoming bytes.
+    It is passed as first argument to route handlers.
     """
 
     method: str
@@ -56,10 +57,15 @@ class HTTPRequest:
         empty_line_index = raw_request.find(b"\r\n\r\n")
 
         header_bytes = raw_request[:empty_line_index]
-        body_bytes = raw_request[empty_line_index + 4:]
+        body_bytes = raw_request[empty_line_index + 4 :]
 
         try:
-            self.method, self.path, self.query_params, self.http_version = self._parse_start_line(header_bytes)
+            (
+                self.method,
+                self.path,
+                self.query_params,
+                self.http_version,
+            ) = self._parse_start_line(header_bytes)
             self.headers = self._parse_headers(header_bytes)
             self.body = body_bytes
         except Exception as error:

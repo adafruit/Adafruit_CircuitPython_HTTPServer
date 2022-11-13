@@ -7,7 +7,8 @@
 * Author(s): Michał Pokusa
 """
 
-class HTTPMethod:
+
+class HTTPMethod:  # pylint: disable=too-few-public-methods
     """Enum with HTTP methods."""
 
     GET = "GET"
