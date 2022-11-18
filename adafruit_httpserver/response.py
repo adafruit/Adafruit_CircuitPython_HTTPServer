@@ -67,8 +67,8 @@ class HTTPResponse:
         content_length: Union[int, None] = None,
         headers: Dict[str, str] = None,
         body: str = "",
-    ) -> str:
-        """Send the constructed response over the given socket."""
+    ) -> bytes:
+        """Constructs the response bytes from the given parameters."""
 
         response = f"{http_version} {status.code} {status.text}\r\n"
 
@@ -83,7 +83,7 @@ class HTTPResponse:
 
         response += f"\r\n{body}"
 
-        return response
+        return response.encode("utf-8")
 
     def send(self, conn: Union["SocketPool.Socket", "socket.socket"]) -> None:
         """
