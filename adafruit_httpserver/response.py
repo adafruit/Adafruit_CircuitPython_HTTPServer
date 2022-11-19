@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Optional, Dict, Union
+    from typing import Optional, Dict, Union, Tuple
     from socket import socket
     from socketpool import SocketPool
 except ImportError:
@@ -37,7 +37,7 @@ class HTTPResponse:
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        status: HTTPStatus = CommonHTTPStatus.OK_200,
+        status: Union[HTTPStatus, Tuple[int, str]] = CommonHTTPStatus.OK_200,
         body: str = "",
         headers: Dict[str, str] = None,
         content_type: str = MIMEType.TYPE_TXT,
@@ -50,8 +50,7 @@ class HTTPResponse:
 
         Returns ``body`` if ``filename`` is ``None``, otherwise returns contents of ``filename``.
         """
-
-        self.status = status
+        self.status = status if isinstance(status, HTTPStatus) else HTTPStatus(*status)
         self.body = body
         self.headers = headers or {}
         self.content_type = content_type

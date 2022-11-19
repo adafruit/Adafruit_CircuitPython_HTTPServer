@@ -26,6 +26,9 @@ class HTTPStatus:  # pylint: disable=too-few-public-methods
     def __str__(self):
         return f"{self.code} {self.text}"
 
+    def __eq__(self, other: "HTTPStatus"):
+        return self.code == other.code and self.text == other.text
+
 
 class CommonHTTPStatus(HTTPStatus):  # pylint: disable=too-few-public-methods
     """Common HTTP status codes."""
