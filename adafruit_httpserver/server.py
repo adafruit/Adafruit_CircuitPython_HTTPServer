@@ -4,7 +4,7 @@
 """
 `adafruit_httpserver.server.HTTPServer`
 ====================================================
-* Author(s): Dan Halbert
+* Author(s): Dan Halbert, Michał Pokusa
 """
 
 try:
@@ -12,7 +12,7 @@ try:
 except ImportError:
     pass
 
-from errno import EAGAIN, ECONNRESET
+from errno import EAGAIN, ECONNRESET, ETIMEDOUT
 
 from .methods import HTTPMethod
 from .request import HTTPRequest
@@ -31,6 +31,7 @@ class HTTPServer:
           in CircuitPython or the `socket` module in CPython.
         """
         self._buffer = bytearray(1024)
+        self._timeout = 0
         self.route_handlers = {}
         self._socket_source = socket_source
         self._sock = None
@@ -100,6 +101,7 @@ class HTTPServer:
         try:
             conn, _ = self._sock.accept()
             with conn:
+                conn.settimeout(self._timeout)
                 length, _ = conn.recvfrom_into(self._buffer)
 
                 request = HTTPRequest(raw_request=self._buffer[:length])
@@ -154,3 +156,29 @@ class HTTPServer:
     @request_buffer_size.setter
     def request_buffer_size(self, value: int) -> None:
         self._buffer = bytearray(value)
+
+    @property
+    def socket_timeout(self) -> int:
+        """
+        Timeout after which the socket will stop waiting for more incoming data.
+        When exceeded, raises `OSError` with `errno.ETIMEDOUT`.
+
+        Default timeout is 0, which means socket is in non-blocking mode.
+
+        Example::
+
+            server = HTTPServer(pool)
+            server.socket_timeout = 3
+
+            server.serve_forever(str(wifi.radio.ipv4_address))
+        """
+        return self._timeout
+
+    @socket_timeout.setter
+    def socket_timeout(self, value: int) -> None:
+        if isinstance(value, (int, float)) and value >= 0:
+            self._timeout = value
+        else:
+            raise TypeError(
+                "HTTPServer.socket_timeout must be a non-negative numeric value."
+            )
