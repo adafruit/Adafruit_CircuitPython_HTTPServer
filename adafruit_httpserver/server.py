@@ -102,9 +102,25 @@ class HTTPServer:
             conn, _ = self._sock.accept()
             with conn:
                 conn.settimeout(self._timeout)
-                length, _ = conn.recvfrom_into(self._buffer)
+                received_data = bytearray()
 
-                request = HTTPRequest(raw_request=self._buffer[:length])
+                # Receiving data until timeout
+                while "Receiving data":
+                    try:
+                        length = conn.recv_into(self._buffer)
+                        received_data += self._buffer[:length]
+                    except OSError as ex:
+                        if ex.errno == ETIMEDOUT:
+                            break
+                    except Exception as ex:
+                        raise ex
+
+                # Return if no data received
+                if not received_data:
+                    return
+
+                # Parsing received data
+                request = HTTPRequest(raw_request=received_data)
 
                 handler = self.route_handlers.get(
                     _HTTPRoute(request.path, request.method), None
