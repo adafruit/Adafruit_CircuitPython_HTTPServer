@@ -31,7 +31,7 @@ class HTTPServer:
           in CircuitPython or the `socket` module in CPython.
         """
         self._buffer = bytearray(1024)
-        self._timeout = 0
+        self._timeout = 1
         self.route_handlers = {}
         self._socket_source = socket_source
         self._sock = None
@@ -107,7 +107,7 @@ class HTTPServer:
                 # Receiving data until timeout
                 while "Receiving data":
                     try:
-                        length = conn.recv_into(self._buffer)
+                        length = conn.recv_into(self._buffer, len(self._buffer))
                         received_data += self._buffer[:length]
                     except OSError as ex:
                         if ex.errno == ETIMEDOUT:
@@ -192,9 +192,9 @@ class HTTPServer:
 
     @socket_timeout.setter
     def socket_timeout(self, value: int) -> None:
-        if isinstance(value, (int, float)) and value >= 0:
+        if isinstance(value, (int, float)) and value > 0:
             self._timeout = value
         else:
-            raise TypeError(
-                "HTTPServer.socket_timeout must be a non-negative numeric value."
+            raise ValueError(
+                "HTTPServer.socket_timeout must be a positive numeric value."
             )
