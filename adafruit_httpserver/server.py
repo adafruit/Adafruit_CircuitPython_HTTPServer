@@ -8,7 +8,9 @@
 """
 
 try:
-    from typing import Callable, Protocol
+    from typing import Callable, Protocol, Union
+    from socket import socket
+    from socketpool import SocketPool
 except ImportError:
     pass
 
@@ -92,6 +94,40 @@ class HTTPServer:
         self._sock.listen(10)
         self._sock.setblocking(False)  # non-blocking socket
 
+    def _receive_header_bytes(
+        self, sock: Union["SocketPool.Socket", "socket.socket"]
+    ) -> bytes:
+        """Receive bytes until a empty line is received."""
+        received_bytes = bytes()
+        while b"\r\n\r\n" not in received_bytes:
+            try:
+                length = sock.recv_into(self._buffer, len(self._buffer))
+                received_bytes += self._buffer[:length]
+            except OSError as ex:
+                if ex.errno == ETIMEDOUT:
+                    break
+            except Exception as ex:
+                raise ex
+        return received_bytes
+
+    def _receive_body_bytes(
+        self,
+        sock: Union["SocketPool.Socket", "socket.socket"],
+        received_body_bytes: bytes,
+        content_length: int,
+    ) -> bytes:
+        """Receive bytes until the given content length is received."""
+        while len(received_body_bytes) < content_length:
+            try:
+                length = sock.recv_into(self._buffer, len(self._buffer))
+                received_body_bytes += self._buffer[:length]
+            except OSError as ex:
+                if ex.errno == ETIMEDOUT:
+                    break
+            except Exception as ex:
+                raise ex
+        return received_body_bytes[:content_length]
+
     def poll(self):
         """
         Call this method inside your main event loop to get the server to
@@ -102,25 +138,23 @@ class HTTPServer:
             conn, _ = self._sock.accept()
             with conn:
                 conn.settimeout(self._timeout)
-                received_data = bytearray()
 
-                # Receiving data until timeout
-                while "Receiving data":
-                    try:
-                        length = conn.recv_into(self._buffer, len(self._buffer))
-                        received_data += self._buffer[:length]
-                    except OSError as ex:
-                        if ex.errno == ETIMEDOUT:
-                            break
-                    except Exception as ex:
-                        raise ex
+                # Receiving data until empty line
+                header_bytes = self._receive_header_bytes(conn)
 
                 # Return if no data received
-                if not received_data:
+                if not header_bytes:
                     return
 
-                # Parsing received data
-                request = HTTPRequest(raw_request=received_data)
+                request = HTTPRequest(header_bytes)
+
+                content_length = int(request.headers.get("content-length", 0))
+                received_body_bytes = request.body
+
+                # Receiving remaining body bytes
+                request.body = self._receive_body_bytes(
+                    conn, received_body_bytes, content_length
+                )
 
                 handler = self.route_handlers.get(
                     _HTTPRoute(request.path, request.method), None
