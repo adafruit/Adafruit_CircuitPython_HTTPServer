@@ -40,7 +40,20 @@ class HTTPRequest:
     """HTTP version, e.g. "HTTP/1.1"."""
 
     headers: Dict[str, str]
-    """Headers from the request."""
+    """
+    Headers from the request as `dict`.
+
+    Values should be accessed using **lower case header names**.
+
+    Example::
+
+            request.headers
+            # {'connection': 'keep-alive', 'content-length': '64' ...}
+            request.headers["content-length"]
+            # '64'
+            request.headers["Content-Length"]
+            # KeyError: 'Content-Length'
+    """
 
     raw_request: bytes
     """Raw bytes passed to the constructor."""
@@ -111,4 +124,8 @@ class HTTPRequest:
         """Parse HTTP headers from raw request."""
         header_lines = header_bytes.decode("utf8").splitlines()[1:]
 
-        return dict([header.split(": ", 1) for header in header_lines[1:]])
+        return {
+            name.lower(): value
+            for header_line in header_lines
+            for name, value in [header_line.split(": ", 1)]
+        }
