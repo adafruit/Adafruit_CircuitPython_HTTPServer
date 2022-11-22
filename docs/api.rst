@@ -6,3 +6,21 @@
 
 .. automodule:: adafruit_httpserver
     :members:
+
+.. automodule:: adafruit_httpserver.methods
+    :members:
+
+.. automodule:: adafruit_httpserver.mime_type
+    :members:
+
+.. automodule:: adafruit_httpserver.request
+    :members:
+
+.. automodule:: adafruit_httpserver.response
+    :members:
+
+.. automodule:: adafruit_httpserver.server
+    :members:
+
+.. automodule:: adafruit_httpserver.status
+    :members:
