@@ -13,7 +13,7 @@ except ImportError:
     pass
 
 
-class HTTPRequest:  # pylint: disable=too-few-public-methods
+class HTTPRequest:
     """
     Incoming request, constructed from raw incoming bytes.
     It is passed as first argument to route handlers.
@@ -42,9 +42,6 @@ class HTTPRequest:  # pylint: disable=too-few-public-methods
     headers: Dict[str, str]
     """Headers from the request."""
 
-    body: bytes
-    """Body of the request, as bytes."""
-
     raw_request: bytes
     """Raw bytes passed to the constructor."""
 
@@ -54,10 +51,7 @@ class HTTPRequest:  # pylint: disable=too-few-public-methods
         if raw_request is None:
             raise ValueError("raw_request cannot be None")
 
-        empty_line_index = raw_request.find(b"\r\n\r\n")
-
-        header_bytes = raw_request[:empty_line_index]
-        body_bytes = raw_request[empty_line_index + 4 :]
+        header_bytes = self.header_body_bytes[0]
 
         try:
             (
@@ -67,9 +61,27 @@ class HTTPRequest:  # pylint: disable=too-few-public-methods
                 self.http_version,
             ) = self._parse_start_line(header_bytes)
             self.headers = self._parse_headers(header_bytes)
-            self.body = body_bytes
         except Exception as error:
             raise ValueError("Unparseable raw_request: ", raw_request) from error
+
+    @property
+    def body(self) -> bytes:
+        """Body of the request, as bytes."""
+        return self.header_body_bytes[1]
+
+    @body.setter
+    def body(self, body: bytes) -> None:
+        self.raw_request = self.header_body_bytes[0] + b"\r\n\r\n" + body
+
+    @property
+    def header_body_bytes(self) -> Tuple[bytes, bytes]:
+        """Return tuple of header and body bytes."""
+
+        empty_line_index = self.raw_request.find(b"\r\n\r\n")
+        header_bytes = self.raw_request[:empty_line_index]
+        body_bytes = self.raw_request[empty_line_index + 4 :]
+
+        return header_bytes, body_bytes
 
     @staticmethod
     def _parse_start_line(header_bytes: bytes) -> Tuple[str, str, Dict[str, str], str]:
