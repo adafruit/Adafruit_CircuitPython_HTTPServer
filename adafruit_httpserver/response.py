@@ -69,6 +69,7 @@ class HTTPResponse:
         cache: int = 0,
         headers: Dict[str, str] = None,
         body: str = "",
+        chunked: bool = False,
     ) -> bytes:
         """Constructs the response bytes from the given parameters."""
 
@@ -78,8 +79,11 @@ class HTTPResponse:
         response_headers = {} if headers is None else headers.copy()
 
         response_headers.setdefault("Content-Type", content_type)
-        response_headers.setdefault("Content-Length", content_length or len(body))
         response_headers.setdefault("Connection", "close")
+        if chunked:
+            response_headers.setdefault("Transfer-Encoding", "chunked")
+        else:
+            response_headers.setdefault("Content-Length", content_length or len(body))
 
         for header, value in response_headers.items():
             response += f"{header}: {value}\r\n"
@@ -120,6 +124,33 @@ class HTTPResponse:
                 headers=self.headers,
                 body=self.body,
             )
+
+    def send_chunk_headers(
+        self, conn: Union["SocketPool.Socket", "socket.socket"]
+    ) -> None:
+        """Send Headers for a chunked response over the given socket."""
+        self._send_bytes(
+            conn,
+            self._construct_response_bytes(
+                status=self.status,
+                content_type=self.content_type,
+                chunked=True,
+                cache=self.cache,
+                body="",
+            ),
+        )
+
+    def send_body_chunk(
+        self, conn: Union["SocketPool.Socket", "socket.socket"], chunk: str
+    ) -> None:
+        """Send chunk of data to the given socket.  Send an empty("") chunk to finish the session.
+
+        :param Union["SocketPool.Socket", "socket.socket"] conn: Current connection.
+        :param str chunk: String data to be sent.
+        """
+        size = "%X\r\n".encode() % len(chunk)
+        self._send_bytes(conn, size)
+        self._send_bytes(conn, chunk.encode() + b"\r\n")
 
     def _send_response(  # pylint: disable=too-many-arguments
         self,
