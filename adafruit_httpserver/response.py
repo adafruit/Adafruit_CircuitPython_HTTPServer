@@ -29,7 +29,7 @@ class HTTPResponse:
     status: HTTPStatus
     headers: Dict[str, str]
     content_type: str
-
+    cache: Optional[int]
     filename: Optional[str]
     root_path: str
 
@@ -41,6 +41,7 @@ class HTTPResponse:
         body: str = "",
         headers: Dict[str, str] = None,
         content_type: str = MIMEType.TYPE_TXT,
+        cache: Optional[int] = 0,
         filename: Optional[str] = None,
         root_path: str = "",
         http_version: str = "HTTP/1.1",
@@ -54,6 +55,7 @@ class HTTPResponse:
         self.body = body
         self.headers = headers or {}
         self.content_type = content_type
+        self.cache = cache
         self.filename = filename
         self.root_path = root_path
         self.http_version = http_version
@@ -64,6 +66,7 @@ class HTTPResponse:
         status: HTTPStatus = CommonHTTPStatus.OK_200,
         content_type: str = MIMEType.TYPE_TXT,
         content_length: Union[int, None] = None,
+        cache: int = 0,
         headers: Dict[str, str] = None,
         body: str = "",
     ) -> bytes:
@@ -80,6 +83,8 @@ class HTTPResponse:
 
         for header, value in response_headers.items():
             response += f"{header}: {value}\r\n"
+
+        response += f"Cache-Control: max-age={cache}\r\n"
 
         response += f"\r\n{body}"
 
@@ -129,6 +134,7 @@ class HTTPResponse:
             self._construct_response_bytes(
                 status=status,
                 content_type=content_type,
+                cache=self.cache,
                 headers=headers,
                 body=body,
             ),
@@ -148,6 +154,7 @@ class HTTPResponse:
                 status=self.status,
                 content_type=MIMEType.from_file_name(filename),
                 content_length=file_length,
+                cache=self.cache,
                 headers=headers,
             ),
         )

@@ -167,7 +167,7 @@ class HTTPServer:
                 # If no handler exists and request method is GET, try to serve a file.
                 elif request.method == HTTPMethod.GET:
                     response = HTTPResponse(
-                        filename=request.path, root_path=self.root_path
+                        filename=request.path, root_path=self.root_path, cache=604800
                     )
 
                 # If no handler exists and request method is not GET, return 400 Bad Request.
