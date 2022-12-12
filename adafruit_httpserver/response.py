@@ -71,13 +71,14 @@ class HTTPResponse:
 
         response = f"{http_version} {status.code} {status.text}\r\n"
 
-        headers = headers or {}
+        # Make a copy of the headers so that we don't modify the incoming dict
+        response_headers = {} if headers is None else headers.copy()
 
-        headers.setdefault("Content-Type", content_type)
-        headers.setdefault("Content-Length", content_length or len(body))
-        headers.setdefault("Connection", "close")
+        response_headers.setdefault("Content-Type", content_type)
+        response_headers.setdefault("Content-Length", content_length or len(body))
+        response_headers.setdefault("Connection", "close")
 
-        for header, value in headers.items():
+        for header, value in response_headers.items():
             response += f"{header}: {value}\r\n"
 
         response += f"\r\n{body}"
