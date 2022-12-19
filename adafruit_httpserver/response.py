@@ -20,6 +20,7 @@ import os
 
 from .mime_type import MIMEType
 from .status import HTTPStatus, CommonHTTPStatus
+from .headers import HTTPHeaders
 
 
 class HTTPResponse:
@@ -27,7 +28,7 @@ class HTTPResponse:
 
     http_version: str
     status: HTTPStatus
-    headers: Dict[str, str]
+    headers: HTTPHeaders
     content_type: str
 
     filename: Optional[str]
@@ -39,7 +40,7 @@ class HTTPResponse:
         self,
         status: Union[HTTPStatus, Tuple[int, str]] = CommonHTTPStatus.OK_200,
         body: str = "",
-        headers: Dict[str, str] = None,
+        headers: Union[HTTPHeaders, Dict[str, str]] = None,
         content_type: str = MIMEType.TYPE_TXT,
         filename: Optional[str] = None,
         root_path: str = "",
@@ -52,7 +53,7 @@ class HTTPResponse:
         """
         self.status = status if isinstance(status, HTTPStatus) else HTTPStatus(*status)
         self.body = body
-        self.headers = headers or {}
+        self.headers = headers.copy() if isinstance(headers, HTTPHeaders) else HTTPHeaders(headers)
         self.content_type = content_type
         self.filename = filename
         self.root_path = root_path
@@ -64,21 +65,18 @@ class HTTPResponse:
         status: HTTPStatus = CommonHTTPStatus.OK_200,
         content_type: str = MIMEType.TYPE_TXT,
         content_length: Union[int, None] = None,
-        headers: Dict[str, str] = None,
+        headers: HTTPHeaders = None,
         body: str = "",
     ) -> bytes:
         """Constructs the response bytes from the given parameters."""
 
         response = f"{http_version} {status.code} {status.text}\r\n"
 
-        # Make a copy of the headers so that we don't modify the incoming dict
-        response_headers = {} if headers is None else headers.copy()
+        headers.setdefault("Content-Type", content_type)
+        headers.setdefault("Content-Length", content_length or len(body))
+        headers.setdefault("Connection", "close")
 
-        response_headers.setdefault("Content-Type", content_type)
-        response_headers.setdefault("Content-Length", content_length or len(body))
-        response_headers.setdefault("Connection", "close")
-
-        for header, value in response_headers.items():
+        for header, value in headers.items():
             response += f"{header}: {value}\r\n"
 
         response += f"\r\n{body}"
@@ -122,7 +120,7 @@ class HTTPResponse:
         status: HTTPStatus,
         content_type: str,
         body: str,
-        headers: Dict[str, str] = None,
+        headers: HTTPHeaders = None,
     ):
         self._send_bytes(
             conn,
@@ -140,7 +138,7 @@ class HTTPResponse:
         filename: str,
         root_path: str,
         file_length: int,
-        headers: Dict[str, str] = None,
+        headers: HTTPHeaders = None,
     ):
         self._send_bytes(
             conn,
