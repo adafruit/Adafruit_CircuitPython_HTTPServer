@@ -73,7 +73,7 @@ class HTTPResponse:
         response = f"{http_version} {status.code} {status.text}\r\n"
 
         headers.setdefault("Content-Type", content_type)
-        headers.setdefault("Content-Length", content_length or len(body))
+        headers.setdefault("Content-Length", content_length or len(body.encode("utf-8")))
         headers.setdefault("Connection", "close")
 
         for header, value in headers.items():
