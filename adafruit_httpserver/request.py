@@ -119,8 +119,10 @@ class HTTPRequest:
         """Parse HTTP headers from raw request."""
         header_lines = header_bytes.decode("utf8").splitlines()[1:]
 
-        return HTTPHeaders({
-            name: value
-            for header_line in header_lines
-            for name, value in [header_line.split(": ", 1)]
-        })
+        return HTTPHeaders(
+            {
+                name: value
+                for header_line in header_lines
+                for name, value in [header_line.split(": ", 1)]
+            }
+        )

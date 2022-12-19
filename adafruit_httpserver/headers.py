@@ -72,7 +72,9 @@ class HTTPHeaders:
 
     def update(self, headers: Dict[str, str]):
         """Updates the headers with the given dict."""
-        return self._storage.update({key.lower(): [key, value] for key, value in headers.items()})
+        return self._storage.update(
+            {key.lower(): [key, value] for key, value in headers.items()}
+        )
 
     def copy(self):
         """Returns a copy of the headers."""
@@ -97,4 +99,4 @@ class HTTPHeaders:
         return key.lower() in self._storage.keys()
 
     def __repr__(self):
-        return f'{self.__class__.__name__}({dict(self._storage.values())})'
+        return f"{self.__class__.__name__}({dict(self._storage.values())})"

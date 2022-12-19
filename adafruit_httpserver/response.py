@@ -53,7 +53,9 @@ class HTTPResponse:
         """
         self.status = status if isinstance(status, HTTPStatus) else HTTPStatus(*status)
         self.body = body
-        self.headers = headers.copy() if isinstance(headers, HTTPHeaders) else HTTPHeaders(headers)
+        self.headers = (
+            headers.copy() if isinstance(headers, HTTPHeaders) else HTTPHeaders(headers)
+        )
         self.content_type = content_type
         self.filename = filename
         self.root_path = root_path
@@ -73,7 +75,9 @@ class HTTPResponse:
         response = f"{http_version} {status.code} {status.text}\r\n"
 
         headers.setdefault("Content-Type", content_type)
-        headers.setdefault("Content-Length", content_length or len(body.encode("utf-8")))
+        headers.setdefault(
+            "Content-Length", content_length or len(body.encode("utf-8"))
+        )
         headers.setdefault("Connection", "close")
 
         for header, value in headers.items():
