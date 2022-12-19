@@ -211,9 +211,10 @@ class HTTPServer:
     def socket_timeout(self) -> int:
         """
         Timeout after which the socket will stop waiting for more incoming data.
-        When exceeded, raises `OSError` with `errno.ETIMEDOUT`.
 
-        Default timeout is 0, which means socket is in non-blocking mode.
+        Must be set to positive integer or float. Default is 1 second.
+
+        When exceeded, raises `OSError` with `errno.ETIMEDOUT`.
 
         Example::
 

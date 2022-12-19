@@ -47,7 +47,11 @@ class HTTPRequest:
     """
 
     raw_request: bytes
-    """Raw bytes passed to the constructor."""
+    """
+    Raw 'bytes' passed to the constructor and body 'bytes' received later.
+
+    Should **not** be modified directly.
+    """
 
     def __init__(self, raw_request: bytes = None) -> None:
         self.raw_request = raw_request

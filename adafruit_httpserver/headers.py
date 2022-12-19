@@ -15,7 +15,7 @@ except ImportError:
 
 class HTTPHeaders:
     """
-    A dict-like object for storing HTTP headers.
+    A dict-like class for storing HTTP headers.
 
     Allows access to headers using **case insensitive** names.
 
