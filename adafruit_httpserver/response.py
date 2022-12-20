@@ -72,20 +72,20 @@ class HTTPResponse:
     ) -> bytes:
         """Constructs the response bytes from the given parameters."""
 
-        response = f"{http_version} {status.code} {status.text}\r\n"
+        response_message_header = f"{http_version} {status.code} {status.text}\r\n"
+        encoded_response_message_body = body.encode("utf-8")
 
         headers.setdefault("Content-Type", content_type)
         headers.setdefault(
-            "Content-Length", content_length or len(body.encode("utf-8"))
+            "Content-Length", content_length or len(encoded_response_message_body)
         )
         headers.setdefault("Connection", "close")
 
         for header, value in headers.items():
-            response += f"{header}: {value}\r\n"
+            response_message_header += f"{header}: {value}\r\n"
+        response_message_header += "\r\n"
 
-        response += f"\r\n{body}"
-
-        return response.encode("utf-8")
+        return response_message_header.encode("utf-8") + encoded_response_message_body
 
     def send(self, conn: Union["SocketPool.Socket", "socket.socket"]) -> None:
         """
