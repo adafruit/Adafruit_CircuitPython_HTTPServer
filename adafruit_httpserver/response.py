@@ -30,7 +30,7 @@ class HTTPResponse:
     status: HTTPStatus
     headers: HTTPHeaders
     content_type: str
-
+    cache: Optional[int]
     filename: Optional[str]
     root_path: str
 
@@ -42,6 +42,7 @@ class HTTPResponse:
         body: str = "",
         headers: Union[HTTPHeaders, Dict[str, str]] = None,
         content_type: str = MIMEType.TYPE_TXT,
+        cache: Optional[int] = 0,
         filename: Optional[str] = None,
         root_path: str = "",
         http_version: str = "HTTP/1.1",
@@ -57,6 +58,7 @@ class HTTPResponse:
             headers.copy() if isinstance(headers, HTTPHeaders) else HTTPHeaders(headers)
         )
         self.content_type = content_type
+        self.cache = cache
         self.filename = filename
         self.root_path = root_path
         self.http_version = http_version
@@ -67,8 +69,10 @@ class HTTPResponse:
         status: HTTPStatus = CommonHTTPStatus.OK_200,
         content_type: str = MIMEType.TYPE_TXT,
         content_length: Union[int, None] = None,
-        headers: HTTPHeaders = None,
+        cache: int = 0,
+        headers: Dict[str, str] = None,
         body: str = "",
+        chunked: bool = False,
     ) -> bytes:
         """Constructs the response bytes from the given parameters."""
 
@@ -81,11 +85,21 @@ class HTTPResponse:
         )
         headers.setdefault("Connection", "close")
 
-        for header, value in headers.items():
-            response_message_header += f"{header}: {value}\r\n"
-        response_message_header += "\r\n"
+        response_headers.setdefault("Content-Type", content_type)
+        response_headers.setdefault("Connection", "close")
+        if chunked:
+            response_headers.setdefault("Transfer-Encoding", "chunked")
+        else:
+            response_headers.setdefault("Content-Length", content_length or len(body))
 
-        return response_message_header.encode("utf-8") + encoded_response_message_body
+        for header, value in response_headers.items():
+            response += f"{header}: {value}\r\n"
+
+        response += f"Cache-Control: max-age={cache}\r\n"
+
+        response += f"\r\n{body}"
+
+        return response.encode("utf-8")
 
     def send(self, conn: Union["SocketPool.Socket", "socket.socket"]) -> None:
         """
@@ -118,6 +132,33 @@ class HTTPResponse:
                 body=self.body,
             )
 
+    def send_chunk_headers(
+        self, conn: Union["SocketPool.Socket", "socket.socket"]
+    ) -> None:
+        """Send Headers for a chunked response over the given socket."""
+        self._send_bytes(
+            conn,
+            self._construct_response_bytes(
+                status=self.status,
+                content_type=self.content_type,
+                chunked=True,
+                cache=self.cache,
+                body="",
+            ),
+        )
+
+    def send_body_chunk(
+        self, conn: Union["SocketPool.Socket", "socket.socket"], chunk: str
+    ) -> None:
+        """Send chunk of data to the given socket.  Send an empty("") chunk to finish the session.
+
+        :param Union["SocketPool.Socket", "socket.socket"] conn: Current connection.
+        :param str chunk: String data to be sent.
+        """
+        size = "%X\r\n".encode() % len(chunk)
+        self._send_bytes(conn, size)
+        self._send_bytes(conn, chunk.encode() + b"\r\n")
+
     def _send_response(  # pylint: disable=too-many-arguments
         self,
         conn: Union["SocketPool.Socket", "socket.socket"],
@@ -131,6 +172,7 @@ class HTTPResponse:
             self._construct_response_bytes(
                 status=status,
                 content_type=content_type,
+                cache=self.cache,
                 headers=headers,
                 body=body,
             ),
@@ -150,6 +192,7 @@ class HTTPResponse:
                 status=self.status,
                 content_type=MIMEType.from_file_name(filename),
                 content_length=file_length,
+                cache=self.cache,
                 headers=headers,
             ),
         )
