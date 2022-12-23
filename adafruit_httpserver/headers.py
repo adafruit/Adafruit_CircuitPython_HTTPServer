@@ -38,6 +38,9 @@ class HTTPHeaders:
         headers["content-type"]
         # 'text/html'
 
+        headers["User-Agent"]
+        # KeyError: User-Agent
+
         "CONTENT-TYPE" in headers
         # True
     """

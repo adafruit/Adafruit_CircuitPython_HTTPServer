@@ -32,17 +32,32 @@ class HTTPResponse:
             # Response with 'Content-Length' header
             @server.route(path, method)
             def route_func(request):
+
                 response = HTTPResponse(request)
                 response.send("Some content", content_type="text/plain")
-            # or
-            @server.route(path, method)
-            def route_func(request):
+
+                # or
+
+                response = HTTPResponse(request)
+                with response:
+                    response.send(body='Some content', content_type="text/plain")
+
+                # or
+
                 with HTTPResponse(request) as response:
                     response.send("Some content", content_type="text/plain")
 
             # Response with 'Transfer-Encoding: chunked' header
             @server.route(path, method)
             def route_func(request):
+
+                response = HTTPResponse(request, content_type="text/plain", chunked=True)
+                with response:
+                    response.send_body_chunk("Some content")
+                    response.send_body_chunk("Some more content")
+
+                # or
+
                 with HTTPResponse(request, content_type="text/plain", chunked=True) as response:
                     response.send_body_chunk("Some content")
                     response.send_body_chunk("Some more content")
@@ -68,7 +83,8 @@ class HTTPResponse:
         """
         Creates an HTTP response.
 
-        Sets `status`, ``headers`` and `http_version`.
+        Sets `status`, ``headers`` and `http_version`
+        and optionally default ``content_type``.
 
         To send the response, call `send` or `send_file`.
         For chunked response use
@@ -122,7 +138,8 @@ class HTTPResponse:
         """
         Sends response with `body` over the given socket.
         Implicitly calls ``_send_headers`` before sending the body.
-        Should be called only once per response.
+
+        Should be called **only once** per response.
         """
         encoded_response_message_body = body.encode("utf-8")
 
@@ -139,6 +156,9 @@ class HTTPResponse:
     ) -> None:
         """
         Send response with content of ``filename`` located in ``root_path`` over the given socket.
+        Implicitly calls ``_send_headers`` before sending the file content.
+
+        Should be called **only once** per response.
         """
         if not root_path.endswith("/"):
             root_path += "/"
@@ -162,7 +182,7 @@ class HTTPResponse:
         """
         Send chunk of data to the given socket.
 
-        Should be used only inside
+        Should be used **only** inside
         ``with HTTPResponse(request, chunked=True) as response:`` context manager.
 
         :param str chunk: String data to be sent.
