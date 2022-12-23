@@ -34,15 +34,18 @@ class HTTPResponse:
             def route_func(request):
                 response = HTTPResponse(request)
                 response.send("Some content", content_type="text/plain")
+            # or
+            @server.route(path, method)
+            def route_func(request):
+                with HTTPResponse(request) as response:
+                    response.send("Some content", content_type="text/plain")
 
             # Response with 'Transfer-Encoding: chunked' header
             @server.route(path, method)
             def route_func(request):
-                response = HTTPResponse(request, content_type="text/html")
-                response.send_headers(content_type="text/plain", chunked=True)
-                response.send_body_chunk("Some content")
-                response.send_body_chunk("Some more content")
-                response.send_body_chunk("")  # Send empty packet to finish chunked stream
+                with HTTPResponse(request, content_type="text/plain", chunked=True) as response:
+                    response.send_body_chunk("Some content")
+                    response.send_body_chunk("Some more content")
     """
 
     request: HTTPRequest
@@ -51,13 +54,16 @@ class HTTPResponse:
     http_version: str
     status: HTTPStatus
     headers: HTTPHeaders
+    content_type: str
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
         request: HTTPRequest,
         status: Union[HTTPStatus, Tuple[int, str]] = CommonHTTPStatus.OK_200,
         headers: Union[HTTPHeaders, Dict[str, str]] = None,
+        content_type: str = MIMEType.TYPE_TXT,
         http_version: str = "HTTP/1.1",
+        chunked: bool = False,
     ) -> None:
         """
         Creates an HTTP response.
@@ -65,23 +71,27 @@ class HTTPResponse:
         Sets `status`, ``headers`` and `http_version`.
 
         To send the response, call `send` or `send_file`.
-        For chunked response ``send_headers(chunked=True)`` and then `send_chunk_body`.
+        For chunked response use
+        ``with HTTPRequest(request, content_type=..., chunked=True) as r:`` and `send_chunk_body`.
         """
         self.request = request
         self.status = status if isinstance(status, HTTPStatus) else HTTPStatus(*status)
         self.headers = (
             headers.copy() if isinstance(headers, HTTPHeaders) else HTTPHeaders(headers)
         )
+        self.content_type = content_type
         self.http_version = http_version
+        self.chunked = chunked
 
-    def send_headers(
+    def _send_headers(
         self,
         content_length: Optional[int] = None,
         content_type: str = MIMEType.TYPE_TXT,
-        chunked: bool = False,
     ) -> None:
         """
-        Send response with `body` over the given socket.
+        Sends headers.
+        Implicitly called by `send` and `send_file` and in
+        ``with HTTPResponse(request, chunked=True) as response:`` context manager.
         """
         headers = self.headers.copy()
 
@@ -89,9 +99,9 @@ class HTTPResponse:
             f"{self.http_version} {self.status.code} {self.status.text}\r\n"
         )
 
-        headers.setdefault("Content-Type", content_type)
+        headers.setdefault("Content-Type", content_type or self.content_type)
         headers.setdefault("Connection", "close")
-        if chunked:
+        if self.chunked:
             headers.setdefault("Transfer-Encoding", "chunked")
         else:
             headers.setdefault("Content-Length", content_length)
@@ -107,16 +117,17 @@ class HTTPResponse:
     def send(
         self,
         body: str = "",
-        content_type: str = MIMEType.TYPE_TXT,
+        content_type: str = None,
     ) -> None:
         """
-        Send response with `body` over the given socket.
-        Implicitly calls `send_headers` before sending the body.
+        Sends response with `body` over the given socket.
+        Implicitly calls ``_send_headers`` before sending the body.
+        Should be called only once per response.
         """
         encoded_response_message_body = body.encode("utf-8")
 
-        self.send_headers(
-            content_type=content_type,
+        self._send_headers(
+            content_type=content_type or self.content_type,
             content_length=len(encoded_response_message_body),
         )
         self._send_bytes(self.request.connection, encoded_response_message_body)
@@ -138,7 +149,7 @@ class HTTPResponse:
             HTTPResponse(self.request, status=CommonHTTPStatus.NOT_FOUND_404).send()
             return
 
-        self.send_headers(
+        self._send_headers(
             content_type=MIMEType.from_file_name(filename),
             content_length=file_length,
         )
@@ -151,7 +162,8 @@ class HTTPResponse:
         """
         Send chunk of data to the given socket.
 
-        Call without `chunk` to finish the session.
+        Should be used only inside
+        ``with HTTPResponse(request, chunked=True) as response:`` context manager.
 
         :param str chunk: String data to be sent.
         """
@@ -160,6 +172,16 @@ class HTTPResponse:
         self._send_bytes(
             self.request.connection, f"{hex_length}\r\n{chunk}\r\n".encode("utf-8")
         )
+
+    def __enter__(self):
+        if self.chunked:
+            self._send_headers()
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        if self.chunked:
+            self.send_chunk_body("")
+        return True
 
     @staticmethod
     def _send_bytes(
