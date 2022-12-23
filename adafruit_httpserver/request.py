@@ -8,7 +8,9 @@
 """
 
 try:
-    from typing import Dict, Tuple
+    from typing import Dict, Tuple, Union
+    from socket import socket
+    from socketpool import SocketPool
 except ImportError:
     pass
 
@@ -19,6 +21,21 @@ class HTTPRequest:
     """
     Incoming request, constructed from raw incoming bytes.
     It is passed as first argument to route handlers.
+    """
+
+    connection: Union["SocketPool.Socket", "socket.socket"]
+    """
+    Socket object usable to send and receive data on the connection.
+    """
+
+    address: Tuple[str, int]
+    """
+    Address bound to the socket on the other end of the connection.
+
+    Example::
+
+            request.address
+            # ('192.168.137.1', 40684)
     """
 
     method: str
@@ -53,7 +70,14 @@ class HTTPRequest:
     Should **not** be modified directly.
     """
 
-    def __init__(self, raw_request: bytes = None) -> None:
+    def __init__(
+        self,
+        connection: Union["SocketPool.Socket", "socket.socket"],
+        address: Tuple[str, int],
+        raw_request: bytes = None,
+    ) -> None:
+        self.connection = connection
+        self.address = address
         self.raw_request = raw_request
 
         if raw_request is None:

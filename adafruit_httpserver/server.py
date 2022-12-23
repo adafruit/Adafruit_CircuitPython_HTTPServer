@@ -40,30 +40,17 @@ class HTTPServer:
         self.root_path = "/"
 
     def route(self, path: str, method: HTTPMethod = HTTPMethod.GET):
-        """Decorator used to add a route.
+        """
+        Decorator used to add a route.
 
         :param str path: filename path
         :param HTTPMethod method: HTTP method: HTTPMethod.GET, HTTPMethod.POST, etc.
 
         Example::
 
-            @server.route(path, method)
+            @server.route("/example", HTTPMethod.GET)
             def route_func(request):
-                raw_text = request.raw_request.decode("utf8")
-                print("Received a request of length", len(raw_text), "bytes")
-                return HTTPResponse(body="hello world")
-
-
-            @server.route(path, method)
-            def route_func(request, conn):
-                raw_text = request.raw_request.decode("utf8")
-                print("Received a request of length", len(raw_text), "bytes")
-                res = HTTPResponse(content_type="text/html")
-                res.send_chunk_headers(conn)
-                res.send_body_chunk(conn, "Some content")
-                res.send_body_chunk(conn, "Some more content")
-                res.send_body_chunk(conn, "")  # Send empty packet to finish chunked stream
-                return None  # Return None, so server knows that nothing else needs to be sent.
+                ...
         """
 
         def route_decorator(func: Callable) -> Callable:
@@ -146,7 +133,7 @@ class HTTPServer:
         the application callable will be invoked.
         """
         try:
-            conn, _ = self._sock.accept()
+            conn, address = self._sock.accept()
             with conn:
                 conn.settimeout(self._timeout)
 
@@ -157,9 +144,9 @@ class HTTPServer:
                 if not header_bytes:
                     return
 
-                request = HTTPRequest(header_bytes)
+                request = HTTPRequest(conn, address, header_bytes)
 
-                content_length = int(request.headers.get("content-length", 0))
+                content_length = int(request.headers.get("Content-Length", 0))
                 received_body_bytes = request.body
 
                 # Receiving remaining body bytes
@@ -173,25 +160,19 @@ class HTTPServer:
 
                 # If a handler for route exists and is callable, call it.
                 if handler is not None and callable(handler):
-                    # Need to pass connection for chunked encoding to work.
-                    try:
-                        response = handler(request, conn)
-                    except TypeError:
-                        response = handler(request)
-                    if response is None:
-                        return
+                    handler(request)
 
                 # If no handler exists and request method is GET, try to serve a file.
-                elif request.method == HTTPMethod.GET:
-                    response = HTTPResponse(
-                        filename=request.path, root_path=self.root_path, cache=604800
+                elif handler is None and request.method == HTTPMethod.GET:
+                    HTTPResponse(request).send_file(
+                        filename=request.path,
+                        root_path=self.root_path,
                     )
-
-                # If no handler exists and request method is not GET, return 400 Bad Request.
                 else:
-                    response = HTTPResponse(status=CommonHTTPStatus.BAD_REQUEST_400)
+                    HTTPResponse(
+                        request, status=CommonHTTPStatus.BAD_REQUEST_400
+                    ).send()
 
-                response.send(conn)
         except OSError as ex:
             # handle EAGAIN and ECONNRESET
             if ex.errno == EAGAIN:
