@@ -53,14 +53,14 @@ class HTTPResponse:
 
                 response = HTTPResponse(request, content_type="text/plain", chunked=True)
                 with response:
-                    response.send_body_chunk("Some content")
-                    response.send_body_chunk("Some more content")
+                    response.send_chunk("Some content")
+                    response.send_chunk("Some more content")
 
                 # or
 
                 with HTTPResponse(request, content_type="text/plain", chunked=True) as response:
-                    response.send_body_chunk("Some content")
-                    response.send_body_chunk("Some more content")
+                    response.send_chunk("Some content")
+                    response.send_chunk("Some more content")
     """
 
     request: HTTPRequest
@@ -88,7 +88,7 @@ class HTTPResponse:
 
         To send the response, call `send` or `send_file`.
         For chunked response use
-        ``with HTTPRequest(request, content_type=..., chunked=True) as r:`` and `send_chunk_body`.
+        ``with HTTPRequest(request, content_type=..., chunked=True) as r:`` and `send_chunk`.
         """
         self.request = request
         self.status = status if isinstance(status, HTTPStatus) else HTTPStatus(*status)
@@ -136,7 +136,7 @@ class HTTPResponse:
         content_type: str = None,
     ) -> None:
         """
-        Sends response with `body` over the given socket.
+        Sends response with content built from ``body``.
         Implicitly calls ``_send_headers`` before sending the body.
 
         Should be called **only once** per response.
@@ -155,7 +155,7 @@ class HTTPResponse:
         root_path: str = "./",
     ) -> None:
         """
-        Send response with content of ``filename`` located in ``root_path`` over the given socket.
+        Send response with content of ``filename`` located in ``root_path``.
         Implicitly calls ``_send_headers`` before sending the file content.
 
         Should be called **only once** per response.
@@ -178,9 +178,9 @@ class HTTPResponse:
             while bytes_read := file.read(2048):
                 self._send_bytes(self.request.connection, bytes_read)
 
-    def send_chunk_body(self, chunk: str = "") -> None:
+    def send_chunk(self, chunk: str = "") -> None:
         """
-        Send chunk of data to the given socket.
+        Sends chunk of response.
 
         Should be used **only** inside
         ``with HTTPResponse(request, chunked=True) as response:`` context manager.
@@ -200,7 +200,7 @@ class HTTPResponse:
 
     def __exit__(self, *args, **kwargs):
         if self.chunked:
-            self.send_chunk_body("")
+            self.send_chunk("")
         return True
 
     @staticmethod
