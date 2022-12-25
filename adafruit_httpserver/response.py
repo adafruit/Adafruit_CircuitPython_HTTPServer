@@ -98,6 +98,7 @@ class HTTPResponse:
         self.content_type = content_type
         self.http_version = http_version
         self.chunked = chunked
+        self._response_already_sent = False
 
     def _send_headers(
         self,
@@ -141,6 +142,9 @@ class HTTPResponse:
 
         Should be called **only once** per response.
         """
+        if self._response_already_sent:
+            raise RuntimeError("Response was already sent")
+
         encoded_response_message_body = body.encode("utf-8")
 
         self._send_headers(
@@ -148,6 +152,7 @@ class HTTPResponse:
             content_length=len(encoded_response_message_body),
         )
         self._send_bytes(self.request.connection, encoded_response_message_body)
+        self._response_already_sent = True
 
     def send_file(
         self,
@@ -160,6 +165,9 @@ class HTTPResponse:
 
         Should be called **only once** per response.
         """
+        if self._response_already_sent:
+            raise RuntimeError("Response was already sent")
+
         if not root_path.endswith("/"):
             root_path += "/"
         try:
@@ -177,6 +185,7 @@ class HTTPResponse:
         with open(root_path + filename, "rb") as file:
             while bytes_read := file.read(2048):
                 self._send_bytes(self.request.connection, bytes_read)
+        self._response_already_sent = True
 
     def send_chunk(self, chunk: str = "") -> None:
         """
@@ -198,7 +207,10 @@ class HTTPResponse:
             self._send_headers()
         return self
 
-    def __exit__(self, *args, **kwargs):
+    def __exit__(self, exception_type, exception_value, exception_traceback):
+        if exception_type is not None:
+            return False
+
         if self.chunked:
             self.send_chunk("")
         return True
