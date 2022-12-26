@@ -21,12 +21,14 @@ Introduction
     :target: https://github.com/psf/black
     :alt: Code Style: Black
 
-Simple HTTP Server for CircuitPython.
+HTTP Server for CircuitPython.
 
 - Supports `socketpool` or `socket` as a source of sockets; can be used in CPython.
 - HTTP 1.1.
 - Serves files from a designated root.
-- Simple routing available to serve computed results.
+- Routing for serving computed responses from handler.
+- Gives access to request headers, query parameters, body and address from which the request came.
+- Supports chunked transfer encoding.
 
 
 Dependencies
