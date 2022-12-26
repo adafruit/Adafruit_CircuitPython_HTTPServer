@@ -187,7 +187,7 @@ class HTTPResponse:
 
         :param str chunk: String data to be sent.
         """
-        hex_length = hex(len(chunk)).lstrip("0x").rstrip("L")
+        hex_length = hex(len(chunk))[2:]  # removing 0x
 
         self._send_bytes(
             self.request.connection, f"{hex_length}\r\n{chunk}\r\n".encode("utf-8")
