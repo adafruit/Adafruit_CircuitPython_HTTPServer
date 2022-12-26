@@ -2,16 +2,16 @@
 #
 # SPDX-License-Identifier: Unlicense
 
+import secrets  # pylint: disable=no-name-in-module
+
 import socketpool
 import wifi
 
 from adafruit_httpserver.response import HTTPResponse
 from adafruit_httpserver.server import HTTPServer
 
-import secrets
 
-
-ssid, password = secrets.WIFI_SSID, secrets.WIFI_PASSWORD
+ssid, password = secrets.WIFI_SSID, secrets.WIFI_PASSWORD  # pylint: disable=no-member
 
 print("Connecting to", ssid)
 wifi.radio.connect(ssid, password)
