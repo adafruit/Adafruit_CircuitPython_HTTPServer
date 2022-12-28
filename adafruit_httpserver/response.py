@@ -70,13 +70,21 @@ class HTTPResponse:
     status: HTTPStatus
     headers: HTTPHeaders
     content_type: str
+    """
+    Defaults to ``text/plain`` if not set.
+
+    Can be explicitly provided in the constructor, in `send()` or
+    implicitly determined from filename in `send_file()`.
+
+    Common MIME types are defined in `adafruit_httpserver.mime_type.MIMEType`.
+    """
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
         request: HTTPRequest,
         status: Union[HTTPStatus, Tuple[int, str]] = CommonHTTPStatus.OK_200,
         headers: Union[HTTPHeaders, Dict[str, str]] = None,
-        content_type: str = MIMEType.TYPE_TXT,
+        content_type: str = None,
         http_version: str = "HTTP/1.1",
         chunked: bool = False,
     ) -> None:
@@ -103,7 +111,7 @@ class HTTPResponse:
     def _send_headers(
         self,
         content_length: Optional[int] = None,
-        content_type: str = MIMEType.TYPE_TXT,
+        content_type: str = None,
     ) -> None:
         """
         Sends headers.
@@ -116,7 +124,9 @@ class HTTPResponse:
             f"{self.http_version} {self.status.code} {self.status.text}\r\n"
         )
 
-        headers.setdefault("Content-Type", content_type or self.content_type)
+        headers.setdefault(
+            "Content-Type", content_type or self.content_type or MIMEType.TYPE_TXT
+        )
         headers.setdefault("Connection", "close")
         if self.chunked:
             headers.setdefault("Transfer-Encoding", "chunked")
