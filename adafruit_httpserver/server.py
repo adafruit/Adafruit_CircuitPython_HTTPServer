@@ -64,7 +64,7 @@ class HTTPServer:
 
         :param str host: host name or IP address
         :param int port: port
-        :param str root: root directory to serve files from
+        :param str root_path: root directory to serve files from
         """
         self.start(host, port, root_path)
 
@@ -81,7 +81,7 @@ class HTTPServer:
 
         :param str host: host name or IP address
         :param int port: port
-        :param str root: root directory to serve files from
+        :param str root_path: root directory to serve files from
         """
         self.root_path = root_path
 
