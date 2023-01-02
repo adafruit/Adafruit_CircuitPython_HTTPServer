@@ -10,6 +10,7 @@ import socketpool
 import wifi
 
 from adafruit_httpserver.mime_type import MIMEType
+from adafruit_httpserver.request import HTTPRequest
 from adafruit_httpserver.response import HTTPResponse
 from adafruit_httpserver.server import HTTPServer
 
@@ -25,7 +26,7 @@ server = HTTPServer(pool)
 
 
 @server.route("/cpu-information")
-def cpu_information_handler(request):
+def cpu_information_handler(request: HTTPRequest):
     """
     Return the current CPU temperature, frequency, and voltage as JSON.
     """

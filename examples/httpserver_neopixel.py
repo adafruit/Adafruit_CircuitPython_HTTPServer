@@ -10,6 +10,7 @@ import socketpool
 import wifi
 
 from adafruit_httpserver.mime_type import MIMEType
+from adafruit_httpserver.request import HTTPRequest
 from adafruit_httpserver.response import HTTPResponse
 from adafruit_httpserver.server import HTTPServer
 
@@ -27,7 +28,7 @@ pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 
 
 @server.route("/change-neopixel-color")
-def change_neopixel_color_handler(request):
+def change_neopixel_color_handler(request: HTTPRequest):
     """
     Changes the color of the built-in NeoPixel.
     """

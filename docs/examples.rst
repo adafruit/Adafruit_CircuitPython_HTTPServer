@@ -56,7 +56,7 @@ That makes it easy to use the data in other applications.
 Chunked response
 ---------------------
 
-Libraries supports chunked responses. This is useful for streaming data.
+Library supports chunked responses. This is useful for streaming data.
 To use it, you need to set the ``chunked=True`` when creating a ``HTTPResponse`` object.
 
 .. literalinclude:: ../examples/httpserver_chunked.py

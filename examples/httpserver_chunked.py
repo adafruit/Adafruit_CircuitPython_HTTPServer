@@ -7,6 +7,7 @@ import secrets  # pylint: disable=no-name-in-module
 import socketpool
 import wifi
 
+from adafruit_httpserver.request import HTTPRequest
 from adafruit_httpserver.response import HTTPResponse
 from adafruit_httpserver.server import HTTPServer
 
@@ -22,7 +23,7 @@ server = HTTPServer(pool)
 
 
 @server.route("/chunked")
-def chunked(request):
+def chunked(request: HTTPRequest):
     """
     Return the response with ``Transfer-Encoding: chunked``.
     """

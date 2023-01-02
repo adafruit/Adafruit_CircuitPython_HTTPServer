@@ -8,6 +8,7 @@ import socketpool
 import wifi
 
 from adafruit_httpserver.mime_type import MIMEType
+from adafruit_httpserver.request import HTTPRequest
 from adafruit_httpserver.response import HTTPResponse
 from adafruit_httpserver.server import HTTPServer
 
@@ -23,7 +24,7 @@ server = HTTPServer(pool)
 
 
 @server.route("/")
-def base(request):
+def base(request: HTTPRequest):
     """
     Serve the default index.html file.
     """
