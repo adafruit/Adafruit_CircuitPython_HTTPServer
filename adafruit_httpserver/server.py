@@ -133,7 +133,7 @@ class HTTPServer:
         the application callable will be invoked.
         """
         try:
-            conn, address = self._sock.accept()
+            conn, client_address = self._sock.accept()
             with conn:
                 conn.settimeout(self._timeout)
 
@@ -144,7 +144,7 @@ class HTTPServer:
                 if not header_bytes:
                     return
 
-                request = HTTPRequest(conn, address, header_bytes)
+                request = HTTPRequest(conn, client_address, header_bytes)
 
                 content_length = int(request.headers.get("Content-Length", 0))
                 received_body_bytes = request.body

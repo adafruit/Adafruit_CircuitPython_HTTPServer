@@ -28,13 +28,13 @@ class HTTPRequest:
     Socket object usable to send and receive data on the connection.
     """
 
-    address: Tuple[str, int]
+    client_address: Tuple[str, int]
     """
-    Address bound to the socket on the other end of the connection.
+    Address and port bound to the socket on the other end of the connection.
 
     Example::
 
-            request.address
+            request.client_address
             # ('192.168.137.1', 40684)
     """
 
@@ -73,11 +73,11 @@ class HTTPRequest:
     def __init__(
         self,
         connection: Union["SocketPool.Socket", "socket.socket"],
-        address: Tuple[str, int],
+        client_address: Tuple[str, int],
         raw_request: bytes = None,
     ) -> None:
         self.connection = connection
-        self.address = address
+        self.client_address = client_address
         self.raw_request = raw_request
 
         if raw_request is None:
