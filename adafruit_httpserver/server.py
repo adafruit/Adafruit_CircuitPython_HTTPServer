@@ -15,6 +15,7 @@ except ImportError:
     pass
 
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
+from select import poll as Poll, POLLIN
 
 from .methods import HTTPMethod
 from .request import HTTPRequest
@@ -136,6 +137,11 @@ class HTTPServer:
             conn, client_address = self._sock.accept()
             with conn:
                 conn.settimeout(self._timeout)
+
+                poller = Poll()
+                poller.register(conn, POLLIN)
+                if not poller.poll(self._timeout * 1000):  # Timeout in milliseconds
+                    return  # Socket is not ready to read
 
                 # Receiving data until empty line
                 header_bytes = self._receive_header_bytes(conn)
