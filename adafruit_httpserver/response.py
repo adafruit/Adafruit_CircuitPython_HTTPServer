@@ -155,7 +155,10 @@ class HTTPResponse:
         if self._response_already_sent:
             raise RuntimeError("Response was already sent")
 
-        encoded_response_message_body = body.encode("utf-8")
+        if getattr(body, "encode", None):
+            encoded_response_message_body = body.encode("utf-8")
+        else:
+            encoded_response_message_body = body
 
         self._send_headers(
             content_type=content_type or self.content_type,
@@ -206,11 +209,12 @@ class HTTPResponse:
 
         :param str chunk: String data to be sent.
         """
-        hex_length = hex(len(chunk))[2:]  # removing 0x
+        if getattr(chunk, "encode", None):
+            chunk = chunk.encode("utf-8")
 
-        self._send_bytes(
-            self.request.connection, f"{hex_length}\r\n{chunk}\r\n".encode("utf-8")
-        )
+        self._send_bytes(self.request.connection, b"%x\r\n" % len(chunk))
+        self._send_bytes(self.request.connection, chunk)
+        self._send_bytes(self.request.connection, b"\r\n")
 
     def __enter__(self):
         if self.chunked:
