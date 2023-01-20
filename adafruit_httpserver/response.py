@@ -171,10 +171,12 @@ class HTTPResponse:
         self,
         filename: str = "index.html",
         root_path: str = "./",
+        buffer_size: int = 1024,
     ) -> None:
         """
         Send response with content of ``filename`` located in ``root_path``.
         Implicitly calls ``_send_headers`` before sending the file content.
+        File is send split into ``buffer_size`` parts.
 
         Should be called **only once** per response.
         """
@@ -196,7 +198,7 @@ class HTTPResponse:
         )
 
         with open(root_path + filename, "rb") as file:
-            while bytes_read := file.read(2048):
+            while bytes_read := file.read(buffer_size):
                 self._send_bytes(self.request.connection, bytes_read)
         self._response_already_sent = True
 

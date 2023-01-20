@@ -172,6 +172,7 @@ class HTTPServer:
                     HTTPResponse(request).send_file(
                         filename=request.path,
                         root_path=self.root_path,
+                        buffer_size=self.request_buffer_size,
                     )
                 else:
                     HTTPResponse(
