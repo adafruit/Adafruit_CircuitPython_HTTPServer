@@ -169,8 +169,9 @@ class HTTPServer:
 
                 # If no handler exists and request method is GET, try to serve a file.
                 elif handler is None and request.method == HTTPMethod.GET:
+                    filename = "index.html" if request.path == "/" else request.path
                     HTTPResponse(request).send_file(
-                        filename=request.path,
+                        filename=filename,
                         root_path=self.root_path,
                     )
                 else:
