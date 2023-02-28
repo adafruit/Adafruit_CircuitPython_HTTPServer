@@ -26,8 +26,8 @@ accessible via a hostname in addition to an IP address.
 
 In this example, the server is accessible via ``http://custom-mdns-hostname/`` and ``http://custom-mdns-hostname.local/``.
 
-.. literalinclude:: ../examples/httpserver_cpu_information.py
-    :caption: examples/httpserver_cpu_information.py
+.. literalinclude:: ../examples/httpserver_mdns.py
+    :caption: examples/httpserver_mdns.py
     :linenos:
 
 Change NeoPixel color
