@@ -22,6 +22,9 @@ class _HTTPRoute:
         return hash(self.method) ^ hash(self.path)
 
     def __eq__(self, other: "_HTTPRoute") -> bool:
+        if self.path[-1] == '*':
+            str = self.path[0:len(self.path)-1]
+            return self.method == other.method and other.path.startswith(str)
         return self.method == other.method and self.path == other.path
 
     def __repr__(self) -> str:
