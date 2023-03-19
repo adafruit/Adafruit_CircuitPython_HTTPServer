@@ -19,7 +19,7 @@ from errno import EAGAIN, ECONNRESET, ETIMEDOUT
 from .methods import HTTPMethod
 from .request import HTTPRequest
 from .response import HTTPResponse
-from .route import _HTTPRoute
+from .route import _HTTPRoutes, _HTTPRoute
 from .status import CommonHTTPStatus
 
 
@@ -34,12 +34,12 @@ class HTTPServer:
         """
         self._buffer = bytearray(1024)
         self._timeout = 1
-        self.route_handlers = {}
+        self.routes = _HTTPRoutes()
         self._socket_source = socket_source
         self._sock = None
         self.root_path = "/"
 
-    def route(self, path: str, method: HTTPMethod = HTTPMethod.GET):
+    def route(self, path: str, method: HTTPMethod = HTTPMethod.GET) -> Callable:
         """
         Decorator used to add a route.
 
@@ -54,7 +54,7 @@ class HTTPServer:
         """
 
         def route_decorator(func: Callable) -> Callable:
-            self.route_handlers[_HTTPRoute(path, method)] = func
+            self.routes.add(_HTTPRoute(path, method), func)
             return func
 
         return route_decorator
@@ -154,8 +154,8 @@ class HTTPServer:
                     conn, received_body_bytes, content_length
                 )
 
-                handler = self.route_handlers.get(
-                    _HTTPRoute(request.path, request.method), None
+                handler = self.routes.find_handler(
+                    _HTTPRoute(request.path, request.method)
                 )
 
                 # If a handler for route exists and is callable, call it.
