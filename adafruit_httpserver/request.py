@@ -133,7 +133,7 @@ class HTTPRequest:
             if "=" in query_param:
                 key, value = query_param.split("=", 1)
                 query_params[key] = value
-            else:
+            elif query_param:
                 query_params[query_param] = ""
 
         return method, path, query_params, http_version
