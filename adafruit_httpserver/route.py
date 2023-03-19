@@ -23,8 +23,8 @@ class _HTTPRoute:
 
     def __eq__(self, other: "_HTTPRoute") -> bool:
         if self.path[-1] == '*':
-            str = self.path[0:len(self.path)-1]
-            return self.method == other.method and other.path.startswith(str)
+            prepath = self.path[0:len(self.path)-1]
+            return self.method == other.method and other.path.startswith(prepath)
         return self.method == other.method and self.path == other.path
 
     def __repr__(self) -> str:
