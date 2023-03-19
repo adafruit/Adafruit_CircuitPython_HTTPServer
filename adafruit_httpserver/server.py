@@ -43,13 +43,17 @@ class HTTPServer:
         """
         Decorator used to add a route.
 
-        :param str path: filename path
+        :param str path: URL path
         :param HTTPMethod method: HTTP method: HTTPMethod.GET, HTTPMethod.POST, etc.
 
         Example::
 
             @server.route("/example", HTTPMethod.GET)
             def route_func(request):
+                ...
+
+            @server.route("/example/<my_parameter>", HTTPMethod.GET)
+            def route_func(request, my_parameter):
                 ...
         """
 
