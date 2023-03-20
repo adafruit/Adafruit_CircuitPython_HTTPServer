@@ -164,12 +164,7 @@ class HTTPServer:
 
                 # If a handler for route exists and is callable, call it.
                 if handler is not None and callable(handler):
-                    output = handler(request)
-                    # TODO: Remove this deprecation error in future
-                    if isinstance(output, HTTPResponse):
-                        raise RuntimeError(
-                            "Returning an HTTPResponse from a route handler is deprecated."
-                        )
+                    handler(request)
 
                 # If no handler exists and request method is GET, try to serve a file.
                 elif handler is None and request.method == HTTPMethod.GET:
