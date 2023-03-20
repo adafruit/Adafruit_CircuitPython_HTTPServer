@@ -26,16 +26,17 @@ class _HTTPRoute:
 
         self.path = path if not contains_regex else re.sub(r"<\w*>", r"([^/]*)", path)
         self.method = method
-        self.regex = contains_regex
+        self._contains_regex = contains_regex
 
     def matches(self, other: "_HTTPRoute") -> bool:
         """
         Checks if the route matches the other route.
 
-        If the route contains parameters, it will check if the other route contains values for them.
+        If the route contains parameters, it will check if the ``other`` route contains values for
+        them.
         """
 
-        if self.regex or other.regex:
+        if self._contains_regex:
             return re.match(self.path, other.path) and self.method == other.method
 
         return self.method == other.method and self.path == other.path
