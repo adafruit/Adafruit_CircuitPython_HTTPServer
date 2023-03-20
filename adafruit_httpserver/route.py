@@ -59,7 +59,7 @@ class _HTTPRoute:
         return self._last_match_groups
 
     def __repr__(self) -> str:
-        return f"HTTPRoute(path={repr(self.path)}, method={repr(self.method)})"
+        return f"_HTTPRoute(path={repr(self.path)}, method={repr(self.method)})"
 
 
 class _HTTPRoutes:
@@ -103,3 +103,6 @@ class _HTTPRoutes:
             return handler(request, *args)
 
         return wrapper
+
+    def __repr__(self) -> str:
+        return f"_HTTPRoutes({repr(self._routes)})"
