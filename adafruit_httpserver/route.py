@@ -22,11 +22,12 @@ class _HTTPRoute:
 
     def __init__(self, path: str = "", method: HTTPMethod = HTTPMethod.GET) -> None:
 
-        contains_regex = re.search(r"<\w*>", path)
+        contains_regex = re.search(r"<\w*>", path) is not None
 
         self.path = path if not contains_regex else re.sub(r"<\w*>", r"([^/]*)", path)
         self.method = method
         self._contains_regex = contains_regex
+        self._last_match_groups: Union[List[str], None] = None
 
     def matches(self, other: "_HTTPRoute") -> bool:
         """
@@ -35,11 +36,27 @@ class _HTTPRoute:
         If the route contains parameters, it will check if the ``other`` route contains values for
         them.
         """
+        if self.method != other.method:
+            return False
 
-        if self._contains_regex:
-            return re.match(self.path, other.path) and self.method == other.method
+        if not self._contains_regex:
+            return self.path == other.path
 
-        return self.method == other.method and self.path == other.path
+        regex_match = re.match(self.path, other.path)
+        if regex_match is None:
+            return False
+
+        self._last_match_groups = regex_match.groups()
+        return True
+
+    def last_match_groups(self) -> Union[List[str], None]:
+        """
+        Returns the last match groups from the last call to `matches`.
+
+        Useful for getting the values of the parameters from the route, without the need to call
+        `re.match` again.
+        """
+        return self._last_match_groups
 
     def __repr__(self) -> str:
         return f"HTTPRoute(path={repr(self.path)}, method={repr(self.method)})"
@@ -80,7 +97,7 @@ class _HTTPRoutes:
             return None
 
         handler = self._handlers[self._routes.index(matched_route)]
-        args = re.match(matched_route.path, route.path).groups()
+        args = matched_route.last_match_groups() or []
 
         def wrapper(request):
             return handler(request, *args)
