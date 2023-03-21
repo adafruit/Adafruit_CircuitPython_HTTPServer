@@ -24,10 +24,10 @@ server = HTTPServer(pool)
 
 
 class Device:
-    def turn_on(self):
+    def turn_on(self):  # pylint: disable=no-self-use
         print("Turning on device.")
 
-    def turn_off(self):
+    def turn_off(self):  # pylint: disable=no-self-use
         print("Turning off device.")
 
 
@@ -40,14 +40,16 @@ def get_device(device_id: str) -> Device:  # pylint: disable=unused-argument
 
 @server.route("/device/<device_id>/action/<action>")
 @server.route("/device/emergency-power-off/<device_id>")
-def perform_action(request: HTTPRequest, device_id: str, action: str = "emergency_power_off"):
+def perform_action(
+    request: HTTPRequest, device_id: str, action: str = "emergency_power_off"
+):
     """
     Performs an "action" on a specified device.
     """
 
     device = get_device(device_id)
 
-    if action in ["turn_on",]:
+    if action in ["turn_on"]:
         device.turn_on()
     elif action in ["turn_off", "emergency_power_off"]:
         device.turn_off()
