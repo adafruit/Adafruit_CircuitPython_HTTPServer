@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, List, Union
+    from typing import Callable, List, Union, Tuple
 except ImportError:
     pass
 
@@ -22,41 +22,56 @@ class _HTTPRoute:
 
     def __init__(self, path: str = "", method: HTTPMethod = HTTPMethod.GET) -> None:
 
-        contains_regex = re.search(r"<\w*>", path) is not None
+        contains_parameters = re.search(r"<\w*>", path) is not None
 
-        self.path = path if not contains_regex else re.sub(r"<\w*>", r"([^/]*)", path)
+        self.path = (
+            path if not contains_parameters else re.sub(r"<\w*>", r"([^/]*)", path)
+        )
         self.method = method
-        self._contains_regex = contains_regex
-        self._last_match_groups: Union[List[str], None] = None
+        self._contains_parameters = contains_parameters
 
-    def matches(self, other: "_HTTPRoute") -> bool:
+    def match(self, other: "_HTTPRoute") -> Tuple[bool, List[str]]:
         """
         Checks if the route matches the other route.
 
         If the route contains parameters, it will check if the ``other`` route contains values for
         them.
-        """
-        if self.method != other.method:
-            return False
 
-        if not self._contains_regex:
-            return self.path == other.path
+        Returns tuple of a boolean and a list of strings. The boolean indicates if the routes match,
+        and the list contains the values of the url parameters from the ``other`` route.
+
+        Examples::
+
+            route = _HTTPRoute("/example", HTTPMethod.GET)
+
+            other1 = _HTTPRoute("/example", HTTPMethod.GET)
+            route.matches(other1) # True, []
+
+            other2 = _HTTPRoute("/other-example", HTTPMethod.GET)
+            route.matches(other2) # False, []
+
+            ...
+
+            route = _HTTPRoute("/example/<parameter>", HTTPMethod.GET)
+
+            other1 = _HTTPRoute("/example/123", HTTPMethod.GET)
+            route.matches(other1) # True, ["123"]
+
+            other2 = _HTTPRoute("/other-example", HTTPMethod.GET)
+            route.matches(other2) # False, []
+        """
+
+        if self.method != other.method:
+            return False, []
+
+        if not self._contains_parameters:
+            return self.path == other.path, []
 
         regex_match = re.match(self.path, other.path)
         if regex_match is None:
-            return False
+            return False, []
 
-        self._last_match_groups = regex_match.groups()
-        return True
-
-    def last_match_groups(self) -> Union[List[str], None]:
-        """
-        Returns the last match groups from the last call to `matches`.
-
-        Useful for getting the values of the parameters from the route, without the need to call
-        `re.match` again.
-        """
-        return self._last_match_groups
+        return True, regex_match.groups()
 
     def __repr__(self) -> str:
         return f"_HTTPRoute(path={repr(self.path)}, method={repr(self.method)})"
@@ -90,19 +105,27 @@ class _HTTPRoutes:
                 request.path == "/example/123" # True
                 my_parameter == "123" # True
         """
+        if not self._routes:
+            raise ValueError("No routes added")
 
-        try:
-            matched_route = next(filter(lambda r: r.matches(route), self._routes))
-        except StopIteration:
+        found_route, _route = False, None
+
+        for _route in self._routes:
+            matches, url_parameters_values = _route.match(route)
+
+            if matches:
+                found_route = True
+                break
+
+        if not found_route:
             return None
 
-        handler = self._handlers[self._routes.index(matched_route)]
-        args = matched_route.last_match_groups() or []
+        handler = self._handlers[self._routes.index(_route)]
 
-        def wrapper(request):
-            return handler(request, *args)
+        def wrapped_handler(request):
+            return handler(request, *url_parameters_values)
 
-        return wrapper
+        return wrapped_handler
 
     def __repr__(self) -> str:
         return f"_HTTPRoutes({repr(self._routes)})"
