@@ -245,7 +245,6 @@ class HTTPResponse:
             except OSError as exc:
                 if exc.errno == EAGAIN:
                     continue
-                elif exc.errno == ECONNRESET:
+                if exc.errno == ECONNRESET:
                     return
-                else:
-                    raise exc
+                raise
