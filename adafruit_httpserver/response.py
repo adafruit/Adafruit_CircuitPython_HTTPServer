@@ -29,38 +29,38 @@ class HTTPResponse:
 
     Example::
 
-            # Response with 'Content-Length' header
-            @server.route(path, method)
-            def route_func(request):
+        # Response with 'Content-Length' header
+        @server.route(path, method)
+        def route_func(request):
 
-                response = HTTPResponse(request)
+            response = HTTPResponse(request)
+            response.send("Some content", content_type="text/plain")
+
+            # or
+
+            response = HTTPResponse(request)
+            with response:
+                response.send(body='Some content', content_type="text/plain")
+
+            # or
+
+            with HTTPResponse(request) as response:
                 response.send("Some content", content_type="text/plain")
 
-                # or
+        # Response with 'Transfer-Encoding: chunked' header
+        @server.route(path, method)
+        def route_func(request):
 
-                response = HTTPResponse(request)
-                with response:
-                    response.send(body='Some content', content_type="text/plain")
+            response = HTTPResponse(request, content_type="text/plain", chunked=True)
+            with response:
+                response.send_chunk("Some content")
+                response.send_chunk("Some more content")
 
-                # or
+            # or
 
-                with HTTPResponse(request) as response:
-                    response.send("Some content", content_type="text/plain")
-
-            # Response with 'Transfer-Encoding: chunked' header
-            @server.route(path, method)
-            def route_func(request):
-
-                response = HTTPResponse(request, content_type="text/plain", chunked=True)
-                with response:
-                    response.send_chunk("Some content")
-                    response.send_chunk("Some more content")
-
-                # or
-
-                with HTTPResponse(request, content_type="text/plain", chunked=True) as response:
-                    response.send_chunk("Some content")
-                    response.send_chunk("Some more content")
+            with HTTPResponse(request, content_type="text/plain", chunked=True) as response:
+                response.send_chunk("Some content")
+                response.send_chunk("Some more content")
     """
 
     request: HTTPRequest

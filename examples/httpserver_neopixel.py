@@ -28,14 +28,27 @@ pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 
 
 @server.route("/change-neopixel-color")
-def change_neopixel_color_handler(request: HTTPRequest):
+def change_neopixel_color_handler_query_params(request: HTTPRequest):
     """
-    Changes the color of the built-in NeoPixel.
+    Changes the color of the built-in NeoPixel using query/GET params.
     """
     r = request.query_params.get("r")
     g = request.query_params.get("g")
     b = request.query_params.get("b")
 
+    pixel.fill((int(r or 0), int(g or 0), int(b or 0)))
+
+    with HTTPResponse(request, content_type=MIMEType.TYPE_TXT) as response:
+        response.send(f"Changed NeoPixel to color ({r}, {g}, {b})")
+
+
+@server.route("/change-neopixel-color/<r>/<g>/<b>")
+def change_neopixel_color_handler_url_params(
+    request: HTTPRequest, r: str, g: str, b: str
+):
+    """
+    Changes the color of the built-in NeoPixel using URL params.
+    """
     pixel.fill((int(r or 0), int(g or 0), int(b or 0)))
 
     with HTTPResponse(request, content_type=MIMEType.TYPE_TXT) as response:

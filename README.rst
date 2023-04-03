@@ -26,9 +26,10 @@ HTTP Server for CircuitPython.
 - Supports `socketpool` or `socket` as a source of sockets; can be used in CPython.
 - HTTP 1.1.
 - Serves files from a designated root.
-- Routing for serving computed responses from handler.
+- Routing for serving computed responses from handlers.
 - Gives access to request headers, query parameters, body and client's address, the one from which the request came.
 - Supports chunked transfer encoding.
+- Supports URL parameters and wildcard URLs.
 
 
 Dependencies

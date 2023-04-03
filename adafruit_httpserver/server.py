@@ -19,7 +19,7 @@ from errno import EAGAIN, ECONNRESET, ETIMEDOUT
 from .methods import HTTPMethod
 from .request import HTTPRequest
 from .response import HTTPResponse
-from .route import _HTTPRoute
+from .route import _HTTPRoutes, _HTTPRoute
 from .status import CommonHTTPStatus
 
 
@@ -34,16 +34,16 @@ class HTTPServer:
         """
         self._buffer = bytearray(1024)
         self._timeout = 1
-        self.route_handlers = {}
+        self.routes = _HTTPRoutes()
         self._socket_source = socket_source
         self._sock = None
         self.root_path = "/"
 
-    def route(self, path: str, method: HTTPMethod = HTTPMethod.GET):
+    def route(self, path: str, method: HTTPMethod = HTTPMethod.GET) -> Callable:
         """
         Decorator used to add a route.
 
-        :param str path: filename path
+        :param str path: URL path
         :param HTTPMethod method: HTTP method: HTTPMethod.GET, HTTPMethod.POST, etc.
 
         Example::
@@ -51,10 +51,14 @@ class HTTPServer:
             @server.route("/example", HTTPMethod.GET)
             def route_func(request):
                 ...
+
+            @server.route("/example/<my_parameter>", HTTPMethod.GET)
+            def route_func(request, my_parameter):
+                ...
         """
 
         def route_decorator(func: Callable) -> Callable:
-            self.route_handlers[_HTTPRoute(path, method)] = func
+            self.routes.add(_HTTPRoute(path, method), func)
             return func
 
         return route_decorator
@@ -154,18 +158,13 @@ class HTTPServer:
                     conn, received_body_bytes, content_length
                 )
 
-                handler = self.route_handlers.get(
-                    _HTTPRoute(request.path, request.method), None
+                handler = self.routes.find_handler(
+                    _HTTPRoute(request.path, request.method)
                 )
 
                 # If a handler for route exists and is callable, call it.
                 if handler is not None and callable(handler):
-                    output = handler(request)
-                    # TODO: Remove this deprecation error in future
-                    if isinstance(output, HTTPResponse):
-                        raise RuntimeError(
-                            "Returning an HTTPResponse from a route handler is deprecated."
-                        )
+                    handler(request)
 
                 # If no handler exists and request method is GET, try to serve a file.
                 elif handler is None and request.method == HTTPMethod.GET:
