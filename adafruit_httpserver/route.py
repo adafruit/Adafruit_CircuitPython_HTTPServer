@@ -106,7 +106,7 @@ class _HTTPRoutes:
                 my_parameter == "123" # True
         """
         if not self._routes:
-            raise ValueError("No routes added")
+            return None
 
         found_route, _route = False, None
 
