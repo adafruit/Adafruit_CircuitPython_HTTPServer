@@ -26,18 +26,19 @@ from .status import CommonHTTPStatus
 class HTTPServer:
     """A basic socket-based HTTP server."""
 
-    def __init__(self, socket_source: Protocol) -> None:
+    def __init__(self, socket_source: Protocol, root_path: str) -> None:
         """Create a server, and get it ready to run.
 
         :param socket: An object that is a source of sockets. This could be a `socketpool`
           in CircuitPython or the `socket` module in CPython.
+        :param str root_path: Root directory to serve files from
         """
         self._buffer = bytearray(1024)
         self._timeout = 1
         self.routes = _HTTPRoutes()
         self._socket_source = socket_source
         self._sock = None
-        self.root_path = "/"
+        self.root_path = root_path
 
     def route(self, path: str, method: HTTPMethod = HTTPMethod.GET) -> Callable:
         """
@@ -63,14 +64,13 @@ class HTTPServer:
 
         return route_decorator
 
-    def serve_forever(self, host: str, port: int = 80, root_path: str = "") -> None:
+    def serve_forever(self, host: str, port: int = 80) -> None:
         """Wait for HTTP requests at the given host and port. Does not return.
 
         :param str host: host name or IP address
         :param int port: port
-        :param str root_path: root directory to serve files from
         """
-        self.start(host, port, root_path)
+        self.start(host, port)
 
         while True:
             try:
@@ -78,17 +78,14 @@ class HTTPServer:
             except OSError:
                 continue
 
-    def start(self, host: str, port: int = 80, root_path: str = "") -> None:
+    def start(self, host: str, port: int = 80) -> None:
         """
         Start the HTTP server at the given host and port. Requires calling
         poll() in a while loop to handle incoming requests.
 
         :param str host: host name or IP address
         :param int port: port
-        :param str root_path: root directory to serve files from
         """
-        self.root_path = root_path
-
         self._sock = self._socket_source.socket(
             self._socket_source.AF_INET, self._socket_source.SOCK_STREAM
         )
