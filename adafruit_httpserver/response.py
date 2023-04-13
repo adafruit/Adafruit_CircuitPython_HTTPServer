@@ -172,6 +172,7 @@ class HTTPResponse:
         filename: str = "index.html",
         root_path: str = "./",
         buffer_size: int = 1024,
+        head_only: bool = False,
     ) -> None:
         """
         Send response with content of ``filename`` located in ``root_path``.
@@ -197,9 +198,10 @@ class HTTPResponse:
             content_length=file_length,
         )
 
-        with open(root_path + filename, "rb") as file:
-            while bytes_read := file.read(buffer_size):
-                self._send_bytes(self.request.connection, bytes_read)
+        if not head_only:
+            with open(root_path + filename, "rb") as file:
+                while bytes_read := file.read(buffer_size):
+                    self._send_bytes(self.request.connection, bytes_read)
         self._response_already_sent = True
 
     def send_chunk(self, chunk: str = "") -> None:
