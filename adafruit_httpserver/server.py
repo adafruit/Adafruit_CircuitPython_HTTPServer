@@ -16,6 +16,7 @@ except ImportError:
 
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
 
+from .exceptions import FileNotExistsError, InvalidPathError
 from .methods import HTTPMethod
 from .request import HTTPRequest
 from .response import HTTPResponse
@@ -160,22 +161,33 @@ class HTTPServer:
                     _HTTPRoute(request.path, request.method)
                 )
 
-                # If a handler for route exists and is callable, call it.
-                if handler is not None and callable(handler):
-                    handler(request)
+                try:
+                    # If a handler for route exists and is callable, call it.
+                    if handler is not None and callable(handler):
+                        handler(request)
 
-                # If no handler exists and request method is GET, try to serve a file.
-                elif handler is None and request.method == HTTPMethod.GET:
-                    filename = "index.html" if request.path == "/" else request.path
-                    HTTPResponse(request).send_file(
-                        filename=filename,
-                        root_path=self.root_path,
-                        buffer_size=self.request_buffer_size,
+                    # If no handler exists and request method is GET, try to serve a file.
+                    elif handler is None and request.method == HTTPMethod.GET:
+                        filename = "index.html" if request.path == "/" else request.path
+                        HTTPResponse(request).send_file(
+                            filename=filename,
+                            root_path=self.root_path,
+                            buffer_size=self.request_buffer_size,
+                        )
+                    else:
+                        HTTPResponse(
+                            request, status=CommonHTTPStatus.BAD_REQUEST_400
+                        ).send()
+
+                except InvalidPathError as error:
+                    HTTPResponse(request, status=CommonHTTPStatus.FORBIDDEN_403).send(
+                        str(error)
                     )
-                else:
-                    HTTPResponse(
-                        request, status=CommonHTTPStatus.BAD_REQUEST_400
-                    ).send()
+
+                except FileNotExistsError as error:
+                    HTTPResponse(request, status=CommonHTTPStatus.NOT_FOUND_404).send(
+                        str(error)
+                    )
 
         except OSError as error:
             # Handle EAGAIN and ECONNRESET

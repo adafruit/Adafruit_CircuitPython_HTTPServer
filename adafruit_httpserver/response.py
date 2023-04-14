@@ -17,6 +17,12 @@ except ImportError:
 import os
 from errno import EAGAIN, ECONNRESET
 
+from .exceptions import (
+    BackslashInPathError,
+    FileNotExistsError,
+    ParentDirectoryReferenceError,
+    ResponseAlreadySentException,
+)
 from .mime_type import MIMEType
 from .request import HTTPRequest
 from .status import HTTPStatus, CommonHTTPStatus
@@ -153,7 +159,7 @@ class HTTPResponse:
         Should be called **only once** per response.
         """
         if self._response_already_sent:
-            raise RuntimeError("Response was already sent")
+            raise ResponseAlreadySentException
 
         if getattr(body, "encode", None):
             encoded_response_message_body = body.encode("utf-8")
@@ -167,11 +173,39 @@ class HTTPResponse:
         self._send_bytes(self.request.connection, encoded_response_message_body)
         self._response_already_sent = True
 
+    @staticmethod
+    def _check_file_path_is_valid(file_path: str) -> bool:
+        """
+        Checks if ``file_path`` is valid.
+        If not raises error corresponding to the problem.
+        """
+
+        # Check for backslashes
+        if "\\" in file_path:  # pylint: disable=anomalous-backslash-in-string
+            raise BackslashInPathError(file_path)
+
+        # Check each component of the path for parent directory references
+        for part in file_path.split("/"):
+            if part == "..":
+                raise ParentDirectoryReferenceError(file_path)
+
+    @staticmethod
+    def _get_file_length(file_path: str) -> int:
+        """
+        Tries to get the length of the file at ``file_path``.
+        Raises ``FileNotExistsError`` if file does not exist.
+        """
+        try:
+            return os.stat(file_path)[6]
+        except OSError:
+            raise FileNotExistsError(file_path)  # pylint: disable=raise-missing-from
+
     def send_file(
         self,
         filename: str = "index.html",
         root_path: str = "./",
         buffer_size: int = 1024,
+        safe: bool = True,
     ) -> None:
         """
         Send response with content of ``filename`` located in ``root_path``.
@@ -181,23 +215,24 @@ class HTTPResponse:
         Should be called **only once** per response.
         """
         if self._response_already_sent:
-            raise RuntimeError("Response was already sent")
+            raise ResponseAlreadySentException
+
+        if safe:
+            self._check_file_path_is_valid(filename)
 
         if not root_path.endswith("/"):
             root_path += "/"
-        try:
-            file_length = os.stat(root_path + filename)[6]
-        except OSError:
-            # If the file doesn't exist, return 404.
-            HTTPResponse(self.request, status=CommonHTTPStatus.NOT_FOUND_404).send()
-            return
+
+        full_file_path = root_path + filename
+
+        file_length = self._get_file_length(full_file_path)
 
         self._send_headers(
             content_type=MIMEType.from_file_name(filename),
             content_length=file_length,
         )
 
-        with open(root_path + filename, "rb") as file:
+        with open(full_file_path, "rb") as file:
             while bytes_read := file.read(buffer_size):
                 self._send_bytes(self.request.connection, bytes_read)
         self._response_already_sent = True
