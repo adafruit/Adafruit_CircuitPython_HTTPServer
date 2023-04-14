@@ -155,6 +155,7 @@ class HTTPServer:
                     conn, received_body_bytes, content_length
                 )
 
+                # Find a handler for the route
                 handler = self.routes.find_handler(
                     _HTTPRoute(request.path, request.method)
                 )
@@ -176,13 +177,13 @@ class HTTPServer:
                         request, status=CommonHTTPStatus.BAD_REQUEST_400
                     ).send()
 
-        except OSError as ex:
-            # handle EAGAIN and ECONNRESET
-            if ex.errno == EAGAIN:
-                # there is no data available right now, try again later.
+        except OSError as error:
+            # Handle EAGAIN and ECONNRESET
+            if error.errno == EAGAIN:
+                # There is no data available right now, try again later.
                 return
-            if ex.errno == ECONNRESET:
-                # connection reset by peer, try again later.
+            if error.errno == ECONNRESET:
+                # Connection reset by peer, try again later.
                 return
             raise
 
