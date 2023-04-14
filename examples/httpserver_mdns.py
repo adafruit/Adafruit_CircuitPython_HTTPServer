@@ -25,7 +25,7 @@ mdns_server.hostname = "custom-mdns-hostname"
 mdns_server.advertise_service(service_type="_http", protocol="_tcp", port=80)
 
 pool = socketpool.SocketPool(wifi.radio)
-server = HTTPServer(pool)
+server = HTTPServer(pool, "/static")
 
 
 @server.route("/")

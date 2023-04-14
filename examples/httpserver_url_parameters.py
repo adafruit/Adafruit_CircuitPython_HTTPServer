@@ -20,7 +20,7 @@ wifi.radio.connect(ssid, password)
 print("Connected to", ssid)
 
 pool = socketpool.SocketPool(wifi.radio)
-server = HTTPServer(pool)
+server = HTTPServer(pool, "/static")
 
 
 class Device:

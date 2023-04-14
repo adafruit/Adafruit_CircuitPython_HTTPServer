@@ -210,7 +210,7 @@ class HTTPServer:
 
         Example::
 
-            server = HTTPServer(pool)
+            server = HTTPServer(pool, "/static")
             server.request_buffer_size = 2048
 
             server.serve_forever(str(wifi.radio.ipv4_address))
@@ -232,7 +232,7 @@ class HTTPServer:
 
         Example::
 
-            server = HTTPServer(pool)
+            server = HTTPServer(pool, "/static")
             server.socket_timeout = 3
 
             server.serve_forever(str(wifi.radio.ipv4_address))
