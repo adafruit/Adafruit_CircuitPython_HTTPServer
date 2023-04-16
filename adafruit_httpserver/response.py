@@ -235,6 +235,8 @@ class HTTPResponse:
 
         if not root_path.endswith("/"):
             root_path += "/"
+        if filename.startswith("/"):
+            filename = filename[1:]
 
         full_file_path = root_path + filename
 
