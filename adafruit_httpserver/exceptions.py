@@ -34,7 +34,7 @@ class BackslashInPathError(InvalidPathError):
         super().__init__(f"Backslash in path: {path}")
 
 
-class ResponseAlreadySentException(Exception):
+class ResponseAlreadySentError(Exception):
     """
     Another ``HTTPResponse`` has already been sent. There can only be one per ``HTTPRequest``.
     """

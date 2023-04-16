@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Optional, Dict, Union, Tuple
+    from typing import Optional, Dict, Union, Tuple, Callable
     from socket import socket
     from socketpool import SocketPool
 except ImportError:
@@ -21,12 +21,27 @@ from .exceptions import (
     BackslashInPathError,
     FileNotExistsError,
     ParentDirectoryReferenceError,
-    ResponseAlreadySentException,
+    ResponseAlreadySentError,
 )
 from .mime_type import MIMEType
 from .request import HTTPRequest
 from .status import HTTPStatus, CommonHTTPStatus
 from .headers import HTTPHeaders
+
+
+def _prevent_multiple_send_calls(function: Callable):
+    """
+    Decorator that prevents calling ``send`` or ``send_file`` more than once.
+    """
+
+    def wrapper(self: "HTTPResponse", *args, **kwargs):
+        if self._response_already_sent:  # pylint: disable=protected-access
+            raise ResponseAlreadySentError
+
+        result = function(self, *args, **kwargs)
+        return result
+
+    return wrapper
 
 
 class HTTPResponse:
@@ -79,8 +94,8 @@ class HTTPResponse:
     """
     Defaults to ``text/plain`` if not set.
 
-    Can be explicitly provided in the constructor, in `send()` or
-    implicitly determined from filename in `send_file()`.
+    Can be explicitly provided in the constructor, in ``send()`` or
+    implicitly determined from filename in ``send_file()``.
 
     Common MIME types are defined in `adafruit_httpserver.mime_type.MIMEType`.
     """
@@ -100,7 +115,7 @@ class HTTPResponse:
         Sets `status`, ``headers`` and `http_version`
         and optionally default ``content_type``.
 
-        To send the response, call `send` or `send_file`.
+        To send the response, call ``send`` or ``send_file``.
         For chunked response use
         ``with HTTPRequest(request, content_type=..., chunked=True) as r:`` and `send_chunk`.
         """
@@ -121,7 +136,7 @@ class HTTPResponse:
     ) -> None:
         """
         Sends headers.
-        Implicitly called by `send` and `send_file` and in
+        Implicitly called by ``send`` and ``send_file`` and in
         ``with HTTPResponse(request, chunked=True) as response:`` context manager.
         """
         headers = self.headers.copy()
@@ -147,6 +162,7 @@ class HTTPResponse:
             self.request.connection, response_message_header.encode("utf-8")
         )
 
+    @_prevent_multiple_send_calls
     def send(
         self,
         body: str = "",
@@ -158,8 +174,6 @@ class HTTPResponse:
 
         Should be called **only once** per response.
         """
-        if self._response_already_sent:
-            raise ResponseAlreadySentException
 
         if getattr(body, "encode", None):
             encoded_response_message_body = body.encode("utf-8")
@@ -200,6 +214,7 @@ class HTTPResponse:
         except OSError:
             raise FileNotExistsError(file_path)  # pylint: disable=raise-missing-from
 
+    @_prevent_multiple_send_calls
     def send_file(
         self,
         filename: str = "index.html",
@@ -214,8 +229,6 @@ class HTTPResponse:
 
         Should be called **only once** per response.
         """
-        if self._response_already_sent:
-            raise ResponseAlreadySentException
 
         if safe:
             self._check_file_path_is_valid(filename)
