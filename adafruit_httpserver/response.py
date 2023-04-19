@@ -215,11 +215,12 @@ class HTTPResponse:
             raise FileNotExistsError(file_path)  # pylint: disable=raise-missing-from
 
     @_prevent_multiple_send_calls
-    def send_file(
+    def send_file(  # pylint: disable=too-many-arguments
         self,
         filename: str = "index.html",
         root_path: str = "./",
         buffer_size: int = 1024,
+        head_only: bool = False,
         safe: bool = True,
     ) -> None:
         """
@@ -247,9 +248,10 @@ class HTTPResponse:
             content_length=file_length,
         )
 
-        with open(full_file_path, "rb") as file:
-            while bytes_read := file.read(buffer_size):
-                self._send_bytes(self.request.connection, bytes_read)
+        if not head_only:
+            with open(full_file_path, "rb") as file:
+                while bytes_read := file.read(buffer_size):
+                    self._send_bytes(self.request.connection, bytes_read)
         self._response_already_sent = True
 
     def send_chunk(self, chunk: str = "") -> None:
