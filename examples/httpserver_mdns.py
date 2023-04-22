@@ -14,8 +14,8 @@ from adafruit_httpserver.response import HTTPResponse
 from adafruit_httpserver.server import HTTPServer
 
 
-ssid = os.environ.get("WIFI_SSID")
-password = os.environ.get("WIFI_PASSWORD")
+ssid = os.getenv("WIFI_SSID")
+password = os.getenv("WIFI_PASSWORD")
 
 print("Connecting to", ssid)
 wifi.radio.connect(ssid, password)
