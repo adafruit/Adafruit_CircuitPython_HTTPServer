@@ -106,6 +106,7 @@ class HTTPServer:
             except OSError as ex:
                 if ex.errno == ETIMEDOUT:
                     break
+                raise
             except Exception as ex:
                 raise ex
         return received_bytes
@@ -124,6 +125,7 @@ class HTTPServer:
             except OSError as ex:
                 if ex.errno == ETIMEDOUT:
                     break
+                raise
             except Exception as ex:
                 raise ex
         return received_body_bytes[:content_length]

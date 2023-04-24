@@ -299,3 +299,4 @@ class HTTPResponse:
                     continue
                 if exc.errno == ECONNRESET:
                     return
+                raise
