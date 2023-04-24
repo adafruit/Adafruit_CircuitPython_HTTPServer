@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Optional, Dict, Union, Tuple
+    from typing import Optional, Dict, Union, Tuple, Callable
     from socket import socket
     from socketpool import SocketPool
 except ImportError:
@@ -17,10 +17,31 @@ except ImportError:
 import os
 from errno import EAGAIN, ECONNRESET
 
+from .exceptions import (
+    BackslashInPathError,
+    FileNotExistsError,
+    ParentDirectoryReferenceError,
+    ResponseAlreadySentError,
+)
 from .mime_type import MIMEType
 from .request import HTTPRequest
 from .status import HTTPStatus, CommonHTTPStatus
 from .headers import HTTPHeaders
+
+
+def _prevent_multiple_send_calls(function: Callable):
+    """
+    Decorator that prevents calling ``send`` or ``send_file`` more than once.
+    """
+
+    def wrapper(self: "HTTPResponse", *args, **kwargs):
+        if self._response_already_sent:  # pylint: disable=protected-access
+            raise ResponseAlreadySentError
+
+        result = function(self, *args, **kwargs)
+        return result
+
+    return wrapper
 
 
 class HTTPResponse:
@@ -73,8 +94,8 @@ class HTTPResponse:
     """
     Defaults to ``text/plain`` if not set.
 
-    Can be explicitly provided in the constructor, in `send()` or
-    implicitly determined from filename in `send_file()`.
+    Can be explicitly provided in the constructor, in ``send()`` or
+    implicitly determined from filename in ``send_file()``.
 
     Common MIME types are defined in `adafruit_httpserver.mime_type.MIMEType`.
     """
@@ -94,7 +115,7 @@ class HTTPResponse:
         Sets `status`, ``headers`` and `http_version`
         and optionally default ``content_type``.
 
-        To send the response, call `send` or `send_file`.
+        To send the response, call ``send`` or ``send_file``.
         For chunked response use
         ``with HTTPRequest(request, content_type=..., chunked=True) as r:`` and `send_chunk`.
         """
@@ -115,7 +136,7 @@ class HTTPResponse:
     ) -> None:
         """
         Sends headers.
-        Implicitly called by `send` and `send_file` and in
+        Implicitly called by ``send`` and ``send_file`` and in
         ``with HTTPResponse(request, chunked=True) as response:`` context manager.
         """
         headers = self.headers.copy()
@@ -141,6 +162,7 @@ class HTTPResponse:
             self.request.connection, response_message_header.encode("utf-8")
         )
 
+    @_prevent_multiple_send_calls
     def send(
         self,
         body: str = "",
@@ -152,8 +174,6 @@ class HTTPResponse:
 
         Should be called **only once** per response.
         """
-        if self._response_already_sent:
-            raise RuntimeError("Response was already sent")
 
         if getattr(body, "encode", None):
             encoded_response_message_body = body.encode("utf-8")
@@ -167,12 +187,41 @@ class HTTPResponse:
         self._send_bytes(self.request.connection, encoded_response_message_body)
         self._response_already_sent = True
 
-    def send_file(
+    @staticmethod
+    def _check_file_path_is_valid(file_path: str) -> bool:
+        """
+        Checks if ``file_path`` is valid.
+        If not raises error corresponding to the problem.
+        """
+
+        # Check for backslashes
+        if "\\" in file_path:  # pylint: disable=anomalous-backslash-in-string
+            raise BackslashInPathError(file_path)
+
+        # Check each component of the path for parent directory references
+        for part in file_path.split("/"):
+            if part == "..":
+                raise ParentDirectoryReferenceError(file_path)
+
+    @staticmethod
+    def _get_file_length(file_path: str) -> int:
+        """
+        Tries to get the length of the file at ``file_path``.
+        Raises ``FileNotExistsError`` if file does not exist.
+        """
+        try:
+            return os.stat(file_path)[6]
+        except OSError:
+            raise FileNotExistsError(file_path)  # pylint: disable=raise-missing-from
+
+    @_prevent_multiple_send_calls
+    def send_file(  # pylint: disable=too-many-arguments
         self,
         filename: str = "index.html",
         root_path: str = "./",
         buffer_size: int = 1024,
         head_only: bool = False,
+        safe: bool = True,
     ) -> None:
         """
         Send response with content of ``filename`` located in ``root_path``.
@@ -181,17 +230,18 @@ class HTTPResponse:
 
         Should be called **only once** per response.
         """
-        if self._response_already_sent:
-            raise RuntimeError("Response was already sent")
+
+        if safe:
+            self._check_file_path_is_valid(filename)
 
         if not root_path.endswith("/"):
             root_path += "/"
-        try:
-            file_length = os.stat(root_path + filename)[6]
-        except OSError:
-            # If the file doesn't exist, return 404.
-            HTTPResponse(self.request, status=CommonHTTPStatus.NOT_FOUND_404).send()
-            return
+        if filename.startswith("/"):
+            filename = filename[1:]
+
+        full_file_path = root_path + filename
+
+        file_length = self._get_file_length(full_file_path)
 
         self._send_headers(
             content_type=MIMEType.from_file_name(filename),
@@ -199,7 +249,7 @@ class HTTPResponse:
         )
 
         if not head_only:
-            with open(root_path + filename, "rb") as file:
+            with open(full_file_path, "rb") as file:
                 while bytes_read := file.read(buffer_size):
                     self._send_bytes(self.request.connection, bytes_read)
         self._response_already_sent = True
