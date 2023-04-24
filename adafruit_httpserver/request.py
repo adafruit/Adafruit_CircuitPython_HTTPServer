@@ -83,7 +83,7 @@ class HTTPRequest:
         if raw_request is None:
             raise ValueError("raw_request cannot be None")
 
-        header_bytes = self.header_body_bytes[0]
+        header_bytes = self._raw_header_bytes
 
         try:
             (
@@ -99,21 +99,25 @@ class HTTPRequest:
     @property
     def body(self) -> bytes:
         """Body of the request, as bytes."""
-        return self.header_body_bytes[1]
+        return self._raw_body_bytes
 
     @body.setter
     def body(self, body: bytes) -> None:
-        self.raw_request = self.header_body_bytes[0] + b"\r\n\r\n" + body
+        self.raw_request = self._raw_header_bytes + b"\r\n\r\n" + body
 
     @property
-    def header_body_bytes(self) -> Tuple[bytes, bytes]:
-        """Return tuple of header and body bytes."""
-
+    def _raw_header_bytes(self) -> bytes:
+        """Returns headers bytes."""
         empty_line_index = self.raw_request.find(b"\r\n\r\n")
-        header_bytes = self.raw_request[:empty_line_index]
-        body_bytes = self.raw_request[empty_line_index + 4 :]
 
-        return header_bytes, body_bytes
+        return self.raw_request[:empty_line_index]
+
+    @property
+    def _raw_body_bytes(self) -> bytes:
+        """Returns body bytes."""
+        empty_line_index = self.raw_request.find(b"\r\n\r\n")
+
+        return self.raw_request[empty_line_index + 4 :]
 
     @staticmethod
     def _parse_start_line(header_bytes: bytes) -> Tuple[str, str, Dict[str, str], str]:
