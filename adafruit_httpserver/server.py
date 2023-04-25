@@ -16,7 +16,7 @@ except ImportError:
 
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
 
-from .exceptions import FileNotExistsError, InvalidPathError
+from .exceptions import AuthenticationError, FileNotExistsError, InvalidPathError
 from .methods import HTTPMethod
 from .request import HTTPRequest
 from .response import HTTPResponse
@@ -184,6 +184,13 @@ class HTTPServer:
                         HTTPResponse(
                             request, status=CommonHTTPStatus.BAD_REQUEST_400
                         ).send()
+
+                except AuthenticationError:
+                    HTTPResponse(
+                        request,
+                        status=CommonHTTPStatus.UNAUTHORIZED_401,
+                        headers={"WWW-Authenticate": 'Basic charset="UTF-8"'},
+                    ).send()
 
                 except InvalidPathError as error:
                     HTTPResponse(request, status=CommonHTTPStatus.FORBIDDEN_403).send(

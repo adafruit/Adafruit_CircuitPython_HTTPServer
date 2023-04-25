@@ -39,6 +39,9 @@ class CommonHTTPStatus(HTTPStatus):  # pylint: disable=too-few-public-methods
     BAD_REQUEST_400 = HTTPStatus(400, "Bad Request")
     """400 Bad Request"""
 
+    UNAUTHORIZED_401 = HTTPStatus(401, "Unauthorized")
+    """401 Unauthorized"""
+
     FORBIDDEN_403 = HTTPStatus(403, "Forbidden")
     """403 Forbidden"""
 

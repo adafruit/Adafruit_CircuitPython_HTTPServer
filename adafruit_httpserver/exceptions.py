@@ -8,6 +8,12 @@
 """
 
 
+class AuthenticationError(Exception):
+    """
+    Raised by ``require_authentication`` when the ``HTTPRequest`` is not authorized.
+    """
+
+
 class InvalidPathError(Exception):
     """
     Parent class for all path related errors.
