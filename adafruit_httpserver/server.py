@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, Protocol, Union
+    from typing import Callable, Protocol, Union, List
     from socket import socket
     from socketpool import SocketPool
 except ImportError:
@@ -41,7 +41,7 @@ class Server:
         self._sock = None
         self.root_path = root_path
 
-    def route(self, path: str, method: str = GET) -> Callable:
+    def route(self, path: str, methods: Union[str, List[str]] = GET) -> Callable:
         """
         Decorator used to add a route.
 
@@ -55,13 +55,27 @@ class Server:
             def route_func(request):
                 ...
 
-            @server.route("/example/<my_parameter>", HTTPMethod.GET)
+            # It is necessary to specify other methods like POST, PUT, etc.
+            @server.route("/example", POST)
+            def route_func(request):
+                ...
+
+            # Multiple methods can be specified
+            @server.route("/example", [GET, POST])
+            def route_func(request):
+                ...
+
+            # URL parameters can be specified
+            @server.route("/example/<my_parameter>", GET)
             def route_func(request, my_parameter):
                 ...
         """
+        if isinstance(methods, str):
+            methods = [methods]
 
         def route_decorator(func: Callable) -> Callable:
-            self.routes.add(_HTTPRoute(path, method), func)
+            for method in methods:
+                self.routes.add(_Route(path, method), func)
             return func
 
         return route_decorator
