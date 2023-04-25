@@ -23,7 +23,7 @@ from .exceptions import (
     ParentDirectoryReferenceError,
     ResponseAlreadySentError,
 )
-from .mime_type import MIMEType
+from .mime_types import MIMETypes
 from .request import Request
 from .status import Status, OK_200
 from .headers import Headers
@@ -97,7 +97,7 @@ class Response:
     Can be explicitly provided in the constructor, in ``send()`` or
     implicitly determined from filename in ``send_file()``.
 
-    Common MIME types are defined in `adafruit_httpserver.mime_type.MIMEType`.
+    Common MIME types are defined in `adafruit_httpserver.mime_types`.
     """
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -146,7 +146,7 @@ class Response:
         )
 
         headers.setdefault(
-            "Content-Type", content_type or self.content_type or MIMEType.TYPE_TXT
+            "Content-Type", content_type or self.content_type or MIMETypes.DEFAULT
         )
         headers.setdefault("Connection", "close")
         if self.chunked:
@@ -244,7 +244,7 @@ class Response:
         file_length = self._get_file_length(full_file_path)
 
         self._send_headers(
-            content_type=MIMEType.from_file_name(filename),
+            content_type=MIMETypes.get_for_filename(filename),
             content_length=file_length,
         )
 
