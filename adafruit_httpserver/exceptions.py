@@ -10,7 +10,7 @@
 
 class AuthenticationError(Exception):
     """
-    Raised by ``require_authentication`` when the ``HTTPRequest`` is not authorized.
+    Raised by ``require_authentication`` when the ``Request`` is not authorized.
     """
 
 
@@ -42,7 +42,7 @@ class BackslashInPathError(InvalidPathError):
 
 class ResponseAlreadySentError(Exception):
     """
-    Another ``HTTPResponse`` has already been sent. There can only be one per ``HTTPRequest``.
+    Another ``Response`` has already been sent. There can only be one per ``Request``.
     """
 
 

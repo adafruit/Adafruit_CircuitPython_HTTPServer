@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 """
-`adafruit_httpserver.request.HTTPRequest`
+`adafruit_httpserver.request`
 ====================================================
 * Author(s): Dan Halbert, Michał Pokusa
 """
@@ -14,10 +14,10 @@ try:
 except ImportError:
     pass
 
-from .headers import HTTPHeaders
+from .headers import Headers
 
 
-class HTTPRequest:
+class Request:
     """
     Incoming request, constructed from raw incoming bytes.
     It is passed as first argument to route handlers.
@@ -50,7 +50,7 @@ class HTTPRequest:
 
     Example::
 
-            request  = HTTPRequest(raw_request=b"GET /?foo=bar HTTP/1.1...")
+            request  = Request(raw_request=b"GET /?foo=bar HTTP/1.1...")
             request.query_params
             # {"foo": "bar"}
     """
@@ -58,7 +58,7 @@ class HTTPRequest:
     http_version: str
     """HTTP version, e.g. "HTTP/1.1"."""
 
-    headers: HTTPHeaders
+    headers: Headers
     """
     Headers from the request.
     """
@@ -143,11 +143,11 @@ class HTTPRequest:
         return method, path, query_params, http_version
 
     @staticmethod
-    def _parse_headers(header_bytes: bytes) -> HTTPHeaders:
+    def _parse_headers(header_bytes: bytes) -> Headers:
         """Parse HTTP headers from raw request."""
         header_lines = header_bytes.decode("utf8").splitlines()[1:]
 
-        return HTTPHeaders(
+        return Headers(
             {
                 name: value
                 for header_line in header_lines

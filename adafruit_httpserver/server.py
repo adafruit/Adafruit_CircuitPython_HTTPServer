@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 """
-`adafruit_httpserver.server.HTTPServer`
+`adafruit_httpserver.server`
 ====================================================
 * Author(s): Dan Halbert, Michał Pokusa
 """
@@ -17,14 +17,14 @@ except ImportError:
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
 
 from .exceptions import AuthenticationError, FileNotExistsError, InvalidPathError
-from .methods import HTTPMethod
-from .request import HTTPRequest
-from .response import HTTPResponse
-from .route import _HTTPRoutes, _HTTPRoute
+from .methods import GET, HEAD
+from .request import Request
+from .response import Response
+from .route import _Routes, _Route
 from .status import CommonHTTPStatus
 
 
-class HTTPServer:
+class Server:
     """A basic socket-based HTTP server."""
 
     def __init__(self, socket_source: Protocol, root_path: str) -> None:
@@ -36,21 +36,22 @@ class HTTPServer:
         """
         self._buffer = bytearray(1024)
         self._timeout = 1
-        self.routes = _HTTPRoutes()
+        self.routes = _Routes()
         self._socket_source = socket_source
         self._sock = None
         self.root_path = root_path
 
-    def route(self, path: str, method: HTTPMethod = HTTPMethod.GET) -> Callable:
+    def route(self, path: str, method: str = GET) -> Callable:
         """
         Decorator used to add a route.
 
         :param str path: URL path
-        :param HTTPMethod method: HTTP method: HTTPMethod.GET, HTTPMethod.POST, etc.
+        :param str method: HTTP method: `"GET"`, `"POST"`, etc.
 
         Example::
 
-            @server.route("/example", HTTPMethod.GET)
+            # Default method is GET
+            @server.route("/example")
             def route_func(request):
                 ...
 
@@ -148,7 +149,7 @@ class HTTPServer:
                 if not header_bytes:
                     return
 
-                request = HTTPRequest(conn, client_address, header_bytes)
+                request = Request(conn, client_address, header_bytes)
 
                 content_length = int(request.headers.get("Content-Length", 0))
                 received_body_bytes = request.body
@@ -159,9 +160,7 @@ class HTTPServer:
                 )
 
                 # Find a handler for the route
-                handler = self.routes.find_handler(
-                    _HTTPRoute(request.path, request.method)
-                )
+                handler = self.routes.find_handler(_Route(request.path, request.method))
 
                 try:
                     # If a handler for route exists and is callable, call it.
@@ -169,16 +168,13 @@ class HTTPServer:
                         handler(request)
 
                     # If no handler exists and request method is GET or HEAD, try to serve a file.
-                    elif handler is None and request.method in (
-                        HTTPMethod.GET,
-                        HTTPMethod.HEAD,
-                    ):
+                    elif handler is None and request.method in [GET, HEAD]:
                         filename = "index.html" if request.path == "/" else request.path
-                        HTTPResponse(request).send_file(
+                        Response(request).send_file(
                             filename=filename,
                             root_path=self.root_path,
                             buffer_size=self.request_buffer_size,
-                            head_only=(request.method == HTTPMethod.HEAD),
+                            head_only=(request.method == HEAD),
                         )
                     else:
                         HTTPResponse(
@@ -186,19 +182,19 @@ class HTTPServer:
                         ).send()
 
                 except AuthenticationError:
-                    HTTPResponse(
+                    Response(
                         request,
                         status=CommonHTTPStatus.UNAUTHORIZED_401,
                         headers={"WWW-Authenticate": 'Basic charset="UTF-8"'},
                     ).send()
 
                 except InvalidPathError as error:
-                    HTTPResponse(request, status=CommonHTTPStatus.FORBIDDEN_403).send(
+                    Response(request, status=CommonHTTPStatus.FORBIDDEN_403).send(
                         str(error)
                     )
 
                 except FileNotExistsError as error:
-                    HTTPResponse(request, status=CommonHTTPStatus.NOT_FOUND_404).send(
+                    Response(request, status=CommonHTTPStatus.NOT_FOUND_404).send(
                         str(error)
                     )
 
@@ -223,7 +219,7 @@ class HTTPServer:
 
         Example::
 
-            server = HTTPServer(pool, "/static")
+            server = Server(pool, "/static")
             server.request_buffer_size = 2048
 
             server.serve_forever(str(wifi.radio.ipv4_address))
@@ -245,7 +241,7 @@ class HTTPServer:
 
         Example::
 
-            server = HTTPServer(pool, "/static")
+            server = Server(pool, "/static")
             server.socket_timeout = 3
 
             server.serve_forever(str(wifi.radio.ipv4_address))
@@ -257,6 +253,4 @@ class HTTPServer:
         if isinstance(value, (int, float)) and value > 0:
             self._timeout = value
         else:
-            raise ValueError(
-                "HTTPServer.socket_timeout must be a positive numeric value."
-            )
+            raise ValueError("Server.socket_timeout must be a positive numeric value.")

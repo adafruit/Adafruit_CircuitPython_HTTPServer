@@ -2,17 +2,18 @@
 #
 # SPDX-License-Identifier: MIT
 """
-`adafruit_httpserver.status.HTTPStatus`
+`adafruit_httpserver.status`
 ====================================================
 * Author(s): Dan Halbert, Michał Pokusa
 """
 
 
-class HTTPStatus:  # pylint: disable=too-few-public-methods
-    """HTTP status codes."""
+class Status:  # pylint: disable=too-few-public-methods
+    """HTTP status code."""
 
     def __init__(self, code: int, text: str):
-        """Define a status code.
+        """
+        Define a status code.
 
         :param int code: Numeric value: 200, 404, etc.
         :param str text: Short phrase: "OK", "Not Found', etc.
@@ -21,12 +22,12 @@ class HTTPStatus:  # pylint: disable=too-few-public-methods
         self.text = text
 
     def __repr__(self):
-        return f'HTTPStatus({self.code}, "{self.text}")'
+        return f'Status({self.code}, "{self.text}")'
 
     def __str__(self):
         return f"{self.code} {self.text}"
 
-    def __eq__(self, other: "HTTPStatus"):
+    def __eq__(self, other: "Status"):
         return self.code == other.code and self.text == other.text
 
 

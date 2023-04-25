@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 """
-`adafruit_httpserver.route._HTTPRoute`
+`adafruit_httpserver.route`
 ====================================================
 * Author(s): Dan Halbert, Michał Pokusa
 """
@@ -14,14 +14,13 @@ except ImportError:
 
 import re
 
-from .methods import HTTPMethod
+from .methods import GET
 
 
-class _HTTPRoute:
-    """Route definition for different paths, see `adafruit_httpserver.server.HTTPServer.route`."""
+class _Route:
+    """Route definition for different paths, see `adafruit_httpserver.server.Server.route`."""
 
-    def __init__(self, path: str = "", method: HTTPMethod = HTTPMethod.GET) -> None:
-
+    def __init__(self, path: str = "", method: str = GET) -> None:
         contains_parameters = re.search(r"<\w*>", path) is not None
 
         self.path = (
@@ -30,7 +29,7 @@ class _HTTPRoute:
         self.method = method
         self._contains_parameters = contains_parameters
 
-    def match(self, other: "_HTTPRoute") -> Tuple[bool, List[str]]:
+    def match(self, other: "_Route") -> Tuple[bool, List[str]]:
         """
         Checks if the route matches the other route.
 
@@ -42,22 +41,22 @@ class _HTTPRoute:
 
         Examples::
 
-            route = _HTTPRoute("/example", HTTPMethod.GET)
+            route = _Route("/example", GET)
 
-            other1 = _HTTPRoute("/example", HTTPMethod.GET)
+            other1 = _Route("/example", GET)
             route.matches(other1) # True, []
 
-            other2 = _HTTPRoute("/other-example", HTTPMethod.GET)
+            other2 = _Route("/other-example", GET)
             route.matches(other2) # False, []
 
             ...
 
-            route = _HTTPRoute("/example/<parameter>", HTTPMethod.GET)
+            route = _Route("/example/<parameter>", GET)
 
-            other1 = _HTTPRoute("/example/123", HTTPMethod.GET)
+            other1 = _Route("/example/123", GET)
             route.matches(other1) # True, ["123"]
 
-            other2 = _HTTPRoute("/other-example", HTTPMethod.GET)
+            other2 = _Route("/other-example", GET)
             route.matches(other2) # False, []
         """
 
@@ -74,23 +73,23 @@ class _HTTPRoute:
         return True, regex_match.groups()
 
     def __repr__(self) -> str:
-        return f"_HTTPRoute(path={repr(self.path)}, method={repr(self.method)})"
+        return f"_Route(path={repr(self.path)}, method={repr(self.method)})"
 
 
-class _HTTPRoutes:
+class _Routes:
     """A collection of routes and their corresponding handlers."""
 
     def __init__(self) -> None:
-        self._routes: List[_HTTPRoute] = []
+        self._routes: List[_Route] = []
         self._handlers: List[Callable] = []
 
-    def add(self, route: _HTTPRoute, handler: Callable):
+    def add(self, route: _Route, handler: Callable):
         """Adds a route and its handler to the collection."""
 
         self._routes.append(route)
         self._handlers.append(handler)
 
-    def find_handler(self, route: _HTTPRoute) -> Union[Callable, None]:
+    def find_handler(self, route: _Route) -> Union[Callable, None]:
         """
         Finds a handler for a given route.
 
@@ -99,7 +98,7 @@ class _HTTPRoutes:
 
         Example::
 
-            @server.route("/example/<my_parameter>", HTTPMethod.GET)
+            @server.route("/example/<my_parameter>", GET)
             def route_func(request, my_parameter):
                 ...
                 request.path == "/example/123" # True
@@ -128,4 +127,4 @@ class _HTTPRoutes:
         return wrapped_handler
 
     def __repr__(self) -> str:
-        return f"_HTTPRoutes({repr(self._routes)})"
+        return f"_Routes({repr(self._routes)})"

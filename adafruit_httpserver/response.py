@@ -2,7 +2,7 @@
 #
 # SPDX-License-Identifier: MIT
 """
-`adafruit_httpserver.response.HTTPResponse`
+`adafruit_httpserver.response`
 ====================================================
 * Author(s): Dan Halbert, Michał Pokusa
 """
@@ -24,9 +24,9 @@ from .exceptions import (
     ResponseAlreadySentError,
 )
 from .mime_type import MIMEType
-from .request import HTTPRequest
-from .status import HTTPStatus, CommonHTTPStatus
-from .headers import HTTPHeaders
+from .request import Request
+from .status import Status, CommonHTTPStatus
+from .headers import Headers
 
 
 def _prevent_multiple_send_calls(function: Callable):
@@ -34,7 +34,7 @@ def _prevent_multiple_send_calls(function: Callable):
     Decorator that prevents calling ``send`` or ``send_file`` more than once.
     """
 
-    def wrapper(self: "HTTPResponse", *args, **kwargs):
+    def wrapper(self: "Response", *args, **kwargs):
         if self._response_already_sent:  # pylint: disable=protected-access
             raise ResponseAlreadySentError
 
@@ -44,9 +44,9 @@ def _prevent_multiple_send_calls(function: Callable):
     return wrapper
 
 
-class HTTPResponse:
+class Response:
     """
-    Response to a given `HTTPRequest`. Use in `HTTPServer.route` decorator functions.
+    Response to a given `Request`. Use in `Server.route` handler functions.
 
     Example::
 
@@ -54,42 +54,42 @@ class HTTPResponse:
         @server.route(path, method)
         def route_func(request):
 
-            response = HTTPResponse(request)
+            response = Response(request)
             response.send("Some content", content_type="text/plain")
 
             # or
 
-            response = HTTPResponse(request)
+            response = Response(request)
             with response:
                 response.send(body='Some content', content_type="text/plain")
 
             # or
 
-            with HTTPResponse(request) as response:
+            with Response(request) as response:
                 response.send("Some content", content_type="text/plain")
 
         # Response with 'Transfer-Encoding: chunked' header
         @server.route(path, method)
         def route_func(request):
 
-            response = HTTPResponse(request, content_type="text/plain", chunked=True)
+            response = Response(request, content_type="text/plain", chunked=True)
             with response:
                 response.send_chunk("Some content")
                 response.send_chunk("Some more content")
 
             # or
 
-            with HTTPResponse(request, content_type="text/plain", chunked=True) as response:
+            with Response(request, content_type="text/plain", chunked=True) as response:
                 response.send_chunk("Some content")
                 response.send_chunk("Some more content")
     """
 
-    request: HTTPRequest
+    request: Request
     """The request that this is a response to."""
 
     http_version: str
-    status: HTTPStatus
-    headers: HTTPHeaders
+    status: Status
+    headers: Headers
     content_type: str
     """
     Defaults to ``text/plain`` if not set.
@@ -102,9 +102,9 @@ class HTTPResponse:
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
-        request: HTTPRequest,
-        status: Union[HTTPStatus, Tuple[int, str]] = CommonHTTPStatus.OK_200,
-        headers: Union[HTTPHeaders, Dict[str, str]] = None,
+        request: Request,
+        status: Union[Status, Tuple[int, str]] = CommonHTTPStatus.OK_200,
+        headers: Union[Headers, Dict[str, str]] = None,
         content_type: str = None,
         http_version: str = "HTTP/1.1",
         chunked: bool = False,
@@ -117,12 +117,12 @@ class HTTPResponse:
 
         To send the response, call ``send`` or ``send_file``.
         For chunked response use
-        ``with HTTPRequest(request, content_type=..., chunked=True) as r:`` and `send_chunk`.
+        ``with Response(request, content_type=..., chunked=True) as r:`` and `send_chunk`.
         """
         self.request = request
-        self.status = status if isinstance(status, HTTPStatus) else HTTPStatus(*status)
+        self.status = status if isinstance(status, Status) else Status(*status)
         self.headers = (
-            headers.copy() if isinstance(headers, HTTPHeaders) else HTTPHeaders(headers)
+            headers.copy() if isinstance(headers, Headers) else Headers(headers)
         )
         self.content_type = content_type
         self.http_version = http_version
@@ -137,7 +137,7 @@ class HTTPResponse:
         """
         Sends headers.
         Implicitly called by ``send`` and ``send_file`` and in
-        ``with HTTPResponse(request, chunked=True) as response:`` context manager.
+        ``with Response(request, chunked=True) as response:`` context manager.
         """
         headers = self.headers.copy()
 
@@ -259,7 +259,7 @@ class HTTPResponse:
         Sends chunk of response.
 
         Should be used **only** inside
-        ``with HTTPResponse(request, chunked=True) as response:`` context manager.
+        ``with Response(request, chunked=True) as response:`` context manager.
 
         :param str chunk: String data to be sent.
         """

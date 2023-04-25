@@ -15,7 +15,7 @@ except ImportError:
 from binascii import b2a_base64
 
 from .exceptions import AuthenticationError
-from .request import HTTPRequest
+from .request import Request
 
 
 class Basic:
@@ -38,9 +38,7 @@ class Bearer:
         return f"Bearer {self._value}"
 
 
-def check_authentication(
-    request: HTTPRequest, auths: List[Union[Basic, Bearer]]
-) -> bool:
+def check_authentication(request: Request, auths: List[Union[Basic, Bearer]]) -> bool:
     """
     Returns ``True`` if request is authorized by any of the authentications, ``False`` otherwise.
     """
@@ -53,9 +51,7 @@ def check_authentication(
     return any(auth_header == str(auth) for auth in auths)
 
 
-def require_authentication(
-    request: HTTPRequest, auths: List[Union[Basic, Bearer]]
-) -> None:
+def require_authentication(request: Request, auths: List[Union[Basic, Bearer]]) -> None:
     """
     Checks if the request is authorized and raises ``AuthenticationError`` if not.
 

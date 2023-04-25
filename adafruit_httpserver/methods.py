@@ -2,38 +2,35 @@
 #
 # SPDX-License-Identifier: MIT
 """
-`adafruit_httpserver.methods.HTTPMethod`
+`adafruit_httpserver.methods`
 ====================================================
 * Author(s): Michał Pokusa
 """
 
 
-class HTTPMethod:  # pylint: disable=too-few-public-methods
-    """Enum with HTTP methods."""
+GET = "GET"
+"""GET method."""
 
-    GET = "GET"
-    """GET method."""
+POST = "POST"
+"""POST method."""
 
-    POST = "POST"
-    """POST method."""
+PUT = "PUT"
+"""PUT method"""
 
-    PUT = "PUT"
-    """PUT method"""
+DELETE = "DELETE"
+"""DELETE method"""
 
-    DELETE = "DELETE"
-    """DELETE method"""
+PATCH = "PATCH"
+"""PATCH method"""
 
-    PATCH = "PATCH"
-    """PATCH method"""
+HEAD = "HEAD"
+"""HEAD method"""
 
-    HEAD = "HEAD"
-    """HEAD method"""
+OPTIONS = "OPTIONS"
+"""OPTIONS method"""
 
-    OPTIONS = "OPTIONS"
-    """OPTIONS method"""
+TRACE = "TRACE"
+"""TRACE method"""
 
-    TRACE = "TRACE"
-    """TRACE method"""
-
-    CONNECT = "CONNECT"
-    """CONNECT method"""
+CONNECT = "CONNECT"
+"""CONNECT method"""
