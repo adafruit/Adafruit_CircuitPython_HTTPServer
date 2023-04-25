@@ -31,23 +31,38 @@ class Status:  # pylint: disable=too-few-public-methods
         return self.code == other.code and self.text == other.text
 
 
-class CommonHTTPStatus(HTTPStatus):  # pylint: disable=too-few-public-methods
-    """Common HTTP status codes."""
+OK_200 = Status(200, "OK")
+"""200 OK"""
 
-    OK_200 = HTTPStatus(200, "OK")
-    """200 OK"""
+NO_CONTENT_204 = Status(204, "No Content")
+"""204 No Content"""
 
-    BAD_REQUEST_400 = HTTPStatus(400, "Bad Request")
-    """400 Bad Request"""
+TEMPORARY_REDIRECT_307 = Status(307, "Temporary Redirect")
+"""307 Temporary Redirect"""
 
-    UNAUTHORIZED_401 = HTTPStatus(401, "Unauthorized")
-    """401 Unauthorized"""
+PERMANENT_REDIRECT_308 = Status(308, "Permanent Redirect")
+"""308 Permanent Redirect"""
 
-    FORBIDDEN_403 = HTTPStatus(403, "Forbidden")
-    """403 Forbidden"""
+BAD_REQUEST_400 = Status(400, "Bad Request")
+"""400 Bad Request"""
 
-    NOT_FOUND_404 = HTTPStatus(404, "Not Found")
-    """404 Not Found"""
+UNAUTHORIZED_401 = Status(401, "Unauthorized")
+"""401 Unauthorized"""
 
-    INTERNAL_SERVER_ERROR_500 = HTTPStatus(500, "Internal Server Error")
-    """500 Internal Server Error"""
+FORBIDDEN_403 = Status(403, "Forbidden")
+"""403 Forbidden"""
+
+NOT_FOUND_404 = Status(404, "Not Found")
+"""404 Not Found"""
+
+METHOD_NOT_ALLOWED_405 = Status(405, "Method Not Allowed")
+"""405 Method Not Allowed"""
+
+INTERNAL_SERVER_ERROR_500 = Status(500, "Internal Server Error")
+"""500 Internal Server Error"""
+
+NOT_IMPLEMENTED_501 = Status(501, "Not Implemented")
+"""501 Not Implemented"""
+
+SERVICE_UNAVAILABLE_503 = Status(503, "Service Unavailable")
+"""503 Service Unavailable"""

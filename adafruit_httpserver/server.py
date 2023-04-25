@@ -21,7 +21,7 @@ from .methods import GET, HEAD
 from .request import Request
 from .response import Response
 from .route import _Routes, _Route
-from .status import CommonHTTPStatus
+from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
 
 class Server:
@@ -177,26 +177,20 @@ class Server:
                             head_only=(request.method == HEAD),
                         )
                     else:
-                        HTTPResponse(
-                            request, status=CommonHTTPStatus.BAD_REQUEST_400
-                        ).send()
+                        Response(request, status=BAD_REQUEST_400).send()
 
                 except AuthenticationError:
                     Response(
                         request,
-                        status=CommonHTTPStatus.UNAUTHORIZED_401,
+                        status=UNAUTHORIZED_401,
                         headers={"WWW-Authenticate": 'Basic charset="UTF-8"'},
                     ).send()
 
                 except InvalidPathError as error:
-                    Response(request, status=CommonHTTPStatus.FORBIDDEN_403).send(
-                        str(error)
-                    )
+                    Response(request, status=FORBIDDEN_403).send(str(error))
 
                 except FileNotExistsError as error:
-                    Response(request, status=CommonHTTPStatus.NOT_FOUND_404).send(
-                        str(error)
-                    )
+                    Response(request, status=NOT_FOUND_404).send(str(error))
 
         except OSError as error:
             # Handle EAGAIN and ECONNRESET

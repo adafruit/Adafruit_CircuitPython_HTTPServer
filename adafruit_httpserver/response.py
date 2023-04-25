@@ -25,7 +25,7 @@ from .exceptions import (
 )
 from .mime_type import MIMEType
 from .request import Request
-from .status import Status, CommonHTTPStatus
+from .status import Status, OK_200
 from .headers import Headers
 
 
@@ -103,7 +103,7 @@ class Response:
     def __init__(  # pylint: disable=too-many-arguments
         self,
         request: Request,
-        status: Union[Status, Tuple[int, str]] = CommonHTTPStatus.OK_200,
+        status: Union[Status, Tuple[int, str]] = OK_200,
         headers: Union[Headers, Dict[str, str]] = None,
         content_type: str = None,
         http_version: str = "HTTP/1.1",
