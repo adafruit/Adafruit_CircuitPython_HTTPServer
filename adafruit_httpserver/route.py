@@ -21,13 +21,29 @@ class _Route:
     """Route definition for different paths, see `adafruit_httpserver.server.Server.route`."""
 
     def __init__(self, path: str = "", method: str = GET) -> None:
-        contains_parameters = re.search(r"<\w*>", path) is not None
+        self._validate_path(path)
 
+        self.parameters_names = [
+            name[1:-1] for name in re.compile(r"/[^<>]*/?").split(path) if name != ""
+        ]
         self.path = (
-            path if not contains_parameters else re.sub(r"<\w*>", r"([^/]*)", path)
+            path
+            if not self._contains_parameters
+            else re.sub(r"<\w*>", r"([^/]*)", path)
         )
         self.method = method
-        self._contains_parameters = contains_parameters
+
+    @staticmethod
+    def _validate_path(path: str) -> None:
+        if not path.startswith("/"):
+            raise ValueError("Path must start with a slash.")
+
+        if "<>" in path:
+            raise ValueError("All URL parameters must be named.")
+
+    @property
+    def _contains_parameters(self) -> bool:
+        return 0 < len(self.parameters_names)
 
     def match(self, other: "_Route") -> Tuple[bool, List[str]]:
         """
@@ -110,7 +126,7 @@ class _Routes:
         found_route, _route = False, None
 
         for _route in self._routes:
-            matches, url_parameters_values = _route.match(route)
+            matches, parameters_values = _route.match(route)
 
             if matches:
                 found_route = True
@@ -121,8 +137,10 @@ class _Routes:
 
         handler = self._handlers[self._routes.index(_route)]
 
+        keyword_parameters = dict(zip(_route.parameters_names, parameters_values))
+
         def wrapped_handler(request):
-            return handler(request, *url_parameters_values)
+            return handler(request, **keyword_parameters)
 
         return wrapped_handler
 
