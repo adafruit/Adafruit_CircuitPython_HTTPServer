@@ -16,6 +16,7 @@ except ImportError:
 
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
 
+from .authentication import Basic, Bearer, require_authentication
 from .exceptions import AuthenticationError, FileNotExistsError, InvalidPathError
 from .methods import GET, HEAD
 from .request import Request
@@ -34,6 +35,7 @@ class Server:
           in CircuitPython or the `socket` module in CPython.
         :param str root_path: Root directory to serve files from
         """
+        self._auths = []
         self._buffer = bytearray(1024)
         self._timeout = 1
         self.routes = _Routes()
@@ -177,6 +179,10 @@ class Server:
                 handler = self.routes.find_handler(_Route(request.path, request.method))
 
                 try:
+                    # Check server authentications if necessary
+                    if self._auths:
+                        require_authentication(request, self._auths)
+
                     # If a handler for route exists and is callable, call it.
                     if handler is not None and callable(handler):
                         handler(request)
@@ -215,6 +221,18 @@ class Server:
                 # Connection reset by peer, try again later.
                 return
             raise
+
+    def restrict_access(self, auths: List[Union[Basic, Bearer]]) -> None:
+        """
+        Restricts access to the whole ``Server``.
+        It applies to all routes and files in ``root_path``.
+
+        Example::
+
+            server = Server(pool, "/static")
+            server.restrict_access([Basic("user", "pass")])
+        """
+        self._auths = auths
 
     @property
     def request_buffer_size(self) -> int:
