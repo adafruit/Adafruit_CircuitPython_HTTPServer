@@ -46,6 +46,12 @@ class ResponseAlreadySentError(Exception):
     """
 
 
+class ServingFilesDisabledError(Exception):
+    """
+    Raised when ``root_path`` is not set and there is no handler for `request`.
+    """
+
+
 class FileNotExistsError(Exception):
     """
     Raised when a file does not exist.

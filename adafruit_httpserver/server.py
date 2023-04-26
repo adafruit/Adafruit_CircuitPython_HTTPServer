@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, Protocol, Union, List
+    from typing import Callable, Protocol, Union, List, Tuple
     from socket import socket
     from socketpool import SocketPool
 except ImportError:
@@ -17,7 +17,12 @@ except ImportError:
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
 
 from .authentication import Basic, Bearer, require_authentication
-from .exceptions import AuthenticationError, FileNotExistsError, InvalidPathError
+from .exceptions import (
+    AuthenticationError,
+    FileNotExistsError,
+    InvalidPathError,
+    ServingFilesDisabledError,
+)
 from .methods import GET, HEAD
 from .request import Request
 from .response import Response
@@ -28,7 +33,7 @@ from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_
 class Server:
     """A basic socket-based HTTP server."""
 
-    def __init__(self, socket_source: Protocol, root_path: str) -> None:
+    def __init__(self, socket_source: Protocol, root_path: str = None) -> None:
         """Create a server, and get it ready to run.
 
         :param socket: An object that is a source of sockets. This could be a `socketpool`
@@ -83,17 +88,19 @@ class Server:
         return route_decorator
 
     def serve_forever(self, host: str, port: int = 80) -> None:
-        """Wait for HTTP requests at the given host and port. Does not return.
+        """
+        Wait for HTTP requests at the given host and port. Does not return.
+        Ignores any exceptions raised by the handler function and continues to serve.
 
         :param str host: host name or IP address
         :param int port: port
         """
         self.start(host, port)
 
-        while True:
+        while "Serving forever":
             try:
                 self.poll()
-            except OSError:
+            except:  # pylint: disable=bare-except
                 continue
 
     def start(self, host: str, port: int = 80) -> None:
@@ -110,6 +117,32 @@ class Server:
         self._sock.bind((host, port))
         self._sock.listen(10)
         self._sock.setblocking(False)  # non-blocking socket
+
+    def _receive_request(
+        self,
+        sock: Union["SocketPool.Socket", "socket.socket"],
+        client_address: Tuple[str, int],
+    ) -> Request:
+        """Receive bytes from socket until the whole request is received."""
+
+        # Receiving data until empty line
+        header_bytes = self._receive_header_bytes(sock)
+
+        # Return if no data received
+        if not header_bytes:
+            return None
+
+        request = Request(sock, client_address, header_bytes)
+
+        content_length = int(request.headers.get("Content-Length", 0))
+        received_body_bytes = request.body
+
+        # Receiving remaining body bytes
+        request.body = self._receive_body_bytes(
+            sock, received_body_bytes, content_length
+        )
+
+        return request
 
     def _receive_header_bytes(
         self, sock: Union["SocketPool.Socket", "socket.socket"]
@@ -147,6 +180,51 @@ class Server:
                 raise ex
         return received_body_bytes[:content_length]
 
+    def _serve_file_from_filesystem(self, request: Request):
+        filename = "index.html" if request.path == "/" else request.path
+        root_path = self.root_path
+        buffer_size = self.request_buffer_size
+        head_only = request.method == HEAD
+
+        with Response(request) as response:
+            response.send_file(filename, root_path, buffer_size, head_only)
+
+    def _handle_request(self, request: Request, handler: Union[Callable, None]):
+        try:
+            # Check server authentications if necessary
+            if self._auths:
+                require_authentication(request, self._auths)
+
+            # Handler for route exists and is callable
+            if handler is not None and callable(handler):
+                handler(request)
+
+            # Handler is not found...
+
+            # ...no root_path, access to filesystem disabled, return 404.
+            elif self.root_path is None:
+                # Response(request, status=NOT_FOUND_404).send()
+                raise ServingFilesDisabledError
+
+            # ..root_path is set, access to filesystem enabled...
+
+            # ...request.method is GET or HEAD, try to serve a file from the filesystem.
+            elif request.method in [GET, HEAD]:
+                self._serve_file_from_filesystem(request)
+            # ...
+            else:
+                Response(request, status=BAD_REQUEST_400).send()
+
+        except AuthenticationError:
+            headers = {"WWW-Authenticate": 'Basic charset="UTF-8"'}
+            Response(request, status=UNAUTHORIZED_401, headers=headers).send()
+
+        except InvalidPathError as error:
+            Response(request, status=FORBIDDEN_403).send(str(error))
+
+        except (FileNotExistsError, ServingFilesDisabledError) as error:
+            Response(request, status=NOT_FOUND_404).send(str(error))
+
     def poll(self):
         """
         Call this method inside your main event loop to get the server to
@@ -158,67 +236,22 @@ class Server:
             with conn:
                 conn.settimeout(self._timeout)
 
-                # Receiving data until empty line
-                header_bytes = self._receive_header_bytes(conn)
-
-                # Return if no data received
-                if not header_bytes:
+                # Receive the whole request
+                if (request := self._receive_request(conn, client_address)) is None:
                     return
-
-                request = Request(conn, client_address, header_bytes)
-
-                content_length = int(request.headers.get("Content-Length", 0))
-                received_body_bytes = request.body
-
-                # Receiving remaining body bytes
-                request.body = self._receive_body_bytes(
-                    conn, received_body_bytes, content_length
-                )
 
                 # Find a handler for the route
                 handler = self.routes.find_handler(_Route(request.path, request.method))
 
-                try:
-                    # Check server authentications if necessary
-                    if self._auths:
-                        require_authentication(request, self._auths)
-
-                    # If a handler for route exists and is callable, call it.
-                    if handler is not None and callable(handler):
-                        handler(request)
-
-                    # If no handler exists and request method is GET or HEAD, try to serve a file.
-                    elif handler is None and request.method in [GET, HEAD]:
-                        filename = "index.html" if request.path == "/" else request.path
-                        Response(request).send_file(
-                            filename=filename,
-                            root_path=self.root_path,
-                            buffer_size=self.request_buffer_size,
-                            head_only=(request.method == HEAD),
-                        )
-                    else:
-                        Response(request, status=BAD_REQUEST_400).send()
-
-                except AuthenticationError:
-                    Response(
-                        request,
-                        status=UNAUTHORIZED_401,
-                        headers={"WWW-Authenticate": 'Basic charset="UTF-8"'},
-                    ).send()
-
-                except InvalidPathError as error:
-                    Response(request, status=FORBIDDEN_403).send(str(error))
-
-                except FileNotExistsError as error:
-                    Response(request, status=NOT_FOUND_404).send(str(error))
+                # Handle the request
+                self._handle_request(request, handler)
 
         except OSError as error:
-            # Handle EAGAIN and ECONNRESET
+            # There is no data available right now, try again later.
             if error.errno == EAGAIN:
-                # There is no data available right now, try again later.
                 return
+            # Connection reset by peer, try again later.
             if error.errno == ECONNRESET:
-                # Connection reset by peer, try again later.
                 return
             raise
 
