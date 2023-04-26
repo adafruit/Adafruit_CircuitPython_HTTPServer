@@ -66,7 +66,7 @@ class _Route:
         if not self._contains_parameters:
             return self.path == other.path, []
 
-        regex_match = re.match(self.path, other.path)
+        regex_match = re.match(f"^{self.path}$", other.path)
         if regex_match is None:
             return False, []
 
