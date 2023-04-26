@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Optional, Dict, Union, Tuple, Callable
+    from typing import Optional, Dict, Union, Tuple
     from socket import socket
     from socketpool import SocketPool
 except ImportError:
@@ -27,21 +27,6 @@ from .mime_types import MIMETypes
 from .request import Request
 from .status import Status, OK_200
 from .headers import Headers
-
-
-def _prevent_multiple_send_calls(function: Callable):
-    """
-    Decorator that prevents calling ``send`` or ``send_file`` more than once.
-    """
-
-    def wrapper(self: "Response", *args, **kwargs):
-        if self._response_already_sent:  # pylint: disable=protected-access
-            raise ResponseAlreadySentError
-
-        result = function(self, *args, **kwargs)
-        return result
-
-    return wrapper
 
 
 class Response:
@@ -162,7 +147,11 @@ class Response:
             self.request.connection, response_message_header.encode("utf-8")
         )
 
-    @_prevent_multiple_send_calls
+    def _check_if_not_already_sent(self) -> None:
+        """Prevents calling ``send`` or ``send_file`` more than once."""
+        if self._response_already_sent:
+            raise ResponseAlreadySentError
+
     def send(
         self,
         body: str = "",
@@ -174,6 +163,7 @@ class Response:
 
         Should be called **only once** per response.
         """
+        self._check_if_not_already_sent()
 
         if getattr(body, "encode", None):
             encoded_response_message_body = body.encode("utf-8")
@@ -214,7 +204,6 @@ class Response:
         except OSError:
             raise FileNotExistsError(file_path)  # pylint: disable=raise-missing-from
 
-    @_prevent_multiple_send_calls
     def send_file(  # pylint: disable=too-many-arguments
         self,
         filename: str = "index.html",
@@ -230,6 +219,7 @@ class Response:
 
         Should be called **only once** per response.
         """
+        self._check_if_not_already_sent()
 
         if safe:
             self._check_file_path_is_valid(filename)
