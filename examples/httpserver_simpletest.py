@@ -27,10 +27,11 @@ server = HTTPServer(pool, "/static")
 @server.route("/")
 def base(request: HTTPRequest):
     """
-    Serve the default index.html file.
+    Serve a default static plain text message.
     """
-    with HTTPResponse(request, content_type=MIMEType.TYPE_HTML) as response:
-        response.send_file("index.html")
+    with HTTPResponse(request, content_type=MIMEType.TYPE_TXT) as response:
+        message = "Hello from the CircuitPython HTTPServer!"
+        response.send(message)
 
 
 print(f"Listening on http://{wifi.radio.ipv4_address}:80")

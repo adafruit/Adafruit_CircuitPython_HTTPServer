@@ -95,6 +95,13 @@ Or the following command to update an existing version:
 
     circup update
 
+Security
+========
+
+The HTTP server implementation in this package is not robust and should only be deployed on trusted networks.
+For instance, there are trivial denial of service attacks against adafruit_httpserver.
+Pull requests that improve the server's security and robustness are of course welcome.
+
 Contributing
 ============
 

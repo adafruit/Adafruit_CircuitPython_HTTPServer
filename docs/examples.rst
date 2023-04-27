@@ -1,10 +1,10 @@
-Simple file serving
+Simple Test
 -------------------
 
-Serving the content of index.html from the filesystem.
+Serving a simple static text message.
 
-.. literalinclude:: ../examples/httpserver_simple_serve.py
-    :caption: examples/httpserver_simple_serve.py
+.. literalinclude:: ../examples/httpserver_simpletest.py
+    :caption: examples/httpserver_simpletest.py
     :linenos:
 
 If you want your code to do more than just serve web pages,
