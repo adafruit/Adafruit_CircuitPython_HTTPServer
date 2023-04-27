@@ -120,9 +120,6 @@ class _Routes:
                 request.path == "/example/123" # True
                 my_parameter == "123" # True
         """
-        if not self._routes:
-            return None
-
         found_route, _route = False, None
 
         for _route in self._routes:

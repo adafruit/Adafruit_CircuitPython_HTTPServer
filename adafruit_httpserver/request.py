@@ -20,12 +20,12 @@ from .headers import Headers
 class Request:
     """
     Incoming request, constructed from raw incoming bytes.
-    It is passed as first argument to route handlers.
+    It is passed as first argument to all route handlers.
     """
 
     connection: Union["SocketPool.Socket", "socket.socket"]
     """
-    Socket object usable to send and receive data on the connection.
+    Socket object used to send and receive data on the connection.
     """
 
     client_address: Tuple[str, int]
@@ -42,7 +42,7 @@ class Request:
     """Request method e.g. "GET" or "POST"."""
 
     path: str
-    """Path of the request."""
+    """Path of the request, e.g. ``"/foo/bar"``."""
 
     query_params: Dict[str, str]
     """
@@ -56,7 +56,7 @@ class Request:
     """
 
     http_version: str
-    """HTTP version, e.g. "HTTP/1.1"."""
+    """HTTP version, e.g. ``"HTTP/1.1"``."""
 
     headers: Headers
     """
@@ -65,7 +65,7 @@ class Request:
 
     raw_request: bytes
     """
-    Raw 'bytes' passed to the constructor and body 'bytes' received later.
+    Raw 'bytes' that were received from the client.
 
     Should **not** be modified directly.
     """

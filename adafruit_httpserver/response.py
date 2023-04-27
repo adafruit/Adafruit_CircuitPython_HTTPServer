@@ -73,8 +73,13 @@ class Response:
     """The request that this is a response to."""
 
     http_version: str
+
     status: Status
+    """Status code of the response. Defaults to ``200 OK``."""
+
     headers: Headers
+    """Headers to be sent in the response."""
+
     content_type: str
     """
     Defaults to ``text/plain`` if not set.
@@ -180,7 +185,8 @@ class Response:
     @staticmethod
     def _check_file_path_is_valid(file_path: str) -> bool:
         """
-        Checks if ``file_path`` is valid.
+        Checks if ``file_path`` does not contain backslashes or parent directory references.
+
         If not raises error corresponding to the problem.
         """
 

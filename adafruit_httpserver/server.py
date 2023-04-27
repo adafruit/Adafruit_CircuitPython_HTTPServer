@@ -53,7 +53,7 @@ class Server:
         Decorator used to add a route.
 
         :param str path: URL path
-        :param str method: HTTP method: `"GET"`, `"POST"`, etc.
+        :param str methods: HTTP method(s): ``"GET"``, ``"POST"``, ``["GET", "POST"]`` etc.
 
         Example::
 
@@ -227,9 +227,8 @@ class Server:
 
     def poll(self):
         """
-        Call this method inside your main event loop to get the server to
-        check for new incoming client requests. When a request comes in,
-        the application callable will be invoked.
+        Call this method inside your main loop to get the server to check for new incoming client
+        requests. When a request comes in, it will be handled by the handler function.
         """
         try:
             conn, client_address = self._sock.accept()
@@ -255,10 +254,10 @@ class Server:
                 return
             raise
 
-    def restrict_access(self, auths: List[Union[Basic, Bearer]]) -> None:
+    def require_authentication(self, auths: List[Union[Basic, Bearer]]) -> None:
         """
-        Restricts access to the whole ``Server``.
-        It applies to all routes and files in ``root_path``.
+        Requires authentication for all routes and files in ``root_path``.
+        Any non-authenticated request will be rejected with a 401 status code.
 
         Example::
 

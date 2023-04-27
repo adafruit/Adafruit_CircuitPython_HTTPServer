@@ -21,6 +21,10 @@ class MIMETypes:
     """
 
     DEFAULT = "text/plain"
+    """
+    Default MIME type for unknown files.
+    Can be changed using ``MIMETypes.configure(default_to=...)``.
+    """
 
     REGISTERED = {
         ".7z": "application/x-7z-compressed",
@@ -175,6 +179,13 @@ class MIMETypes:
         """
         Allows to globally configure the MIME types.
 
+        It is recommended to **always** call this method before starting the ``Server``.
+        Unregistering unused MIME types will **decrease overall memory usage**.
+
+        :param str default_to: The MIME type to use for unknown files.
+        :param List[str] keep_for: File extensions to keep. All other will be unregistered.
+        :param Dict[str, str] register: A dictionary mapping file extensions to MIME types.
+
         Example::
 
             MIMETypes.configure(
@@ -194,8 +205,10 @@ class MIMETypes:
     def get_for_filename(cls, filename: str, default: str = None) -> str:
         """
         Return the MIME type for the given file name.
+        If the file extension is not registered, ``default`` is returned.
 
         :param str filename: The file name to look up.
+        :param str default: Default MIME type to return if the file extension is not registered.
         """
         if default is None:
             default = cls.DEFAULT
