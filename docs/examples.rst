@@ -48,6 +48,11 @@ By default ``Response.send_file()`` looks for the file in the server's ``root_pa
     :caption: examples/httpserver_handler_serves_file.py
     :linenos:
 
+.. literalinclude:: ../examples/home.html
+    :language: html
+    :caption: www/home.html
+    :linenos:
+
 Tasks in the background
 -----------------------
 
