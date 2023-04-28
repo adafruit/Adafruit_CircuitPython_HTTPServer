@@ -8,9 +8,12 @@
 """
 
 try:
-    from typing import Dict, Tuple, Union
+    from typing import Dict, Tuple, Union, TYPE_CHECKING
     from socket import socket
     from socketpool import SocketPool
+
+    if TYPE_CHECKING:
+        from .server import Server
 except ImportError:
     pass
 
@@ -21,6 +24,11 @@ class Request:
     """
     Incoming request, constructed from raw incoming bytes.
     It is passed as first argument to all route handlers.
+    """
+
+    server: "Server"
+    """
+    Server object that received the request.
     """
 
     connection: Union["SocketPool.Socket", "socket.socket"]
@@ -72,10 +80,12 @@ class Request:
 
     def __init__(
         self,
+        server: "Server",
         connection: Union["SocketPool.Socket", "socket.socket"],
         client_address: Tuple[str, int],
         raw_request: bytes = None,
     ) -> None:
+        self.server = server
         self.connection = connection
         self.client_address = client_address
         self.raw_request = raw_request

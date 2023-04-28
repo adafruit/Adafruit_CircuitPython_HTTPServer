@@ -132,7 +132,7 @@ class Server:
         if not header_bytes:
             return None
 
-        request = Request(sock, client_address, header_bytes)
+        request = Request(self, sock, client_address, header_bytes)
 
         content_length = int(request.headers.get("Content-Length", 0))
         received_body_bytes = request.body
