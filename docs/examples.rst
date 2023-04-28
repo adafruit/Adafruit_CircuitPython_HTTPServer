@@ -21,6 +21,7 @@ This is the same example as above, but it uses the ``settings.toml`` file to con
 
 .. literalinclude:: ../examples/settings.toml
     :caption: settings.toml
+    :lines: 5-
     :linenos:
 
 Note that we still need to import ``socketpool`` and ``wifi`` modules.
@@ -54,6 +55,7 @@ By default ``Response.send_file()`` looks for the file in the server's ``root_pa
 .. literalinclude:: ../examples/home.html
     :language: html
     :caption: www/home.html
+    :lines: 5-
     :linenos:
 
 Tasks in the background
