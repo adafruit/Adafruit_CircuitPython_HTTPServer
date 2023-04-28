@@ -7,11 +7,7 @@ import os
 import socketpool
 import wifi
 
-from adafruit_httpserver.mime_type import MIMEType
-from adafruit_httpserver.request import HTTPRequest
-from adafruit_httpserver.response import HTTPResponse
-from adafruit_httpserver.server import HTTPServer
-
+from adafruit_httpserver import Server, Request, Response
 
 ssid = os.getenv("WIFI_SSID")
 password = os.getenv("WIFI_PASSWORD")
@@ -21,16 +17,16 @@ wifi.radio.connect(ssid, password)
 print("Connected to", ssid)
 
 pool = socketpool.SocketPool(wifi.radio)
-server = HTTPServer(pool, "/static")
+server = Server(pool, "/static")
 
 
 @server.route("/")
-def base(request: HTTPRequest):
+def base(request: Request):
     """
     Serve a default static plain text message.
     """
-    with HTTPResponse(request, content_type=MIMEType.TYPE_TXT) as response:
-        message = "Hello from the CircuitPython HTTPServer!"
+    with Response(request, content_type="text/plain") as response:
+        message = "Hello from the CircuitPython HTTP Server!"
         response.send(message)
 
 

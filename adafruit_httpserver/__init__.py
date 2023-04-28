@@ -5,7 +5,7 @@
 `adafruit_httpserver`
 ================================================================================
 
-Simple HTTP Server for CircuitPython
+Socket based HTTP Server for CircuitPython
 
 
 * Author(s): Dan Halbert

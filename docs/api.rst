@@ -25,7 +25,7 @@
 .. automodule:: adafruit_httpserver.methods
     :members:
 
-.. automodule:: adafruit_httpserver.mime_type
+.. automodule:: adafruit_httpserver.mime_types
     :members:
 
 .. automodule:: adafruit_httpserver.exceptions

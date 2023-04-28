@@ -2,16 +2,11 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-import mdns
 import socketpool
 import wifi
 
 from adafruit_httpserver import Server, Request, Response
 
-
-mdns_server = mdns.Server(wifi.radio)
-mdns_server.hostname = "custom-mdns-hostname"
-mdns_server.advertise_service(service_type="_http", protocol="_tcp", port=80)
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, "/static")
@@ -20,10 +15,11 @@ server = Server(pool, "/static")
 @server.route("/")
 def base(request: Request):
     """
-    Serve the default index.html file.
+    Serve a default static plain text message.
     """
-    with Response(request, content_type="text/html") as response:
-        response.send_file("index.html")
+    with Response(request, content_type="text/plain") as response:
+        message = "Hello from the CircuitPython HTTP Server!"
+        response.send(message)
 
 
 print(f"Listening on http://{wifi.radio.ipv4_address}:80")

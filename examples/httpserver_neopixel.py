@@ -2,34 +2,22 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-import os
-
 import board
 import neopixel
 import socketpool
 import wifi
 
-from adafruit_httpserver.mime_type import MIMEType
-from adafruit_httpserver.request import HTTPRequest
-from adafruit_httpserver.response import HTTPResponse
-from adafruit_httpserver.server import HTTPServer
+from adafruit_httpserver import Server, Request, Response
 
-
-ssid = os.getenv("WIFI_SSID")
-password = os.getenv("WIFI_PASSWORD")
-
-print("Connecting to", ssid)
-wifi.radio.connect(ssid, password)
-print("Connected to", ssid)
 
 pool = socketpool.SocketPool(wifi.radio)
-server = HTTPServer(pool, "/static")
+server = Server(pool, "/static")
 
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 
 
 @server.route("/change-neopixel-color")
-def change_neopixel_color_handler_query_params(request: HTTPRequest):
+def change_neopixel_color_handler_query_params(request: Request):
     """
     Changes the color of the built-in NeoPixel using query/GET params.
     """
@@ -39,20 +27,18 @@ def change_neopixel_color_handler_query_params(request: HTTPRequest):
 
     pixel.fill((int(r or 0), int(g or 0), int(b or 0)))
 
-    with HTTPResponse(request, content_type=MIMEType.TYPE_TXT) as response:
+    with Response(request, content_type="text/plain") as response:
         response.send(f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
 @server.route("/change-neopixel-color/<r>/<g>/<b>")
-def change_neopixel_color_handler_url_params(
-    request: HTTPRequest, r: str, g: str, b: str
-):
+def change_neopixel_color_handler_url_params(request: Request, r: str, g: str, b: str):
     """
     Changes the color of the built-in NeoPixel using URL params.
     """
     pixel.fill((int(r or 0), int(g or 0), int(b or 0)))
 
-    with HTTPResponse(request, content_type=MIMEType.TYPE_TXT) as response:
+    with Response(request, content_type="text/plain") as response:
         response.send(f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 

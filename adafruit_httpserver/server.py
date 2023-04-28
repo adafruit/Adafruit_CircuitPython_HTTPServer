@@ -262,7 +262,7 @@ class Server:
         Example::
 
             server = Server(pool, "/static")
-            server.restrict_access([Basic("user", "pass")])
+            server.require_authentication([Basic("user", "pass")])
         """
         self._auths = auths
 

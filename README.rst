@@ -30,6 +30,7 @@ HTTP Server for CircuitPython.
 - Gives access to request headers, query parameters, body and client's address, the one from which the request came.
 - Supports chunked transfer encoding.
 - Supports URL parameters and wildcard URLs.
+- Supports HTTP Basic and Bearer Authentication on both server and route per level.
 
 
 Dependencies

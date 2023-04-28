@@ -2,34 +2,23 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-import os
-
 import socketpool
 import wifi
 
-from adafruit_httpserver.request import HTTPRequest
-from adafruit_httpserver.response import HTTPResponse
-from adafruit_httpserver.server import HTTPServer
+from adafruit_httpserver import Server, Request, Response
 
-
-ssid = os.getenv("WIFI_SSID")
-password = os.getenv("WIFI_PASSWORD")
-
-print("Connecting to", ssid)
-wifi.radio.connect(ssid, password)
-print("Connected to", ssid)
 
 pool = socketpool.SocketPool(wifi.radio)
-server = HTTPServer(pool, "/static")
+server = Server(pool)
 
 
 @server.route("/chunked")
-def chunked(request: HTTPRequest):
+def chunked(request: Request):
     """
     Return the response with ``Transfer-Encoding: chunked``.
     """
 
-    with HTTPResponse(request, chunked=True) as response:
+    with Response(request, chunked=True) as response:
         response.send_chunk("Adaf")
         response.send_chunk("ruit")
         response.send_chunk(" Indus")
