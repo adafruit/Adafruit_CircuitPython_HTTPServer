@@ -200,6 +200,19 @@ class Response:
                 raise ParentDirectoryReferenceError(file_path)
 
     @staticmethod
+    def _combine_path(root_path: str, filename: str) -> str:
+        """
+        Combines ``root_path`` and ``filename`` into a single path.
+        """
+
+        if not root_path.endswith("/"):
+            root_path += "/"
+        if filename.startswith("/"):
+            filename = filename[1:]
+
+        return root_path + filename
+
+    @staticmethod
     def _get_file_length(file_path: str) -> int:
         """
         Tries to get the length of the file at ``file_path``.
@@ -213,7 +226,7 @@ class Response:
     def send_file(  # pylint: disable=too-many-arguments
         self,
         filename: str = "index.html",
-        root_path: str = "./",
+        root_path: str = None,
         buffer_size: int = 1024,
         head_only: bool = False,
         safe: bool = True,
@@ -230,12 +243,8 @@ class Response:
         if safe:
             self._check_file_path_is_valid(filename)
 
-        if not root_path.endswith("/"):
-            root_path += "/"
-        if filename.startswith("/"):
-            filename = filename[1:]
-
-        full_file_path = root_path + filename
+        root_path = root_path or self.request.server.root_path
+        full_file_path = self._combine_path(root_path, filename)
 
         file_length = self._get_file_length(full_file_path)
 
