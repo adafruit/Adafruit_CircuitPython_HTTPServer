@@ -8,6 +8,7 @@ It also manually connects to the WiFi network.
 
 .. literalinclude:: ../examples/httpserver_simpletest_manual.py
     :caption: examples/httpserver_simpletest_manual.py
+    :emphasize-lines: 12-17
     :linenos:
 
 Although there is nothing wrong with this approach, from the version 8.0.0 of CircuitPython,
@@ -39,6 +40,7 @@ In order to save memory, we are unregistering unused MIME types and registering 
 
 .. literalinclude:: ../examples/httpserver_static_files_serving.py
     :caption: examples/httpserver_static_files_serving.py
+    :emphasize-lines: 12-18,23-26
     :linenos:
 
 You can also serve a specific file from the handler.
@@ -46,6 +48,7 @@ By default ``Response.send_file()`` looks for the file in the server's ``root_pa
 
 .. literalinclude:: ../examples/httpserver_handler_serves_file.py
     :caption: examples/httpserver_handler_serves_file.py
+    :emphasize-lines: 22-23
     :linenos:
 
 .. literalinclude:: ../examples/home.html
@@ -65,6 +68,7 @@ a running total of the last 10 samples.
 
 .. literalinclude:: ../examples/httpserver_start_and_poll.py
     :caption: examples/httpserver_start_and_poll.py
+    :emphasize-lines: 26-39
     :linenos:
 
 Server with MDNS
@@ -77,6 +81,7 @@ In this example, the server is accessible via ``http://custom-mdns-hostname/`` a
 
 .. literalinclude:: ../examples/httpserver_mdns.py
     :caption: examples/httpserver_mdns.py
+    :emphasize-lines: 12-14
     :linenos:
 
 Handling different methods
@@ -93,13 +98,15 @@ In example below, handler for ``/api`` route will be called when any of ``GET``,
 
 .. literalinclude:: ../examples/httpserver_methods.py
     :caption: examples/httpserver_methods.py
+    :emphasize-lines: 8,15
     :linenos:
 
 Change NeoPixel color
 ---------------------
 
-If you want your code to do more than just serve web pages,
-use the start/poll methods as shown in this example.
+In your handler function you can access the query/GET parameters using ``request.query_params``.
+This allows you to pass data to the handler function and use it in your code.
+Alternatively you can use URL parameters, which are described later in this document.
 
 For example by going to ``/change-neopixel-color?r=255&g=0&b=0`` or ``/change-neopixel-color/255/0/0``
 you can change the color of the NeoPixel to red.
@@ -107,6 +114,7 @@ Tested on ESP32-S2 Feather.
 
 .. literalinclude:: ../examples/httpserver_neopixel.py
     :caption: examples/httpserver_neopixel.py
+    :emphasize-lines: 24-26,34-35
     :linenos:
 
 Get CPU information
@@ -117,6 +125,7 @@ That makes it easy to use the data in other applications.
 
 .. literalinclude:: ../examples/httpserver_cpu_information.py
     :caption: examples/httpserver_cpu_information.py
+    :emphasize-lines: 28-29
     :linenos:
 
 Chunked response
@@ -127,6 +136,7 @@ To use it, you need to set the ``chunked=True`` when creating a ``Response`` obj
 
 .. literalinclude:: ../examples/httpserver_chunked.py
     :caption: examples/httpserver_chunked.py
+    :emphasize-lines: 21-26
     :linenos:
 
 URL parameters
@@ -149,6 +159,7 @@ Also note that the names of the function parameters **have to match** with the o
 
 .. literalinclude:: ../examples/httpserver_url_parameters.py
     :caption: examples/httpserver_url_parameters.py
+    :emphasize-lines: 30-34
     :linenos:
 
 Authentication
@@ -160,6 +171,7 @@ If you want to apply authentication to the whole server, you need to call ``.req
 
 .. literalinclude:: ../examples/httpserver_authentication_server.py
     :caption: examples/httpserver_authentication_server.py
+    :emphasize-lines: 8,11-15,19
     :linenos:
 
 On the other hand, if you want to apply authentication to a set of routes, you need to call ``require_authentication`` function.
@@ -167,4 +179,5 @@ In both cases you can check if ``request`` is authenticated by calling ``check_a
 
 .. literalinclude:: ../examples/httpserver_authentication_handlers.py
     :caption: examples/httpserver_authentication_handlers.py
+    :emphasize-lines: 9-15,21-25,33,44,57
     :linenos:
