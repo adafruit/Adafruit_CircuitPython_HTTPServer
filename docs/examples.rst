@@ -183,3 +183,19 @@ In both cases you can check if ``request`` is authenticated by calling ``check_a
     :caption: examples/httpserver_authentication_handlers.py
     :emphasize-lines: 9-15,21-25,33,44,57
     :linenos:
+
+Multiple servers
+----------------
+
+Although it is not the primary use case, it is possible to run multiple servers at the same time.
+In order to do that, you need to create multiple ``Server`` instances and call ``.start()`` and ``.poll()`` on each of them.
+Using ``.serve_forever()`` for this is not possible because of it's blocking behaviour.
+
+Each server **must have a different port number**.
+
+In combination with separate authentication and diffrent ``root_path`` this allows creating moderately complex setups.
+
+.. literalinclude:: ../examples/httpserver_multiple_servers.py
+    :caption: examples/httpserver_multiple_servers.py
+    :emphasize-lines: 13-14,17,26,35-36,51-52,57-58
+    :linenos:
