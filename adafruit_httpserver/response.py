@@ -157,6 +157,15 @@ class Response:
         if self._response_already_sent:
             raise ResponseAlreadySentError
 
+    def _check_chunked(self, expected_value: bool) -> None:
+        """Prevents calling incompatible methods on chunked/non-chunked response."""
+        if self.chunked != expected_value:
+            raise RuntimeError(
+                "Trying to send non-chunked data in chunked response."
+                if self.chunked
+                else "Trying to send chunked data in non-chunked response."
+            )
+
     def send(
         self,
         body: str = "",
@@ -169,6 +178,7 @@ class Response:
         Should be called **only once** per response.
         """
         self._check_if_not_already_sent()
+        self._check_chunked(False)
 
         if getattr(body, "encode", None):
             encoded_response_message_body = body.encode("utf-8")
@@ -239,6 +249,7 @@ class Response:
         Should be called **only once** per response.
         """
         self._check_if_not_already_sent()
+        self._check_chunked(False)
 
         if safe:
             self._check_file_path_is_valid(filename)
@@ -268,6 +279,8 @@ class Response:
 
         :param str chunk: String data to be sent.
         """
+        self._check_chunked(True)
+
         if getattr(chunk, "encode", None):
             chunk = chunk.encode("utf-8")
 
