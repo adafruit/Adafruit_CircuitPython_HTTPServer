@@ -133,12 +133,6 @@ class MIMETypes:
         """
         Unregisters all MIME types except the ones for the given extensions,\
         **decreasing overall memory usage**.
-
-        It is recommended to **always** call this function before starting the server.
-
-        Example::
-
-            keep_for([".jpg", ".mp4", ".txt"])
         """
 
         cls.__check_all_start_with_dot(extensions)
@@ -156,13 +150,6 @@ class MIMETypes:
     def _register(cls, mime_types: dict) -> None:
         """
         Register multiple MIME types.
-
-        Example::
-
-            register({
-                ".foo": "application/foo",
-                ".bar": "application/bar",
-            })
 
         :param dict mime_types: A dictionary mapping file extensions to MIME types.
         """

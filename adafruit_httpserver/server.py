@@ -216,7 +216,6 @@ class Server:
 
             # ...no root_path, access to filesystem disabled, return 404.
             elif self.root_path is None:
-                # Response(request, status=NOT_FOUND_404).send()
                 raise ServingFilesDisabledError
 
             # ..root_path is set, access to filesystem enabled...
