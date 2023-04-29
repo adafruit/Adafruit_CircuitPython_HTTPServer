@@ -34,6 +34,8 @@ while True:
 
         # Process any waiting requests
         server.poll()
+
+        # If you want you can stop the server by calling server.stop() anywhere in your code
     except OSError as error:
         print(error)
         continue

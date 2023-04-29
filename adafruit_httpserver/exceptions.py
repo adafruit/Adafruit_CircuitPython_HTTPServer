@@ -8,6 +8,12 @@
 """
 
 
+class ServerStoppedError(Exception):
+    """
+    Raised when ``.poll`` is called on a stopped ``Server``.
+    """
+
+
 class AuthenticationError(Exception):
     """
     Raised by ``require_authentication`` when the ``Request`` is not authorized.

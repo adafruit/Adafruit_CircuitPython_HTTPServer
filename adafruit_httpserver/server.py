@@ -18,6 +18,7 @@ from errno import EAGAIN, ECONNRESET, ETIMEDOUT
 
 from .authentication import Basic, Bearer, require_authentication
 from .exceptions import (
+    ServerStoppedError,
     AuthenticationError,
     FileNotExistsError,
     InvalidPathError,
@@ -47,6 +48,7 @@ class Server:
         self._socket_source = socket_source
         self._sock = None
         self.root_path = root_path
+        self.stopped = False
 
     def route(self, path: str, methods: Union[str, List[str]] = GET) -> Callable:
         """
@@ -91,13 +93,14 @@ class Server:
         """
         Wait for HTTP requests at the given host and port. Does not return.
         Ignores any exceptions raised by the handler function and continues to serve.
+        Returns only when the server is stopped by calling ``.stop()``.
 
         :param str host: host name or IP address
         :param int port: port
         """
         self.start(host, port)
 
-        while "Serving forever":
+        while not self.stopped:
             try:
                 self.poll()
             except:  # pylint: disable=bare-except
@@ -106,17 +109,27 @@ class Server:
     def start(self, host: str, port: int = 80) -> None:
         """
         Start the HTTP server at the given host and port. Requires calling
-        poll() in a while loop to handle incoming requests.
+        ``.poll()`` in a while loop to handle incoming requests.
 
         :param str host: host name or IP address
         :param int port: port
         """
+        self.stopped = False
         self._sock = self._socket_source.socket(
             self._socket_source.AF_INET, self._socket_source.SOCK_STREAM
         )
         self._sock.bind((host, port))
         self._sock.listen(10)
-        self._sock.setblocking(False)  # non-blocking socket
+        self._sock.setblocking(False)  # Non-blocking socket
+
+    def stop(self) -> None:
+        """
+        Stops the server from listening for new connections and closes the socket.
+        Current requests will be processed. Server can be started again by calling ``.start()``
+        or ``.serve_forever()``.
+        """
+        self.stopped = True
+        self._sock.close()
 
     def _receive_request(
         self,
@@ -230,6 +243,9 @@ class Server:
         Call this method inside your main loop to get the server to check for new incoming client
         requests. When a request comes in, it will be handled by the handler function.
         """
+        if self.stopped:
+            raise ServerStoppedError
+
         try:
             conn, client_address = self._sock.accept()
             with conn:
