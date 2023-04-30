@@ -34,6 +34,9 @@ from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_
 class Server:
     """A basic socket-based HTTP server."""
 
+    host: str = None
+    port: int = None
+
     def __init__(self, socket_source: Protocol, root_path: str = None) -> None:
         """Create a server, and get it ready to run.
 
@@ -129,6 +132,8 @@ class Server:
         """
         self._verify_can_start(host, port)
 
+        self.host, self.port = host, port
+
         self.stopped = False
         self._sock = self._socket_source.socket(
             self._socket_source.AF_INET, self._socket_source.SOCK_STREAM
@@ -143,6 +148,8 @@ class Server:
         Current requests will be processed. Server can be started again by calling ``.start()``
         or ``.serve_forever()``.
         """
+        self.host, self.port = None, None
+
         self.stopped = True
         self._sock.close()
 
