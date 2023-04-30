@@ -1,6 +1,9 @@
 Simple Test
 -----------
 
+**All examples in this document are using** ``Server`` **in** ``debug`` **mode.**
+**This mode is useful for development, but it is not recommended to use it in production.**
+
 This is the minimal example of using the library.
 This example is serving a simple static text message.
 

@@ -9,7 +9,7 @@ from adafruit_httpserver import Server, Request, Response
 
 
 pool = socketpool.SocketPool(wifi.radio)
-server = Server(pool)
+server = Server(pool, debug=True)
 
 
 class Device:
@@ -49,3 +49,6 @@ def perform_action(
 
     with Response(request, content_type="text/plain") as response:
         response.send(f"Action ({action}) performed on device with ID: {device_id}")
+
+
+server.serve_forever(str(wifi.radio.ipv4_address))

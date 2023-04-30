@@ -9,7 +9,7 @@ from adafruit_httpserver import Server, Request, Response
 
 
 pool = socketpool.SocketPool(wifi.radio)
-server = Server(pool)
+server = Server(pool, debug=True)
 
 
 @server.route("/chunked")
@@ -26,5 +26,4 @@ def chunked(request: Request):
         response.send_chunk("ies")
 
 
-print(f"Listening on http://{wifi.radio.ipv4_address}:80")
 server.serve_forever(str(wifi.radio.ipv4_address))

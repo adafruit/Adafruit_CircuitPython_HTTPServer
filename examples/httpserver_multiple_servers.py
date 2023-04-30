@@ -10,8 +10,8 @@ from adafruit_httpserver import Server, Request, Response
 
 pool = socketpool.SocketPool(wifi.radio)
 
-bedroom_server = Server(pool, "/bedroom")
-office_server = Server(pool, "/office")
+bedroom_server = Server(pool, "/bedroom", debug=True)
+office_server = Server(pool, "/office", debug=True)
 
 
 @bedroom_server.route("/bedroom")
@@ -45,9 +45,6 @@ def home(request: Request):
 id_address = str(wifi.radio.ipv4_address)
 
 # Start the servers.
-
-print(f"[bedroom_server] Listening on http://{id_address}:5000")
-print(f"[office_server] Listening on http://{id_address}:8000")
 bedroom_server.start(id_address, 5000)
 office_server.start(id_address, 8000)
 

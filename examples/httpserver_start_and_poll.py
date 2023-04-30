@@ -9,7 +9,7 @@ from adafruit_httpserver import Server, Request, Response
 
 
 pool = socketpool.SocketPool(wifi.radio)
-server = Server(pool, "/static")
+server = Server(pool, "/static", debug=True)
 
 
 @server.route("/")
@@ -20,8 +20,6 @@ def base(request: Request):
     with Response(request, content_type="text/html") as response:
         response.send_file("index.html")
 
-
-print(f"Listening on http://{wifi.radio.ipv4_address}:80")
 
 # Start the server.
 server.start(str(wifi.radio.ipv4_address))

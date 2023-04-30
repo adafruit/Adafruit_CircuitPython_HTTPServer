@@ -11,7 +11,7 @@ from adafruit_httpserver import Server, Request, Response
 
 
 pool = socketpool.SocketPool(wifi.radio)
-server = Server(pool, "/static")
+server = Server(pool, "/static", debug=True)
 
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 
@@ -42,5 +42,4 @@ def change_neopixel_color_handler_url_params(request: Request, r: str, g: str, b
         response.send(f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
-print(f"Listening on http://{wifi.radio.ipv4_address}:80")
 server.serve_forever(str(wifi.radio.ipv4_address))

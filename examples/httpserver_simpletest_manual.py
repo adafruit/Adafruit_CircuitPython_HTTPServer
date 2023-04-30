@@ -17,7 +17,7 @@ wifi.radio.connect(ssid, password)
 print("Connected to", ssid)
 
 pool = socketpool.SocketPool(wifi.radio)
-server = Server(pool, "/static")
+server = Server(pool, "/static", debug=True)
 
 
 @server.route("/")
@@ -30,5 +30,4 @@ def base(request: Request):
         response.send(message)
 
 
-print(f"Listening on http://{wifi.radio.ipv4_address}:80")
 server.serve_forever(str(wifi.radio.ipv4_address))

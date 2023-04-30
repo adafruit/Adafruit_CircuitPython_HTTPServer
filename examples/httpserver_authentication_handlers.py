@@ -16,7 +16,7 @@ from adafruit_httpserver.authentication import (
 
 
 pool = socketpool.SocketPool(wifi.radio)
-server = Server(pool)
+server = Server(pool, debug=True)
 
 # Create a list of available authentication methods.
 auths = [
@@ -64,5 +64,4 @@ def require_authentication_or_manually_handle(request: Request):
             response.send("Not authenticated - Manually handled")
 
 
-print(f"Listening on http://{wifi.radio.ipv4_address}:80")
 server.serve_forever(str(wifi.radio.ipv4_address))

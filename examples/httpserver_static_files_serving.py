@@ -18,12 +18,11 @@ MIMETypes.configure(
 )
 
 pool = socketpool.SocketPool(wifi.radio)
-server = Server(pool, "/static")
+server = Server(pool, "/static", debug=True)
 
 # You don't have to add any routes, by default the server will serve files
 # from it's root_path, which is set to "/static" in this example.
 
 # If you don't set a root_path, the server will not serve any files.
 
-print(f"Listening on http://{wifi.radio.ipv4_address}:80")
 server.serve_forever(str(wifi.radio.ipv4_address))

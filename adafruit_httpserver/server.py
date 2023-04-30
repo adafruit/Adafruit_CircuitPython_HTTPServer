@@ -15,6 +15,7 @@ except ImportError:
     pass
 
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
+from traceback import print_exception
 
 from .authentication import Basic, Bearer, require_authentication
 from .exceptions import (
@@ -37,12 +38,15 @@ class Server:
     host: str = None
     port: int = None
 
-    def __init__(self, socket_source: Protocol, root_path: str = None) -> None:
+    def __init__(
+        self, socket_source: Protocol, root_path: str = None, *, debug: bool = False
+    ) -> None:
         """Create a server, and get it ready to run.
 
         :param socket: An object that is a source of sockets. This could be a `socketpool`
           in CircuitPython or the `socket` module in CPython.
         :param str root_path: Root directory to serve files from
+        :param bool debug: Enables debug messages useful during development
         """
         self._auths = []
         self._buffer = bytearray(1024)
@@ -52,6 +56,8 @@ class Server:
         self._sock = None
         self.root_path = root_path
         self.stopped = False
+
+        self.debug = debug
 
     def route(self, path: str, methods: Union[str, List[str]] = GET) -> Callable:
         """
@@ -119,8 +125,9 @@ class Server:
                 self.poll()
             except KeyboardInterrupt:  # Exit on Ctrl-C e.g. during development
                 return
-            except:  # pylint: disable=bare-except
-                continue
+            except Exception as error:  # pylint: disable=broad-except
+                if self.debug:
+                    _debug_exception_in_handler(error)
 
     def start(self, host: str, port: int = 80) -> None:
         """
@@ -141,6 +148,9 @@ class Server:
         self._sock.bind((host, port))
         self._sock.listen(10)
         self._sock.setblocking(False)  # Non-blocking socket
+
+        if self.debug:
+            _debug_started_server(self)
 
     def stop(self) -> None:
         """
@@ -245,7 +255,7 @@ class Server:
             # ...request.method is GET or HEAD, try to serve a file from the filesystem.
             elif request.method in [GET, HEAD]:
                 self._serve_file_from_filesystem(request)
-            # ...
+
             else:
                 Response(request, status=BAD_REQUEST_400).send()
 
@@ -275,6 +285,9 @@ class Server:
                 # Receive the whole request
                 if (request := self._receive_request(conn, client_address)) is None:
                     return
+
+                if self.debug:
+                    _debug_incoming_request(request)
 
                 # Find a handler for the route
                 handler = self.routes.find_handler(_Route(request.path, request.method))
@@ -349,3 +362,24 @@ class Server:
             self._timeout = value
         else:
             raise ValueError("Server.socket_timeout must be a positive numeric value.")
+
+
+def _debug_started_server(server: "Server"):
+    """Prints a message when the server starts."""
+    host, port = server.host, server.port
+
+    print(f"Started development server on http://{host}:{port}")
+
+
+def _debug_incoming_request(request: "Request"):
+    """Prints a message when a request is received."""
+    client_ip = request.client_address[0]
+    method = request.method
+    size = len(request.raw_request)
+
+    print(f"{client_ip} -- {method} {request.path} {size}")
+
+
+def _debug_exception_in_handler(error: Exception):
+    """Prints a message when an exception is raised in a handler."""
+    print_exception(error)

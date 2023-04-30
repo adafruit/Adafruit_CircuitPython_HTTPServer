@@ -10,7 +10,7 @@ import wifi
 from adafruit_httpserver import Server, Request, Response
 
 pool = socketpool.SocketPool(wifi.radio)
-server = Server(pool)
+server = Server(pool, debug=True)
 
 
 @server.route("/cpu-information")
@@ -29,5 +29,4 @@ def cpu_information_handler(request: Request):
         response.send(json.dumps(data))
 
 
-print(f"Listening on http://{wifi.radio.ipv4_address}:80")
 server.serve_forever(str(wifi.radio.ipv4_address))

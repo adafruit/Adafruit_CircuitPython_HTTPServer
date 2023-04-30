@@ -9,7 +9,7 @@ from adafruit_httpserver import Server, Request, Response, GET, POST, PUT, DELET
 
 
 pool = socketpool.SocketPool(wifi.radio)
-server = Server(pool)
+server = Server(pool, debug=True)
 
 
 @server.route("/api", [GET, POST, PUT, DELETE])
@@ -34,5 +34,4 @@ def api(request: Request):
             response.send("Object deleted")
 
 
-print(f"Listening on http://{wifi.radio.ipv4_address}:80")
 server.serve_forever(str(wifi.radio.ipv4_address))
