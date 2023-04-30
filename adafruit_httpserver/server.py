@@ -103,6 +103,8 @@ class Server:
         while not self.stopped:
             try:
                 self.poll()
+            except KeyboardInterrupt:  # Exit on Ctrl-C e.g. during development
+                return
             except:  # pylint: disable=bare-except
                 continue
 
