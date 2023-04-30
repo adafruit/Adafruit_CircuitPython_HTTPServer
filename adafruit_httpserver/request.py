@@ -17,6 +17,8 @@ try:
 except ImportError:
     pass
 
+import json
+
 from .headers import Headers
 
 
@@ -114,6 +116,10 @@ class Request:
     @body.setter
     def body(self, body: bytes) -> None:
         self.raw_request = self._raw_header_bytes + b"\r\n\r\n" + body
+
+    def json(self) -> Union[dict, None]:
+        """Body of the request, as a JSON-decoded dictionary."""
+        return json.loads(self.body) if self.body else None
 
     @property
     def _raw_header_bytes(self) -> bytes:
