@@ -109,9 +109,15 @@ In example below, handler for ``/api`` route will be called when any of ``GET``,
 Change NeoPixel color
 ---------------------
 
-In your handler function you can access the query/GET parameters using ``request.query_params``.
-This allows you to pass data to the handler function and use it in your code.
-Alternatively you can use URL parameters, which are described later in this document.
+There are several ways to pass data to the handler function:
+
+- In your handler function you can access the query/GET parameters using ``request.query_params``
+- You can also access the POST data directly using ``request.body`` or if you data is in JSON format,
+  you can use ``request.json()`` to parse it into a dictionary
+- Alternatively for short pieces of data you can use URL parameters, which are described later in this document
+  For more complex data, it is recommended to use JSON format.
+
+All of these approaches allow you to pass data to the handler function and use it in your code.
 
 For example by going to ``/change-neopixel-color?r=255&g=0&b=0`` or ``/change-neopixel-color/255/0/0``
 you can change the color of the NeoPixel to red.
@@ -119,7 +125,7 @@ Tested on ESP32-S2 Feather.
 
 .. literalinclude:: ../examples/httpserver_neopixel.py
     :caption: examples/httpserver_neopixel.py
-    :emphasize-lines: 24-26,34-35
+    :emphasize-lines: 25-27,39-40,52-53,61,69
     :linenos:
 
 Get CPU information
