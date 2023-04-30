@@ -89,6 +89,17 @@ class Server:
 
         return route_decorator
 
+    def _verify_can_start(self, host: str, port: int) -> None:
+        """Check if the server can be successfully started. Raises RuntimeError if not."""
+
+        if host is None or port is None:
+            raise RuntimeError("Host and port cannot be None")
+
+        try:
+            self._socket_source.getaddrinfo(host, port)
+        except OSError as error:
+            raise RuntimeError(f"Cannot start server on {host}:{port}") from error
+
     def serve_forever(self, host: str, port: int = 80) -> None:
         """
         Wait for HTTP requests at the given host and port. Does not return.
@@ -116,6 +127,8 @@ class Server:
         :param str host: host name or IP address
         :param int port: port
         """
+        self._verify_can_start(host, port)
+
         self.stopped = False
         self._sock = self._socket_source.socket(
             self._socket_source.AF_INET, self._socket_source.SOCK_STREAM
