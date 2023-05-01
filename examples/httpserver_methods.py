@@ -12,7 +12,7 @@ pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)
 
 
-@server.route("/api", [GET, POST, PUT, DELETE])
+@server.route("/api", [GET, POST, PUT, DELETE], append_slash=True)
 def api(request: Request):
     """
     Performs different operations depending on the HTTP method.

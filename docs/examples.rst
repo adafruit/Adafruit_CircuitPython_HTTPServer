@@ -101,7 +101,9 @@ You can pass a list of methods or a single method as a string.
 
 It is recommended to use the the values in ``adafruit_httpserver.methods`` module to avoid typos and for future proofness.
 
-In example below, handler for ``/api`` route will be called when any of ``GET``, ``POST``, ``PUT``, ``DELETE`` methods is used.
+If you want to route a given path with and without trailing slash, use ``append_slash=True`` parameter.
+
+In example below, handler for ``/api`` and ``/api/`` route will be called when any of ``GET``, ``POST``, ``PUT``, ``DELETE`` methods is used.
 
 .. literalinclude:: ../examples/httpserver_methods.py
     :caption: examples/httpserver_methods.py

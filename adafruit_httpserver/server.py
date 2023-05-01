@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, Protocol, Union, List, Tuple
+    from typing import Callable, Protocol, Union, List, Set, Tuple
     from socket import socket
     from socketpool import SocketPool
 except ImportError:
@@ -51,7 +51,7 @@ class Server:
         self._auths = []
         self._buffer = bytearray(1024)
         self._timeout = 1
-        self.routes = _Routes()
+        self._routes = _Routes()
         self._socket_source = socket_source
         self._sock = None
         self.root_path = root_path
@@ -59,12 +59,22 @@ class Server:
 
         self.debug = debug
 
-    def route(self, path: str, methods: Union[str, List[str]] = GET) -> Callable:
+    def route(
+        self,
+        path: str,
+        methods: Union[str, Set[str]] = GET,
+        *,
+        append_slash: bool = False,
+    ) -> Callable:
         """
         Decorator used to add a route.
 
+        If request matches multiple routes, the first matched one added will be used.
+
         :param str path: URL path
         :param str methods: HTTP method(s): ``"GET"``, ``"POST"``, ``["GET", "POST"]`` etc.
+        :param bool append_slash: If True, the route will be accessible with and without a
+          trailing slash
 
         Example::
 
@@ -78,6 +88,14 @@ class Server:
             def route_func(request):
                 ...
 
+            # If you want to access URL with and without trailing slash, use append_slash=True
+            @server.route("/example-with-slash", append_slash=True)
+            # which is equivalent to
+            @server.route("/example-with-slash")
+            @server.route("/example-with-slash/")
+            def route_func(request):
+                ...
+
             # Multiple methods can be specified
             @server.route("/example", [GET, POST])
             def route_func(request):
@@ -88,12 +106,13 @@ class Server:
             def route_func(request, my_parameter):
                 ...
         """
-        if isinstance(methods, str):
-            methods = [methods]
+        if path.endswith("/") and append_slash:
+            raise ValueError("Cannot use append_slash=True when path ends with /")
+
+        methods = methods if isinstance(methods, set) else {methods}
 
         def route_decorator(func: Callable) -> Callable:
-            for method in methods:
-                self.routes.add(_Route(path, method), func)
+            self._routes.add(_Route(path, methods, append_slash), func)
             return func
 
         return route_decorator
@@ -294,7 +313,9 @@ class Server:
                     _debug_incoming_request(request)
 
                 # Find a handler for the route
-                handler = self.routes.find_handler(_Route(request.path, request.method))
+                handler = self._routes.find_handler(
+                    _Route(request.path, request.method)
+                )
 
                 # Handle the request
                 self._handle_request(request, handler)

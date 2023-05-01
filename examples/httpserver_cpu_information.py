@@ -13,7 +13,7 @@ pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)
 
 
-@server.route("/cpu-information")
+@server.route("/cpu-information", append_slash=True)
 def cpu_information_handler(request: Request):
     """
     Return the current CPU temperature, frequency, and voltage as JSON.

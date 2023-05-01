@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, List, Union, Tuple
+    from typing import Callable, List, Set, Union, Tuple
 except ImportError:
     pass
 
@@ -20,18 +20,19 @@ from .methods import GET
 class _Route:
     """Route definition for different paths, see `adafruit_httpserver.server.Server.route`."""
 
-    def __init__(self, path: str = "", method: str = GET) -> None:
+    def __init__(
+        self,
+        path: str = "",
+        methods: Union[str, Set[str]] = GET,
+        append_slash: bool = False,
+    ) -> None:
         self._validate_path(path)
 
         self.parameters_names = [
             name[1:-1] for name in re.compile(r"/[^<>]*/?").split(path) if name != ""
         ]
-        self.path = (
-            path
-            if not self._contains_parameters
-            else re.sub(r"<\w*>", r"([^/]*)", path)
-        )
-        self.method = method
+        self.path = re.sub(r"<\w*>", r"([^/]*)", path) + ("/?" if append_slash else "")
+        self.methods = methods if isinstance(methods, set) else {methods}
 
     @staticmethod
     def _validate_path(path: str) -> None:
@@ -40,10 +41,6 @@ class _Route:
 
         if "<>" in path:
             raise ValueError("All URL parameters must be named.")
-
-    @property
-    def _contains_parameters(self) -> bool:
-        return 0 < len(self.parameters_names)
 
     def match(self, other: "_Route") -> Tuple[bool, List[str]]:
         """
@@ -76,11 +73,8 @@ class _Route:
             route.matches(other2) # False, []
         """
 
-        if self.method != other.method:
+        if not other.methods.issubset(self.methods):
             return False, []
-
-        if not self._contains_parameters:
-            return self.path == other.path, []
 
         regex_match = re.match(f"^{self.path}$", other.path)
         if regex_match is None:
@@ -89,7 +83,10 @@ class _Route:
         return True, regex_match.groups()
 
     def __repr__(self) -> str:
-        return f"_Route(path={repr(self.path)}, method={repr(self.method)})"
+        path = repr(self.path)
+        methods = repr(self.methods)
+
+        return f"_Route(path={path}, methods={methods})"
 
 
 class _Routes:
