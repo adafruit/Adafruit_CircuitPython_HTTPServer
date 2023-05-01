@@ -124,6 +124,7 @@ class Server:
             try:
                 self.poll()
             except KeyboardInterrupt:  # Exit on Ctrl-C e.g. during development
+                self.stop()
                 return
             except Exception as error:  # pylint: disable=broad-except
                 if self.debug:
@@ -162,6 +163,9 @@ class Server:
 
         self.stopped = True
         self._sock.close()
+
+        if self.debug:
+            _debug_stopped_server(self)
 
     def _receive_request(
         self,
@@ -369,6 +373,11 @@ def _debug_started_server(server: "Server"):
     host, port = server.host, server.port
 
     print(f"Started development server on http://{host}:{port}")
+
+
+def _debug_stopped_server(server: "Server"):  # pylint: disable=unused-argument
+    """Prints a message when the server stops."""
+    print("Stopped development server")
 
 
 def _debug_incoming_request(request: "Request"):

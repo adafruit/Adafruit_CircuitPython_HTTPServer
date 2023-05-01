@@ -240,7 +240,7 @@ This is how the logs might look like when debug mode is enabled::
         File "code.py", line 55, in example_handler
     KeyError: non_existent_key
     192.168.0.103 -- GET /index.html 242
-    ...
+    Stopped development server
 
 
 If you need more information about the request or you want it in a different format you can modify
