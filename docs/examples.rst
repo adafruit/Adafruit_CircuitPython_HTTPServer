@@ -3,6 +3,7 @@ Simple Test
 
 **All examples in this document are using** ``Server`` **in** ``debug`` **mode.**
 **This mode is useful for development, but it is not recommended to use it in production.**
+**More about Debug mode at the end of Examples section.**
 
 This is the minimal example of using the library.
 This example is serving a simple static text message.
@@ -61,8 +62,8 @@ By default ``Response.send_file()`` looks for the file in the server's ``root_pa
     :lines: 5-
     :linenos:
 
-Tasks in the background
------------------------
+Tasks between requests
+----------------------
 
 If you want your code to do more than just serve web pages,
 use the ``.start()``/``.poll()`` methods as shown in this example.
@@ -73,14 +74,15 @@ a running total of the last 10 samples.
 
 .. literalinclude:: ../examples/httpserver_start_and_poll.py
     :caption: examples/httpserver_start_and_poll.py
-    :emphasize-lines: 26-39
+    :emphasize-lines: 25,34
     :linenos:
 
 Server with MDNS
 ----------------
 
-It is possible to use the MDNS protocol to make the server
-accessible via a hostname in addition to an IP address.
+It is possible to use the MDNS protocol to make the server accessible via a hostname in addition
+to an IP address. It is worth noting that it takes a bit longer to get the response from the server
+when accessing it via the hostname.
 
 In this example, the server is accessible via ``http://custom-mdns-hostname/`` and ``http://custom-mdns-hostname.local/``.
 
@@ -154,6 +156,10 @@ URL parameters
 --------------
 
 Alternatively to using query parameters, you can use URL parameters.
+They are a better choice when you want to perform different actions based on the URL.
+Query/GET parameters are better suited for modifying the behaviour of the handler function.
+
+Of course it is only a suggestion, you can use them interchangeably and/or both at the same time.
 
 In order to use URL parameters, you need to wrap them inside ``<>`` in ``Server.route``, e.g. ``<my_parameter>``.
 
@@ -177,6 +183,7 @@ Authentication
 --------------
 
 In order to increase security of your server, you can use ``Basic`` and ``Bearer`` authentication.
+Remember that it is **not a replacement for HTTPS**, traffic is still sent **in plain text**, but it can be used to protect your server from unauthorized access.
 
 If you want to apply authentication to the whole server, you need to call ``.require_authentication`` on ``Server`` instance.
 
@@ -203,8 +210,41 @@ Using ``.serve_forever()`` for this is not possible because of it's blocking beh
 Each server **must have a different port number**.
 
 In combination with separate authentication and diffrent ``root_path`` this allows creating moderately complex setups.
+You can share same handler functions between servers or use different ones for each server.
 
 .. literalinclude:: ../examples/httpserver_multiple_servers.py
     :caption: examples/httpserver_multiple_servers.py
-    :emphasize-lines: 13-14,17,26,35-36,51-52,57-58
+    :emphasize-lines: 13-14,17,26,35-36,48-49,54-55
     :linenos:
+
+Debug mode
+----------------
+
+It is highly recommended to **disable debug mode in production**.
+
+During development it is useful to see the logs from the server.
+You can enable debug mode by setting ``debug=True`` on ``Server`` instance or in constructor,
+it is disabled by default.
+
+Debug mode prints messages on server startup, when a request is received and if exception
+occurs during handling of the request in ``.serve_forever()``.
+
+This is how the logs might look like when debug mode is enabled::
+
+    Started development server on http://192.168.0.100:80
+    192.168.0.101 -- GET / 194
+    192.168.0.101 -- GET /example 194
+    192.168.0.102 -- POST /api 241
+    Traceback (most recent call last):
+        ...
+        File "code.py", line 55, in example_handler
+    KeyError: non_existent_key
+    192.168.0.103 -- GET /index.html 242
+    ...
+
+
+If you need more information about the request or you want it in a different format you can modify
+functions at the bottom of ``adafruit_httpserver/server.py`` that start with ``_debug_...``.
+
+NOTE:
+*This is an advanced usage that might change in the future. It is not recommended to modify other parts of the code.*
