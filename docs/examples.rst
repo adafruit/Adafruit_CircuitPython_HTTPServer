@@ -228,25 +228,29 @@ During development it is useful to see the logs from the server.
 You can enable debug mode by setting ``debug=True`` on ``Server`` instance or in constructor,
 it is disabled by default.
 
-Debug mode prints messages on server startup, when a request is received and if exception
+Debug mode prints messages on server startup, after sending a response to a request and if exception
 occurs during handling of the request in ``.serve_forever()``.
 
 This is how the logs might look like when debug mode is enabled::
 
     Started development server on http://192.168.0.100:80
-    192.168.0.101 -- GET / 194
-    192.168.0.101 -- GET /example 194
-    192.168.0.102 -- POST /api 241
+    192.168.0.101 -- "GET /" 194 -- "200 OK" 154
+    192.168.0.101 -- "GET /example" 134 -- "404 Not Found" 172
+    192.168.0.102 -- "POST /api" 1241 -- "401 Unauthorized" 95
     Traceback (most recent call last):
         ...
         File "code.py", line 55, in example_handler
     KeyError: non_existent_key
-    192.168.0.103 -- GET /index.html 242
+    192.168.0.103 -- "GET /index.html" 242 -- "200 OK" 154
     Stopped development server
 
+This is the default format of the logs::
 
-If you need more information about the request or you want it in a different format you can modify
-functions at the bottom of ``adafruit_httpserver/server.py`` that start with ``_debug_...``.
+    {client_ip} -- "{request_method} {path}" {request_size} -- "{response_status}" {response_size}
+
+If you need more information about the server or request, or you want it in a different format you can modify
+functions at the bottom of ``adafruit_httpserver/server.py`` and ``adafruit_httpserver/response.py`` that
+start with ``_debug_...``.
 
 NOTE:
 *This is an advanced usage that might change in the future. It is not recommended to modify other parts of the code.*

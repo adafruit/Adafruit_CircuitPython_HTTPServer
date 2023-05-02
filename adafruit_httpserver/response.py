@@ -90,6 +90,9 @@ class Response:
     Common MIME types are defined in `adafruit_httpserver.mime_types`.
     """
 
+    size: int = 0
+    """Size of the response in bytes."""
+
     def __init__(  # pylint: disable=too-many-arguments
         self,
         request: Request,
@@ -192,6 +195,9 @@ class Response:
         self._send_bytes(self.request.connection, encoded_response_message_body)
         self._response_already_sent = True
 
+        if self.request.server.debug:
+            _debug_response_sent(self)
+
     @staticmethod
     def _check_file_path_is_valid(file_path: str) -> bool:
         """
@@ -270,6 +276,9 @@ class Response:
                     self._send_bytes(self.request.connection, bytes_read)
         self._response_already_sent = True
 
+        if self.request.server.debug:
+            _debug_response_sent(self)
+
     def send_chunk(self, chunk: str = "") -> None:
         """
         Sends chunk of response.
@@ -279,6 +288,7 @@ class Response:
 
         :param str chunk: String data to be sent.
         """
+        self._check_if_not_already_sent()
         self._check_chunked(True)
 
         if getattr(chunk, "encode", None):
@@ -299,14 +309,19 @@ class Response:
 
         if self.chunked:
             self.send_chunk("")
+        self._response_already_sent = True
+
+        if self.chunked and self.request.server.debug:
+            _debug_response_sent(self)
+
         return True
 
-    @staticmethod
     def _send_bytes(
+        self,
         conn: Union["SocketPool.Socket", "socket.socket"],
         buffer: Union[bytes, bytearray, memoryview],
     ):
-        bytes_sent = 0
+        bytes_sent: int = 0
         bytes_to_send = len(buffer)
         view = memoryview(buffer)
         while bytes_sent < bytes_to_send:
@@ -318,3 +333,16 @@ class Response:
                 if exc.errno == ECONNRESET:
                     return
                 raise
+        self.size += bytes_sent
+
+
+def _debug_response_sent(response: "Response"):
+    """Prints a message when after a response is sent."""
+    client_ip = response.request.client_address[0]
+    method = response.request.method
+    path = response.request.path
+    req_size = len(response.request.raw_request)
+    status = response.status
+    res_size = response.size
+
+    print(f'{client_ip} -- "{method} {path}" {req_size} -- "{status}" {res_size}')

@@ -309,9 +309,6 @@ class Server:
                 if (request := self._receive_request(conn, client_address)) is None:
                     return
 
-                if self.debug:
-                    _debug_incoming_request(request)
-
                 # Find a handler for the route
                 handler = self._routes.find_handler(
                     _Route(request.path, request.method)
@@ -397,17 +394,8 @@ def _debug_started_server(server: "Server"):
 
 
 def _debug_stopped_server(server: "Server"):  # pylint: disable=unused-argument
-    """Prints a message when the server stops."""
+    """Prints a message after the server stops."""
     print("Stopped development server")
-
-
-def _debug_incoming_request(request: "Request"):
-    """Prints a message when a request is received."""
-    client_ip = request.client_address[0]
-    method = request.method
-    size = len(request.raw_request)
-
-    print(f"{client_ip} -- {method} {request.path} {size}")
 
 
 def _debug_exception_in_handler(error: Exception):
