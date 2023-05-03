@@ -8,7 +8,7 @@
 Socket based HTTP Server for CircuitPython
 
 
-* Author(s): Dan Halbert
+* Author(s): Dan Halbert, Michał Pokusa
 
 Implementation Notes
 --------------------
@@ -30,12 +30,14 @@ from .authentication import (
     require_authentication,
 )
 from .exceptions import (
+    ServerStoppedError,
     AuthenticationError,
-    BackslashInPathError,
-    FileNotExistsError,
     InvalidPathError,
     ParentDirectoryReferenceError,
+    BackslashInPathError,
     ResponseAlreadySentError,
+    ServingFilesDisabledError,
+    FileNotExistsError,
 )
 from .headers import Headers
 from .methods import (
