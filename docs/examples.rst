@@ -154,8 +154,8 @@ To use it, you need to set the ``chunked=True`` when creating a ``Response`` obj
     :emphasize-lines: 21-26
     :linenos:
 
-URL parameters
---------------
+URL parameters and wildcards
+----------------------------
 
 Alternatively to using query parameters, you can use URL parameters.
 They are a better choice when you want to perform different actions based on the URL.
@@ -176,9 +176,16 @@ In the example below the second route has only one URL parameter, so the ``actio
 Keep in mind that URL parameters are always passed as strings, so you need to convert them to the desired type.
 Also note that the names of the function parameters **have to match** with the ones used in route, but they **do not have to** be in the same order.
 
+It is also possible to specify a wildcard route:
+
+- ``...`` - matches one path segment, e.g ``/api/...`` will match ``/api/123``, but **not** ``/api/123/456``
+- ``....`` - matches multiple path segments, e.g ``/api/....`` will match ``/api/123`` and ``/api/123/456``
+
+In both cases, wildcards will not match empty path segment, so ``/api/.../users`` will match ``/api/v1/users``, but not ``/api//users`` or ``/api/users``.
+
 .. literalinclude:: ../examples/httpserver_url_parameters.py
     :caption: examples/httpserver_url_parameters.py
-    :emphasize-lines: 30-34
+    :emphasize-lines: 30-34,54-55
     :linenos:
 
 Authentication

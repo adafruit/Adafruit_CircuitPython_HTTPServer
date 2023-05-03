@@ -102,8 +102,14 @@ class Server:
                 ...
 
             # URL parameters can be specified
-            @server.route("/example/<my_parameter>", GET)
+            @server.route("/example/<my_parameter>", GET) e.g. /example/123
             def route_func(request, my_parameter):
+                ...
+
+            # It is possible to use wildcard that can match any number of path segments
+            @server.route("/example/.../something", GET) # e.g. /example/123/something
+            @server.route("/example/..../something", GET) # e.g. /example/123/456/something
+            def route_func(request):
                 ...
         """
         if path.endswith("/") and append_slash:

@@ -51,4 +51,16 @@ def perform_action(
         response.send(f"Action ({action}) performed on device with ID: {device_id}")
 
 
+@server.route("/device/.../status", append_slash=True)
+@server.route("/device/....", append_slash=True)
+def device_status(request: Request):
+    """
+    Returns the status of all devices no matter what their ID is.
+    Unknown commands also return the status of all devices.
+    """
+
+    with Response(request, content_type="text/plain") as response:
+        response.send("Status of all devices: ...")
+
+
 server.serve_forever(str(wifi.radio.ipv4_address))

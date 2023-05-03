@@ -31,7 +31,9 @@ class _Route:
         self.parameters_names = [
             name[1:-1] for name in re.compile(r"/[^<>]*/?").split(path) if name != ""
         ]
-        self.path = re.sub(r"<\w*>", r"([^/]*)", path) + ("/?" if append_slash else "")
+        self.path = re.sub(r"<\w+>", r"([^/]+)", path).replace("....", r".+").replace(
+            "...", r"[^/]+"
+        ) + ("/?" if append_slash else "")
         self.methods = methods if isinstance(methods, set) else {methods}
 
     @staticmethod
@@ -54,10 +56,12 @@ class _Route:
 
         Examples::
 
-            route = _Route("/example", GET)
+            route = _Route("/example", GET, True)
 
-            other1 = _Route("/example", GET)
-            route.matches(other1) # True, []
+            other1a = _Route("/example", GET)
+            other1b = _Route("/example/", GET)
+            route.matches(other1a) # True, []
+            route.matches(other1b) # True, []
 
             other2 = _Route("/other-example", GET)
             route.matches(other2) # False, []
@@ -71,6 +75,16 @@ class _Route:
 
             other2 = _Route("/other-example", GET)
             route.matches(other2) # False, []
+
+            ...
+
+            route1 = _Route("/example/.../something", GET)
+            other1 = _Route("/example/123/something", GET)
+            route1.matches(other1) # True, []
+
+            route2 = _Route("/example/..../something", GET)
+            other2 = _Route("/example/123/456/something", GET)
+            route2.matches(other2) # True, []
         """
 
         if not other.methods.issubset(self.methods):
