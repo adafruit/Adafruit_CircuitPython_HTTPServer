@@ -171,7 +171,7 @@ class Response:
 
     def send(
         self,
-        body: str = "",
+        body: Union[str, bytes] = "",
         content_type: str = None,
     ) -> None:
         """
