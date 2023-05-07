@@ -151,9 +151,6 @@ class Server:
             except KeyboardInterrupt:  # Exit on Ctrl-C e.g. during development
                 self.stop()
                 return
-            except Exception as error:  # pylint: disable=broad-except
-                if self.debug:
-                    _debug_exception_in_handler(error)
 
     def start(self, host: str, port: int = 80) -> None:
         """
@@ -331,6 +328,10 @@ class Server:
             if error.errno == ECONNRESET:
                 return
             raise
+
+        except Exception as error:  # pylint: disable=broad-except
+            if self.debug:
+                _debug_exception_in_handler(error)
 
     def require_authentication(self, auths: List[Union[Basic, Bearer]]) -> None:
         """
