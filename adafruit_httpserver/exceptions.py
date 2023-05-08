@@ -46,12 +46,6 @@ class BackslashInPathError(InvalidPathError):
         super().__init__(f"Backslash in path: {path}")
 
 
-class ResponseAlreadySentError(Exception):
-    """
-    Another ``Response`` has already been sent. There can only be one per ``Request``.
-    """
-
-
 class ServingFilesDisabledError(Exception):
     """
     Raised when ``root_path`` is not set and there is no handler for ``request``.

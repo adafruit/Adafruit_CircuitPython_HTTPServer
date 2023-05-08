@@ -8,143 +8,83 @@
 """
 
 try:
-    from typing import Optional, Dict, Union, Tuple
+    from typing import Optional, Dict, Union, Tuple, Generator, Any
     from socket import socket
     from socketpool import SocketPool
 except ImportError:
     pass
 
 import os
+import json
 from errno import EAGAIN, ECONNRESET
 
 from .exceptions import (
     BackslashInPathError,
     FileNotExistsError,
     ParentDirectoryReferenceError,
-    ResponseAlreadySentError,
 )
 from .mime_types import MIMETypes
 from .request import Request
-from .status import Status, OK_200
+from .status import Status, OK_200, TEMPORARY_REDIRECT_307, PERMANENT_REDIRECT_308
 from .headers import Headers
 
 
-class Response:
+class Response:  # pylint: disable=too-few-public-methods
     """
     Response to a given `Request`. Use in `Server.route` handler functions.
 
+    Base class for all other response classes.
+
     Example::
 
-        # Response with 'Content-Length' header
         @server.route(path, method)
-        def route_func(request):
+        def route_func(request: Request):
 
-            response = Response(request)
-            response.send("Some content", content_type="text/plain")
-
-            # or
-
-            response = Response(request)
-            with response:
-                response.send(body='Some content', content_type="text/plain")
-
-            # or
-
-            with Response(request) as response:
-                response.send("Some content", content_type="text/plain")
-
-        # Response with 'Transfer-Encoding: chunked' header
-        @server.route(path, method)
-        def route_func(request):
-
-            response = Response(request, content_type="text/plain", chunked=True)
-            with response:
-                response.send_chunk("Some content")
-                response.send_chunk("Some more content")
-
-            # or
-
-            with Response(request, content_type="text/plain", chunked=True) as response:
-                response.send_chunk("Some content")
-                response.send_chunk("Some more content")
+            return Response(request, body='Some content', content_type="text/plain")
     """
-
-    request: Request
-    """The request that this is a response to."""
-
-    http_version: str
-
-    status: Status
-    """Status code of the response. Defaults to ``200 OK``."""
-
-    headers: Headers
-    """Headers to be sent in the response."""
-
-    content_type: str
-    """
-    Defaults to ``text/plain`` if not set.
-
-    Can be explicitly provided in the constructor, in ``send()`` or
-    implicitly determined from filename in ``send_file()``.
-
-    Common MIME types are defined in `adafruit_httpserver.mime_types`.
-    """
-
-    size: int = 0
-    """Size of the response in bytes."""
 
     def __init__(  # pylint: disable=too-many-arguments
         self,
         request: Request,
+        body: Union[str, bytes] = "",
+        *,
         status: Union[Status, Tuple[int, str]] = OK_200,
         headers: Union[Headers, Dict[str, str]] = None,
         content_type: str = None,
-        http_version: str = "HTTP/1.1",
-        chunked: bool = False,
     ) -> None:
         """
-        Creates an HTTP response.
-
-        Sets `status`, ``headers`` and `http_version`
-        and optionally default ``content_type``.
-
-        To send the response, call ``send`` or ``send_file``.
-        For chunked response use
-        ``with Response(request, content_type=..., chunked=True) as r:`` and `send_chunk`.
+        :param Request request: Request that this is a response to.
+        :param str body: Body of response. Defaults to empty string.
+        :param Status status: Status code and text. Defaults to 200 OK.
+        :param Headers headers: Headers to include in response. Defaults to empty dict.
+        :param str content_type: Content type of response. Defaults to None.
         """
-        self.request = request
-        self.status = status if isinstance(status, Status) else Status(*status)
-        self.headers = (
+
+        self._request = request
+        self._body = body
+        self._status = status if isinstance(status, Status) else Status(*status)
+        self._headers = (
             headers.copy() if isinstance(headers, Headers) else Headers(headers)
         )
-        self.content_type = content_type
-        self.http_version = http_version
-        self.chunked = chunked
-        self._response_already_sent = False
+        self._content_type = content_type
+        self._size = 0
 
     def _send_headers(
         self,
         content_length: Optional[int] = None,
         content_type: str = None,
     ) -> None:
-        """
-        Sends headers.
-        Implicitly called by ``send`` and ``send_file`` and in
-        ``with Response(request, chunked=True) as response:`` context manager.
-        """
-        headers = self.headers.copy()
+        headers = self._headers.copy()
 
         response_message_header = (
-            f"{self.http_version} {self.status.code} {self.status.text}\r\n"
+            f"HTTP/1.1 {self._status.code} {self._status.text}\r\n"
         )
 
         headers.setdefault(
-            "Content-Type", content_type or self.content_type or MIMETypes.DEFAULT
+            "Content-Type", content_type or self._content_type or MIMETypes.DEFAULT
         )
         headers.setdefault("Connection", "close")
-        if self.chunked:
-            headers.setdefault("Transfer-Encoding", "chunked")
-        else:
+        if content_length is not None:
             headers.setdefault("Content-Length", content_length)
 
         for header, value in headers.items():
@@ -152,56 +92,113 @@ class Response:
         response_message_header += "\r\n"
 
         self._send_bytes(
-            self.request.connection, response_message_header.encode("utf-8")
+            self._request.connection, response_message_header.encode("utf-8")
         )
 
-    def _check_if_not_already_sent(self) -> None:
-        """Prevents calling ``send`` or ``send_file`` more than once."""
-        if self._response_already_sent:
-            raise ResponseAlreadySentError
+    def _send(self) -> None:
+        encoded_body = (
+            self._body.encode("utf-8") if isinstance(self._body, str) else self._body
+        )
 
-    def _check_chunked(self, expected_value: bool) -> None:
-        """Prevents calling incompatible methods on chunked/non-chunked response."""
-        if self.chunked != expected_value:
-            raise RuntimeError(
-                "Trying to send non-chunked data in chunked response."
-                if self.chunked
-                else "Trying to send chunked data in non-chunked response."
-            )
+        self._send_headers(len(encoded_body), self._content_type)
+        self._send_bytes(self._request.connection, encoded_body)
 
-    def send(
+    def _send_bytes(
         self,
-        body: Union[str, bytes] = "",
+        conn: Union["SocketPool.Socket", "socket.socket"],
+        buffer: Union[bytes, bytearray, memoryview],
+    ):
+        bytes_sent: int = 0
+        bytes_to_send = len(buffer)
+        view = memoryview(buffer)
+        while bytes_sent < bytes_to_send:
+            try:
+                bytes_sent += conn.send(view[bytes_sent:])
+            except OSError as exc:
+                if exc.errno == EAGAIN:
+                    continue
+                if exc.errno == ECONNRESET:
+                    return
+                raise
+        self._size += bytes_sent
+
+
+class FileResponse(Response):  # pylint: disable=too-few-public-methods
+    """
+    Specialized version of `Response` class for sending files.
+
+    Instead of ``body`` it takes ``filename`` and ``root_path`` arguments.
+    It is also possible to send only headers with ``head_only`` argument or modify ``buffer_size``.
+
+    If browsers should download the file instead of displaying it, use ``as_attachment`` and
+    ``download_filename`` arguments.
+
+    Example::
+
+        @server.route(path, method)
+        def route_func(request: Request):
+
+            return FileResponse(request, filename='index.html', root_path='/www')
+    """
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        request: Request,
+        filename: str = "index.html",
+        root_path: str = None,
+        *,
+        status: Union[Status, Tuple[int, str]] = OK_200,
+        headers: Union[Headers, Dict[str, str]] = None,
         content_type: str = None,
+        as_attachment: bool = False,
+        download_filename: str = None,
+        buffer_size: int = 1024,
+        head_only: bool = False,
+        safe: bool = True,
     ) -> None:
         """
-        Sends response with content built from ``body``.
-        Implicitly calls ``_send_headers`` before sending the body.
-
-        Should be called **only once** per response.
+        :param Request request: Request that this is a response to.
+        :param str filename: Name of the file to send.
+        :param str root_path: Path to the root directory from which to serve files. Defaults to
+          server's ``root_path``.
+        :param Status status: Status code and text. Defaults to 200 OK.
+        :param Headers headers: Headers to include in response.
+        :param str content_type: Content type of response.
+        :param bool as_attachment: If True, the file will be sent as an attachment.
+        :param str download_filename: Name of the file to send as an attachment.
+        :param int buffer_size: Size of the buffer used to send the file. Defaults to 1024.
+        :param bool head_only: If True, only headers will be sent. Defaults to False.
+        :param bool safe: If True, checks if ``filename`` is valid. Defaults to True.
         """
-        self._check_if_not_already_sent()
-        self._check_chunked(False)
+        if safe:
+            self._verify_file_path_is_valid(filename)
 
-        if getattr(body, "encode", None):
-            encoded_response_message_body = body.encode("utf-8")
-        else:
-            encoded_response_message_body = body
-
-        self._send_headers(
-            content_type=content_type or self.content_type,
-            content_length=len(encoded_response_message_body),
+        super().__init__(
+            request=request,
+            headers=headers,
+            content_type=content_type,
+            status=status,
         )
-        self._send_bytes(self.request.connection, encoded_response_message_body)
-        self._response_already_sent = True
+        self._filename = filename + "index.html" if filename.endswith("/") else filename
+        self._root_path = root_path or self._request.server.root_path
+        self._full_file_path = self._combine_path(self._root_path, self._filename)
+        self._content_type = content_type or MIMETypes.get_for_filename(self._filename)
+        self._file_length = self._get_file_length(self._full_file_path)
 
-        if self.request.server.debug:
-            _debug_response_sent(self)
+        self._buffer_size = buffer_size
+        self._head_only = head_only
+        self._safe = safe
+
+        if as_attachment:
+            self._headers.setdefault(
+                "Content-Disposition",
+                f"attachment; filename={download_filename or self._filename.split('/')[-1]}",
+            )
 
     @staticmethod
-    def _check_file_path_is_valid(file_path: str) -> bool:
+    def _verify_file_path_is_valid(file_path: str):
         """
-        Checks if ``file_path`` does not contain backslashes or parent directory references.
+        Verifies that ``file_path`` does not contain backslashes or parent directory references.
 
         If not raises error corresponding to the problem.
         """
@@ -235,114 +232,162 @@ class Response:
         Raises ``FileNotExistsError`` if file does not exist.
         """
         try:
-            return os.stat(file_path)[6]
-        except OSError:
+            stat = os.stat(file_path)
+            st_mode, st_size = stat[0], stat[6]
+            assert (st_mode & 0o170000) == 0o100000  # Check if it is a regular file
+            return st_size
+        except (OSError, AssertionError):
             raise FileNotExistsError(file_path)  # pylint: disable=raise-missing-from
 
-    def send_file(  # pylint: disable=too-many-arguments
+    def _send(self) -> None:
+        self._send_headers(self._file_length, self._content_type)
+
+        if not self._head_only:
+            with open(self._full_file_path, "rb") as file:
+                while bytes_read := file.read(self._buffer_size):
+                    self._send_bytes(self._request.connection, bytes_read)
+
+
+class ChunkedResponse(Response):  # pylint: disable=too-few-public-methods
+    """
+    Specialized version of `Response` class for sending data using chunked transfer encoding.
+
+    Instead of requiring the whole content to be passed to the constructor, it expects
+    a **generator** that yields chunks of data.
+
+    Example::
+
+        @server.route(path, method)
+        def route_func(request: Request):
+
+            def body():
+                yield "Some ch"
+                yield "unked co"
+                yield "ntent"
+
+            return ChunkedResponse(request, body, content_type="text/plain")
+    """
+
+    def __init__(  # pylint: disable=too-many-arguments
         self,
-        filename: str = "index.html",
-        root_path: str = None,
-        buffer_size: int = 1024,
-        head_only: bool = False,
-        safe: bool = True,
+        request: Request,
+        body: Generator[Union[str, bytes], Any, Any],
+        *,
+        status: Union[Status, Tuple[int, str]] = OK_200,
+        headers: Union[Headers, Dict[str, str]] = None,
+        content_type: str = None,
     ) -> None:
         """
-        Send response with content of ``filename`` located in ``root_path``.
-        Implicitly calls ``_send_headers`` before sending the file content.
-        File is send split into ``buffer_size`` parts.
-
-        Should be called **only once** per response.
+        :param Request request: Request object
+        :param Generator body: Generator that yields chunks of data.
+        :param Status status: Status object or tuple with code and message.
+        :param Headers headers: Headers to be sent with the response.
+        :param str content_type: Content type of the response.
         """
-        self._check_if_not_already_sent()
-        self._check_chunked(False)
 
-        if safe:
-            self._check_file_path_is_valid(filename)
-
-        root_path = root_path or self.request.server.root_path
-        full_file_path = self._combine_path(root_path, filename)
-
-        file_length = self._get_file_length(full_file_path)
-
-        self._send_headers(
-            content_type=MIMETypes.get_for_filename(filename),
-            content_length=file_length,
+        super().__init__(
+            request=request,
+            headers=headers,
+            status=status,
+            content_type=content_type,
         )
+        self._headers.setdefault("Transfer-Encoding", "chunked")
+        self._body = body
 
-        if not head_only:
-            with open(full_file_path, "rb") as file:
-                while bytes_read := file.read(buffer_size):
-                    self._send_bytes(self.request.connection, bytes_read)
-        self._response_already_sent = True
+    def _send_chunk(self, chunk: Union[str, bytes] = "") -> None:
+        encoded_chunk = chunk.encode("utf-8") if isinstance(chunk, str) else chunk
 
-        if self.request.server.debug:
-            _debug_response_sent(self)
+        self._send_bytes(self._request.connection, b"%x\r\n" % len(encoded_chunk))
+        self._send_bytes(self._request.connection, encoded_chunk)
+        self._send_bytes(self._request.connection, b"\r\n")
 
-    def send_chunk(self, chunk: str = "") -> None:
-        """
-        Sends chunk of response.
+    def _send(self) -> None:
+        self._send_headers()
 
-        Should be used **only** inside
-        ``with Response(request, chunked=True) as response:`` context manager.
+        for chunk in self._body():
+            self._send_chunk(chunk)
 
-        :param str chunk: String data to be sent.
-        """
-        self._check_if_not_already_sent()
-        self._check_chunked(True)
+        # Empty chunk to indicate end of response
+        self._send_chunk()
 
-        if getattr(chunk, "encode", None):
-            chunk = chunk.encode("utf-8")
 
-        self._send_bytes(self.request.connection, b"%x\r\n" % len(chunk))
-        self._send_bytes(self.request.connection, chunk)
-        self._send_bytes(self.request.connection, b"\r\n")
+class JSONResponse(Response):  # pylint: disable=too-few-public-methods
+    """
+    Specialized version of `Response` class for sending JSON data.
 
-    def __enter__(self):
-        if self.chunked:
-            self._send_headers()
-        return self
+    Instead of requiring ``body`` to be passed to the constructor, it expects ``data`` to be passed
+    instead.
 
-    def __exit__(self, exception_type, exception_value, exception_traceback):
-        if exception_type is not None:
-            return False
+    Example::
 
-        if self.chunked:
-            self.send_chunk("")
-        self._response_already_sent = True
+        @server.route(path, method)
+        def route_func(request: Request):
 
-        if self.chunked and self.request.server.debug:
-            _debug_response_sent(self)
+            return JSONResponse(request, {"key": "value"})
+    """
 
-        return True
-
-    def _send_bytes(
+    def __init__(
         self,
-        conn: Union["SocketPool.Socket", "socket.socket"],
-        buffer: Union[bytes, bytearray, memoryview],
-    ):
-        bytes_sent: int = 0
-        bytes_to_send = len(buffer)
-        view = memoryview(buffer)
-        while bytes_sent < bytes_to_send:
-            try:
-                bytes_sent += conn.send(view[bytes_sent:])
-            except OSError as exc:
-                if exc.errno == EAGAIN:
-                    continue
-                if exc.errno == ECONNRESET:
-                    return
-                raise
-        self.size += bytes_sent
+        request: Request,
+        data: Dict[Any, Any],
+        *,
+        headers: Union[Headers, Dict[str, str]] = None,
+        status: Union[Status, Tuple[int, str]] = OK_200,
+    ) -> None:
+        """
+        :param Request request: Request that this is a response to.
+        :param dict data: Data to be sent as JSON.
+        :param Headers headers: Headers to include in response.
+        :param Status status: Status code and text. Defaults to 200 OK.
+        """
+        super().__init__(
+            request=request,
+            headers=headers,
+            status=status,
+        )
+        self._data = data
+
+    def _send(self) -> None:
+        encoded_data = json.dumps(self._data).encode("utf-8")
+
+        self._send_headers(len(encoded_data), "application/json")
+        self._send_bytes(self._request.connection, encoded_data)
 
 
-def _debug_response_sent(response: "Response"):
-    """Prints a message when after a response is sent."""
-    client_ip = response.request.client_address[0]
-    method = response.request.method
-    path = response.request.path
-    req_size = len(response.request.raw_request)
-    status = response.status
-    res_size = response.size
+class Redirect(Response):  # pylint: disable=too-few-public-methods
+    """
+    Specialized version of `Response` class for redirecting to another URL.
 
-    print(f'{client_ip} -- "{method} {path}" {req_size} -- "{status}" {res_size}')
+    Instead of requiring the body to be passed to the constructor, it expects a URL to redirect to.
+
+    Example::
+
+        @server.route(path, method)
+        def route_func(request: Request):
+
+            return Redirect(request, "https://www.example.com")
+    """
+
+    def __init__(
+        self,
+        request: Request,
+        url: str,
+        *,
+        permanent: bool = False,
+        headers: Union[Headers, Dict[str, str]] = None,
+    ) -> None:
+        """
+        :param Request request: Request that this is a response to.
+        :param str url: URL to redirect to.
+        :param bool permanent: Whether to use a permanent redirect (308) or a temporary one (307).
+        :param Headers headers: Headers to include in response.
+        """
+        super().__init__(
+            request,
+            status=PERMANENT_REDIRECT_308 if permanent else TEMPORARY_REDIRECT_307,
+            headers=headers,
+        )
+        self._headers.update({"Location": url})
+
+    def _send(self) -> None:
+        self._send_headers()

@@ -27,7 +27,7 @@ from .exceptions import (
 )
 from .methods import GET, HEAD
 from .request import Request
-from .response import Response
+from .response import Response, FileResponse
 from .route import _Routes, _Route
 from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
@@ -151,6 +151,8 @@ class Server:
             except KeyboardInterrupt:  # Exit on Ctrl-C e.g. during development
                 self.stop()
                 return
+            except Exception:  # pylint: disable=broad-except
+                pass  # Ignore exceptions in handler function
 
     def start(self, host: str, port: int = 80) -> None:
         """
@@ -251,16 +253,9 @@ class Server:
                 raise ex
         return received_body_bytes[:content_length]
 
-    def _serve_file_from_filesystem(self, request: Request):
-        filename = "index.html" if request.path == "/" else request.path
-        root_path = self.root_path
-        buffer_size = self.request_buffer_size
-        head_only = request.method == HEAD
-
-        with Response(request) as response:
-            response.send_file(filename, root_path, buffer_size, head_only)
-
-    def _handle_request(self, request: Request, handler: Union[Callable, None]):
+    def _handle_request(
+        self, request: Request, handler: Union[Callable, None]
+    ) -> Union[Response, None]:
         try:
             # Check server authentications if necessary
             if self._auths:
@@ -268,32 +263,43 @@ class Server:
 
             # Handler for route exists and is callable
             if handler is not None and callable(handler):
-                handler(request)
+                return handler(request)
 
-            # Handler is not found...
-
-            # ...no root_path, access to filesystem disabled, return 404.
-            elif self.root_path is None:
+            # No root_path, access to filesystem disabled, return 404.
+            if self.root_path is None:
                 raise ServingFilesDisabledError
 
-            # ..root_path is set, access to filesystem enabled...
+            # Method is GET or HEAD, try to serve a file from the filesystem.
+            if request.method in [GET, HEAD]:
+                return FileResponse(
+                    request,
+                    filename=request.path,
+                    root_path=self.root_path,
+                    head_only=request.method == HEAD,
+                )
 
-            # ...request.method is GET or HEAD, try to serve a file from the filesystem.
-            elif request.method in [GET, HEAD]:
-                self._serve_file_from_filesystem(request)
-
-            else:
-                Response(request, status=BAD_REQUEST_400).send()
+            return Response(request, status=BAD_REQUEST_400)
 
         except AuthenticationError:
-            headers = {"WWW-Authenticate": 'Basic charset="UTF-8"'}
-            Response(request, status=UNAUTHORIZED_401, headers=headers).send()
+            return Response(
+                request,
+                status=UNAUTHORIZED_401,
+                headers={"WWW-Authenticate": 'Basic charset="UTF-8"'},
+            )
 
         except InvalidPathError as error:
-            Response(request, status=FORBIDDEN_403).send(str(error))
+            return Response(
+                request,
+                str(error) if self.debug else "Invalid path",
+                status=FORBIDDEN_403,
+            )
 
         except (FileNotExistsError, ServingFilesDisabledError) as error:
-            Response(request, status=NOT_FOUND_404).send(str(error))
+            return Response(
+                request,
+                str(error) if self.debug else "File not found",
+                status=NOT_FOUND_404,
+            )
 
     def poll(self):
         """
@@ -318,20 +324,28 @@ class Server:
                 )
 
                 # Handle the request
-                self._handle_request(request, handler)
+                response = self._handle_request(request, handler)
 
-        except OSError as error:
-            # There is no data available right now, try again later.
-            if error.errno == EAGAIN:
-                return
-            # Connection reset by peer, try again later.
-            if error.errno == ECONNRESET:
-                return
-            raise
+                # Send the response
+                if response is not None:
+                    response._send()  # pylint: disable=protected-access
+
+                    if self.debug:
+                        _debug_response_sent(response)
 
         except Exception as error:  # pylint: disable=broad-except
+            if isinstance(error, OSError):
+                # There is no data available right now, try again later.
+                if error.errno == EAGAIN:
+                    return
+                # Connection reset by peer, try again later.
+                if error.errno == ECONNRESET:
+                    return
+
             if self.debug:
                 _debug_exception_in_handler(error)
+
+            raise error  # Raise the exception again to be handled by the user.
 
     def require_authentication(self, auths: List[Union[Basic, Bearer]]) -> None:
         """
@@ -398,6 +412,19 @@ def _debug_started_server(server: "Server"):
     host, port = server.host, server.port
 
     print(f"Started development server on http://{host}:{port}")
+
+
+def _debug_response_sent(response: "Response"):
+    """Prints a message when after a response is sent."""
+    # pylint: disable=protected-access
+    client_ip = response._request.client_address[0]
+    method = response._request.method
+    path = response._request.path
+    req_size = len(response._request.raw_request)
+    status = response._status
+    res_size = response._size
+
+    print(f'{client_ip} -- "{method} {path}" {req_size} -- "{status}" {res_size}')
 
 
 def _debug_stopped_server(server: "Server"):  # pylint: disable=unused-argument

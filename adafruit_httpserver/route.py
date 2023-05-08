@@ -8,7 +8,10 @@
 """
 
 try:
-    from typing import Callable, List, Set, Union, Tuple
+    from typing import Callable, List, Set, Union, Tuple, TYPE_CHECKING
+
+    if TYPE_CHECKING:
+        from .response import Response
 except ImportError:
     pass
 
@@ -116,7 +119,7 @@ class _Routes:
         self._routes.append(route)
         self._handlers.append(handler)
 
-    def find_handler(self, route: _Route) -> Union[Callable, None]:
+    def find_handler(self, route: _Route) -> Union[Callable["...", "Response"], None]:
         """
         Finds a handler for a given route.
 
