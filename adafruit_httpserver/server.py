@@ -326,12 +326,14 @@ class Server:
                 # Handle the request
                 response = self._handle_request(request, handler)
 
-                # Send the response
-                if response is not None:
-                    response._send()  # pylint: disable=protected-access
+                if response is None:
+                    return
 
-                    if self.debug:
-                        _debug_response_sent(response)
+                # Send the response
+                response._send()  # pylint: disable=protected-access
+
+                if self.debug:
+                    _debug_response_sent(response)
 
         except Exception as error:  # pylint: disable=broad-except
             if isinstance(error, OSError):
