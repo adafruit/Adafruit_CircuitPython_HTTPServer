@@ -49,11 +49,11 @@ In order to save memory, we are unregistering unused MIME types and registering 
     :linenos:
 
 You can also serve a specific file from the handler.
-By default ``Response.send_file()`` looks for the file in the server's ``root_path`` directory, but you can change it.
+By default ``FileResponse`` looks for the file in the server's ``root_path`` directory, but you can change it.
 
 .. literalinclude:: ../examples/httpserver_handler_serves_file.py
     :caption: examples/httpserver_handler_serves_file.py
-    :emphasize-lines: 22-23
+    :emphasize-lines: 22
     :linenos:
 
 .. literalinclude:: ../examples/home.html
@@ -74,7 +74,7 @@ a running total of the last 10 samples.
 
 .. literalinclude:: ../examples/httpserver_start_and_poll.py
     :caption: examples/httpserver_start_and_poll.py
-    :emphasize-lines: 25,34
+    :emphasize-lines: 24,33
     :linenos:
 
 Server with MDNS
@@ -89,6 +89,17 @@ In this example, the server is accessible via ``http://custom-mdns-hostname/`` a
 .. literalinclude:: ../examples/httpserver_mdns.py
     :caption: examples/httpserver_mdns.py
     :emphasize-lines: 12-14
+    :linenos:
+
+Get CPU information
+-------------------
+
+You can return data from sensors or any computed value as JSON.
+That makes it easy to use the data in other applications.
+
+.. literalinclude:: ../examples/httpserver_cpu_information.py
+    :caption: examples/httpserver_cpu_information.py
+    :emphasize-lines: 9,27
     :linenos:
 
 Handling different methods
@@ -107,7 +118,7 @@ In example below, handler for ``/api`` and ``/api/`` route will be called when a
 
 .. literalinclude:: ../examples/httpserver_methods.py
     :caption: examples/httpserver_methods.py
-    :emphasize-lines: 8,15
+    :emphasize-lines: 8,19,26,30,49
     :linenos:
 
 Change NeoPixel color
@@ -129,29 +140,19 @@ Tested on ESP32-S2 Feather.
 
 .. literalinclude:: ../examples/httpserver_neopixel.py
     :caption: examples/httpserver_neopixel.py
-    :emphasize-lines: 25-27,39-40,52-53,61,69
-    :linenos:
-
-Get CPU information
--------------------
-
-You can return data from sensors or any computed value as JSON.
-That makes it easy to use the data in other applications.
-
-.. literalinclude:: ../examples/httpserver_cpu_information.py
-    :caption: examples/httpserver_cpu_information.py
-    :emphasize-lines: 28-29
+    :emphasize-lines: 25-27,39,51,60,66
     :linenos:
 
 Chunked response
 ----------------
 
-Library supports chunked responses. This is useful for streaming data.
-To use it, you need to set the ``chunked=True`` when creating a ``Response`` object.
+Library supports chunked responses. This is useful for streaming large amounts of data.
+In order to use it, you need pass a generator that yields chunks of data to a ``ChunkedResponse``
+constructor.
 
 .. literalinclude:: ../examples/httpserver_chunked.py
     :caption: examples/httpserver_chunked.py
-    :emphasize-lines: 21-26
+    :emphasize-lines: 8,21-26,28
     :linenos:
 
 URL parameters and wildcards
@@ -163,7 +164,7 @@ Query/GET parameters are better suited for modifying the behaviour of the handle
 
 Of course it is only a suggestion, you can use them interchangeably and/or both at the same time.
 
-In order to use URL parameters, you need to wrap them inside ``<>`` in ``Server.route``, e.g. ``<my_parameter>``.
+In order to use URL parameters, you need to wrap them inside with angle brackets in ``Server.route``, e.g. ``<my_parameter>``.
 
 All URL parameters values are **passed as keyword arguments** to the handler function.
 
@@ -185,7 +186,7 @@ In both cases, wildcards will not match empty path segment, so ``/api/.../users`
 
 .. literalinclude:: ../examples/httpserver_url_parameters.py
     :caption: examples/httpserver_url_parameters.py
-    :emphasize-lines: 30-34,54-55
+    :emphasize-lines: 30-34,53-54
     :linenos:
 
 Authentication
@@ -206,7 +207,21 @@ In both cases you can check if ``request`` is authenticated by calling ``check_a
 
 .. literalinclude:: ../examples/httpserver_authentication_handlers.py
     :caption: examples/httpserver_authentication_handlers.py
-    :emphasize-lines: 9-15,21-25,33,44,57
+    :emphasize-lines: 9-15,21-25,33,47,59
+    :linenos:
+
+Redirects
+---------
+
+Sometimes you might want to redirect the user to a different URL, either on the same server or on a different one.
+
+You can do that by returning ``Redirect`` from your handler function.
+
+You can specify wheter the redirect is permanent or temporary by passing ``permanent=...``  to ``Redirect``.
+
+.. literalinclude:: ../examples/httpserver_redirects.py
+    :caption: examples/httpserver_redirects.py
+    :emphasize-lines: 14-18,26,38
     :linenos:
 
 Multiple servers
@@ -223,7 +238,7 @@ You can share same handler functions between servers or use different ones for e
 
 .. literalinclude:: ../examples/httpserver_multiple_servers.py
     :caption: examples/httpserver_multiple_servers.py
-    :emphasize-lines: 13-14,17,26,35-36,48-49,54-55
+    :emphasize-lines: 13-14,17,25,33-34,45-46,51-52
     :linenos:
 
 Debug mode
@@ -256,8 +271,7 @@ This is the default format of the logs::
     {client_ip} -- "{request_method} {path}" {request_size} -- "{response_status}" {response_size}
 
 If you need more information about the server or request, or you want it in a different format you can modify
-functions at the bottom of ``adafruit_httpserver/server.py`` and ``adafruit_httpserver/response.py`` that
-start with ``_debug_...``.
+functions at the bottom of ``adafruit_httpserver/server.py`` that start with ``_debug_...``.
 
 NOTE:
 *This is an advanced usage that might change in the future. It is not recommended to modify other parts of the code.*

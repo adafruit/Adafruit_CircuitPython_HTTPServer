@@ -43,12 +43,11 @@ def perform_action(
     elif action in ["turn_off", "emergency_power_off"]:
         device.turn_off()
     else:
-        with Response(request, content_type="text/plain") as response:
-            response.send(f"Unknown action ({action})")
-        return
+        return Response(request, f"Unknown action ({action})")
 
-    with Response(request, content_type="text/plain") as response:
-        response.send(f"Action ({action}) performed on device with ID: {device_id}")
+    return Response(
+        request, f"Action ({action}) performed on device with ID: {device_id}"
+    )
 
 
 @server.route("/device/.../status", append_slash=True)
@@ -59,8 +58,7 @@ def device_status(request: Request):
     Unknown commands also return the status of all devices.
     """
 
-    with Response(request, content_type="text/plain") as response:
-        response.send("Status of all devices: ...")
+    return Response(request, "Status of all devices: ...")
 
 
 server.serve_forever(str(wifi.radio.ipv4_address))

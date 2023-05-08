@@ -2,12 +2,11 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-import json
 import microcontroller
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response
+from adafruit_httpserver import Server, Request, JSONResponse
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)
@@ -25,8 +24,7 @@ def cpu_information_handler(request: Request):
         "voltage": microcontroller.cpu.voltage,
     }
 
-    with Response(request, content_type="application/json") as response:
-        response.send(json.dumps(data))
+    return JSONResponse(request, data)
 
 
 server.serve_forever(str(wifi.radio.ipv4_address))

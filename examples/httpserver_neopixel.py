@@ -28,8 +28,7 @@ def change_neopixel_color_handler_query_params(request: Request):
 
     pixel.fill((int(r), int(g), int(b)))
 
-    with Response(request, content_type="text/plain") as response:
-        response.send(f"Changed NeoPixel to color ({r}, {g}, {b})")
+    return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
 @server.route("/change-neopixel-color", POST)
@@ -41,8 +40,7 @@ def change_neopixel_color_handler_post_body(request: Request):
 
     pixel.fill((int(r), int(g), int(b)))
 
-    with Response(request, content_type="text/plain") as response:
-        response.send(f"Changed NeoPixel to color ({r}, {g}, {b})")
+    return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
 @server.route("/change-neopixel-color/json", POST)
@@ -54,8 +52,7 @@ def change_neopixel_color_handler_post_json(request: Request):
 
     pixel.fill((r, g, b))
 
-    with Response(request, content_type="text/plain") as response:
-        response.send(f"Changed NeoPixel to color ({r}, {g}, {b})")
+    return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
 @server.route("/change-neopixel-color/<r>/<g>/<b>", GET)
@@ -68,8 +65,7 @@ def change_neopixel_color_handler_url_params(
 
     pixel.fill((int(r), int(g), int(b)))
 
-    with Response(request, content_type="text/plain") as response:
-        response.send(f"Changed NeoPixel to color ({r}, {g}, {b})")
+    return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
 server.serve_forever(str(wifi.radio.ipv4_address))

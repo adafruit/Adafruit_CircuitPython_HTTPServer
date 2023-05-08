@@ -6,7 +6,7 @@ import mdns
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response
+from adafruit_httpserver import Server, Request, FileResponse
 
 
 mdns_server = mdns.Server(wifi.radio)
@@ -22,8 +22,8 @@ def base(request: Request):
     """
     Serve the default index.html file.
     """
-    with Response(request, content_type="text/html") as response:
-        response.send_file("index.html")
+
+    return FileResponse(request, "index.html", "/www")
 
 
 server.serve_forever(str(wifi.radio.ipv4_address))

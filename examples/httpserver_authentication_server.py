@@ -25,8 +25,7 @@ def implicit_require_authentication(request: Request):
     Implicitly require authentication because of the server.require_authentication() call.
     """
 
-    with Response(request, content_type="text/plain") as response:
-        response.send("Authenticated")
+    return Response(request, body="Authenticated", content_type="text/plain")
 
 
 server.serve_forever(str(wifi.radio.ipv4_address))

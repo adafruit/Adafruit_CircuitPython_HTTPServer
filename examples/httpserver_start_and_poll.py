@@ -5,7 +5,7 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response
+from adafruit_httpserver import Server, Request, FileResponse
 
 
 pool = socketpool.SocketPool(wifi.radio)
@@ -17,8 +17,7 @@ def base(request: Request):
     """
     Serve the default index.html file.
     """
-    with Response(request, content_type="text/html") as response:
-        response.send_file("index.html")
+    return FileResponse(request, "index.html")
 
 
 # Start the server.

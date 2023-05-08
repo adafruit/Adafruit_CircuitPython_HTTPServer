@@ -6,7 +6,7 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response
+from adafruit_httpserver import Server, Request, FileResponse
 
 
 pool = socketpool.SocketPool(wifi.radio)
@@ -19,8 +19,7 @@ def home(request: Request):
     Serves the file /www/home.html.
     """
 
-    with Response(request, content_type="text/html") as response:
-        response.send_file("home.html", root_path="/www")
+    return FileResponse(request, "home.html", "/www")
 
 
 server.serve_forever(str(wifi.radio.ipv4_address))

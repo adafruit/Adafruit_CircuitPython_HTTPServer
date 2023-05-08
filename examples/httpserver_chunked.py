@@ -5,7 +5,7 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response
+from adafruit_httpserver import Server, Request, ChunkedResponse
 
 
 pool = socketpool.SocketPool(wifi.radio)
@@ -18,12 +18,14 @@ def chunked(request: Request):
     Return the response with ``Transfer-Encoding: chunked``.
     """
 
-    with Response(request, chunked=True) as response:
-        response.send_chunk("Adaf")
-        response.send_chunk("ruit")
-        response.send_chunk(" Indus")
-        response.send_chunk("tr")
-        response.send_chunk("ies")
+    def body():
+        yield "Adaf"
+        yield b"ruit"  # Data chunk can be bytes or str.
+        yield " Indus"
+        yield b"tr"
+        yield "ies"
+
+    return ChunkedResponse(request, body)
 
 
 server.serve_forever(str(wifi.radio.ipv4_address))

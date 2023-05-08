@@ -17,9 +17,7 @@ def base(request: Request):
     """
     Serve a default static plain text message.
     """
-    with Response(request, content_type="text/plain") as response:
-        message = "Hello from the CircuitPython HTTP Server!"
-        response.send(message)
+    return Response(request, "Hello from the CircuitPython HTTP Server!")
 
 
 server.serve_forever(str(wifi.radio.ipv4_address))

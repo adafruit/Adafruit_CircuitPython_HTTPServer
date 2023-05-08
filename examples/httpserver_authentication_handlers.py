@@ -32,8 +32,11 @@ def check_if_authenticated(request: Request):
     """
     is_authenticated = check_authentication(request, auths)
 
-    with Response(request, content_type="text/plain") as response:
-        response.send("Authenticated" if is_authenticated else "Not authenticated")
+    return Response(
+        request,
+        body="Authenticated" if is_authenticated else "Not authenticated",
+        content_type="text/plain",
+    )
 
 
 @server.route("/require-or-401")
@@ -43,8 +46,7 @@ def require_authentication_or_401(request: Request):
     """
     require_authentication(request, auths)
 
-    with Response(request, content_type="text/plain") as response:
-        response.send("Authenticated")
+    return Response(request, body="Authenticated", content_type="text/plain")
 
 
 @server.route("/require-or-handle")
@@ -56,12 +58,15 @@ def require_authentication_or_manually_handle(request: Request):
     try:
         require_authentication(request, auths)
 
-        with Response(request, content_type="text/plain") as response:
-            response.send("Authenticated")
+        return Response(request, body="Authenticated", content_type="text/plain")
 
     except AuthenticationError:
-        with Response(request, status=UNATUHORIZED_401) as response:
-            response.send("Not authenticated - Manually handled")
+        return Response(
+            request,
+            body="Not authenticated - Manually handled",
+            content_type="text/plain",
+            status=UNATUHORIZED_401,
+        )
 
 
 server.serve_forever(str(wifi.radio.ipv4_address))

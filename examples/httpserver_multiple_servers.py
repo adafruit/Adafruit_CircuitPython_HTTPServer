@@ -17,29 +17,26 @@ office_server = Server(pool, "/office", debug=True)
 @bedroom_server.route("/bedroom")
 def bedroom(request: Request):
     """
-    This route is registered only with ``bedroom_server``.
+    This route is registered only on ``bedroom_server``.
     """
-    with Response(request) as response:
-        response.send("Hello from the bedroom!")
+    return Response(request, "Hello from the bedroom!")
 
 
 @office_server.route("/office")
 def office(request: Request):
     """
-    This route is registered only with ``office_server``.
+    This route is registered only on ``office_server``.
     """
-    with Response(request) as response:
-        response.send("Hello from the office!")
+    return Response(request, "Hello from the office!")
 
 
 @bedroom_server.route("/home")
 @office_server.route("/home")
 def home(request: Request):
     """
-    This route is registered with both servers.
+    This route is registered on both servers.
     """
-    with Response(request) as response:
-        response.send("Hello from home!")
+    return Response(request, "Hello from home!")
 
 
 id_address = str(wifi.radio.ipv4_address)
