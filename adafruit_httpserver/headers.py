@@ -48,7 +48,6 @@ class HTTPHeaders:
     _storage: Dict[str, Tuple[str, str]]
 
     def __init__(self, headers: Dict[str, str] = None) -> None:
-
         headers = headers or {}
 
         self._storage = {key.lower(): [key, value] for key, value in headers.items()}

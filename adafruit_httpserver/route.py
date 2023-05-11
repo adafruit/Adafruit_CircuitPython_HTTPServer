@@ -21,7 +21,6 @@ class _HTTPRoute:
     """Route definition for different paths, see `adafruit_httpserver.server.HTTPServer.route`."""
 
     def __init__(self, path: str = "", method: HTTPMethod = HTTPMethod.GET) -> None:
-
         contains_parameters = re.search(r"<\w*>", path) is not None
 
         self.path = (
