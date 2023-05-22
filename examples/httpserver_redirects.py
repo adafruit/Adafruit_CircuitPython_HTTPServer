@@ -33,7 +33,7 @@ def redirect_other(request: Request, slug: str = None):
     """
 
     if slug is None or not slug in REDIRECTS:
-        return Response(request, text="Unknown redirect", status=NOT_FOUND_404)
+        return Response(request, "Unknown redirect", status=NOT_FOUND_404)
 
     return Redirect(request, REDIRECTS.get(slug))
 
