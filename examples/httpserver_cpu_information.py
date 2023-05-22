@@ -2,32 +2,18 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-import os
-
-import json
 import microcontroller
 import socketpool
 import wifi
 
-from adafruit_httpserver.mime_type import MIMEType
-from adafruit_httpserver.request import HTTPRequest
-from adafruit_httpserver.response import HTTPResponse
-from adafruit_httpserver.server import HTTPServer
-
-
-ssid = os.getenv("WIFI_SSID")
-password = os.getenv("WIFI_PASSWORD")
-
-print("Connecting to", ssid)
-wifi.radio.connect(ssid, password)
-print("Connected to", ssid)
+from adafruit_httpserver import Server, Request, JSONResponse
 
 pool = socketpool.SocketPool(wifi.radio)
-server = HTTPServer(pool, "/static")
+server = Server(pool, debug=True)
 
 
-@server.route("/cpu-information")
-def cpu_information_handler(request: HTTPRequest):
+@server.route("/cpu-information", append_slash=True)
+def cpu_information_handler(request: Request):
     """
     Return the current CPU temperature, frequency, and voltage as JSON.
     """
@@ -38,9 +24,7 @@ def cpu_information_handler(request: HTTPRequest):
         "voltage": microcontroller.cpu.voltage,
     }
 
-    with HTTPResponse(request, content_type=MIMEType.TYPE_JSON) as response:
-        response.send(json.dumps(data))
+    return JSONResponse(request, data)
 
 
-print(f"Listening on http://{wifi.radio.ipv4_address}:80")
 server.serve_forever(str(wifi.radio.ipv4_address))

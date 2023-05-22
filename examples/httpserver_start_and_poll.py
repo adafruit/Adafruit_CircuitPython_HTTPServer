@@ -2,38 +2,23 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-import os
-
 import socketpool
 import wifi
 
-from adafruit_httpserver.mime_type import MIMEType
-from adafruit_httpserver.request import HTTPRequest
-from adafruit_httpserver.response import HTTPResponse
-from adafruit_httpserver.server import HTTPServer
+from adafruit_httpserver import Server, Request, FileResponse
 
-
-ssid = os.getenv("WIFI_SSID")
-password = os.getenv("WIFI_PASSWORD")
-
-print("Connecting to", ssid)
-wifi.radio.connect(ssid, password)
-print("Connected to", ssid)
 
 pool = socketpool.SocketPool(wifi.radio)
-server = HTTPServer(pool, "/static")
+server = Server(pool, "/static", debug=True)
 
 
 @server.route("/")
-def base(request: HTTPRequest):
+def base(request: Request):
     """
     Serve the default index.html file.
     """
-    with HTTPResponse(request, content_type=MIMEType.TYPE_HTML) as response:
-        response.send_file("index.html")
+    return FileResponse(request, "index.html")
 
-
-print(f"Listening on http://{wifi.radio.ipv4_address}:80")
 
 # Start the server.
 server.start(str(wifi.radio.ipv4_address))
@@ -46,6 +31,8 @@ while True:
 
         # Process any waiting requests
         server.poll()
+
+        # If you want you can stop the server by calling server.stop() anywhere in your code
     except OSError as error:
         print(error)
         continue

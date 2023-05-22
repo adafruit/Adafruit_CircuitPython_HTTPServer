@@ -2,30 +2,40 @@
 #
 # SPDX-License-Identifier: MIT
 """
-`adafruit_httpserver.request.HTTPRequest`
+`adafruit_httpserver.request`
 ====================================================
 * Author(s): Dan Halbert, Michał Pokusa
 """
 
 try:
-    from typing import Dict, Tuple, Union
+    from typing import Dict, Tuple, Union, TYPE_CHECKING
     from socket import socket
     from socketpool import SocketPool
+
+    if TYPE_CHECKING:
+        from .server import Server
 except ImportError:
     pass
 
-from .headers import HTTPHeaders
+import json
+
+from .headers import Headers
 
 
-class HTTPRequest:
+class Request:
     """
     Incoming request, constructed from raw incoming bytes.
-    It is passed as first argument to route handlers.
+    It is passed as first argument to all route handlers.
+    """
+
+    server: "Server"
+    """
+    Server object that received the request.
     """
 
     connection: Union["SocketPool.Socket", "socket.socket"]
     """
-    Socket object usable to send and receive data on the connection.
+    Socket object used to send and receive data on the connection.
     """
 
     client_address: Tuple[str, int]
@@ -42,7 +52,7 @@ class HTTPRequest:
     """Request method e.g. "GET" or "POST"."""
 
     path: str
-    """Path of the request."""
+    """Path of the request, e.g. ``"/foo/bar"``."""
 
     query_params: Dict[str, str]
     """
@@ -50,32 +60,34 @@ class HTTPRequest:
 
     Example::
 
-            request  = HTTPRequest(raw_request=b"GET /?foo=bar HTTP/1.1...")
+            request  = Request(raw_request=b"GET /?foo=bar HTTP/1.1...")
             request.query_params
             # {"foo": "bar"}
     """
 
     http_version: str
-    """HTTP version, e.g. "HTTP/1.1"."""
+    """HTTP version, e.g. ``"HTTP/1.1"``."""
 
-    headers: HTTPHeaders
+    headers: Headers
     """
     Headers from the request.
     """
 
     raw_request: bytes
     """
-    Raw 'bytes' passed to the constructor and body 'bytes' received later.
+    Raw 'bytes' that were received from the client.
 
     Should **not** be modified directly.
     """
 
     def __init__(
         self,
+        server: "Server",
         connection: Union["SocketPool.Socket", "socket.socket"],
         client_address: Tuple[str, int],
         raw_request: bytes = None,
     ) -> None:
+        self.server = server
         self.connection = connection
         self.client_address = client_address
         self.raw_request = raw_request
@@ -83,7 +95,7 @@ class HTTPRequest:
         if raw_request is None:
             raise ValueError("raw_request cannot be None")
 
-        header_bytes = self.header_body_bytes[0]
+        header_bytes = self._raw_header_bytes
 
         try:
             (
@@ -99,21 +111,29 @@ class HTTPRequest:
     @property
     def body(self) -> bytes:
         """Body of the request, as bytes."""
-        return self.header_body_bytes[1]
+        return self._raw_body_bytes
 
     @body.setter
     def body(self, body: bytes) -> None:
-        self.raw_request = self.header_body_bytes[0] + b"\r\n\r\n" + body
+        self.raw_request = self._raw_header_bytes + b"\r\n\r\n" + body
+
+    def json(self) -> Union[dict, None]:
+        """Body of the request, as a JSON-decoded dictionary."""
+        return json.loads(self.body) if self.body else None
 
     @property
-    def header_body_bytes(self) -> Tuple[bytes, bytes]:
-        """Return tuple of header and body bytes."""
-
+    def _raw_header_bytes(self) -> bytes:
+        """Returns headers bytes."""
         empty_line_index = self.raw_request.find(b"\r\n\r\n")
-        header_bytes = self.raw_request[:empty_line_index]
-        body_bytes = self.raw_request[empty_line_index + 4 :]
 
-        return header_bytes, body_bytes
+        return self.raw_request[:empty_line_index]
+
+    @property
+    def _raw_body_bytes(self) -> bytes:
+        """Returns body bytes."""
+        empty_line_index = self.raw_request.find(b"\r\n\r\n")
+
+        return self.raw_request[empty_line_index + 4 :]
 
     @staticmethod
     def _parse_start_line(header_bytes: bytes) -> Tuple[str, str, Dict[str, str], str]:
@@ -139,11 +159,11 @@ class HTTPRequest:
         return method, path, query_params, http_version
 
     @staticmethod
-    def _parse_headers(header_bytes: bytes) -> HTTPHeaders:
+    def _parse_headers(header_bytes: bytes) -> Headers:
         """Parse HTTP headers from raw request."""
         header_lines = header_bytes.decode("utf8").splitlines()[1:]
 
-        return HTTPHeaders(
+        return Headers(
             {
                 name: value
                 for header_line in header_lines

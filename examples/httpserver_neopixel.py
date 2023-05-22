@@ -2,59 +2,70 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-import os
-
 import board
 import neopixel
 import socketpool
 import wifi
 
-from adafruit_httpserver.mime_type import MIMEType
-from adafruit_httpserver.request import HTTPRequest
-from adafruit_httpserver.response import HTTPResponse
-from adafruit_httpserver.server import HTTPServer
+from adafruit_httpserver import Server, Request, Response, GET, POST
 
-
-ssid = os.getenv("WIFI_SSID")
-password = os.getenv("WIFI_PASSWORD")
-
-print("Connecting to", ssid)
-wifi.radio.connect(ssid, password)
-print("Connected to", ssid)
 
 pool = socketpool.SocketPool(wifi.radio)
-server = HTTPServer(pool, "/static")
+server = Server(pool, "/static", debug=True)
 
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 
 
-@server.route("/change-neopixel-color")
-def change_neopixel_color_handler_query_params(request: HTTPRequest):
-    """
-    Changes the color of the built-in NeoPixel using query/GET params.
-    """
-    r = request.query_params.get("r")
-    g = request.query_params.get("g")
-    b = request.query_params.get("b")
+@server.route("/change-neopixel-color", GET)
+def change_neopixel_color_handler_query_params(request: Request):
+    """Changes the color of the built-in NeoPixel using query/GET params."""
 
-    pixel.fill((int(r or 0), int(g or 0), int(b or 0)))
+    # e.g. /change-neopixel-color?r=255&g=0&b=0
 
-    with HTTPResponse(request, content_type=MIMEType.TYPE_TXT) as response:
-        response.send(f"Changed NeoPixel to color ({r}, {g}, {b})")
+    r = request.query_params.get("r") or 0
+    g = request.query_params.get("g") or 0
+    b = request.query_params.get("b") or 0
+
+    pixel.fill((int(r), int(g), int(b)))
+
+    return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
-@server.route("/change-neopixel-color/<r>/<g>/<b>")
+@server.route("/change-neopixel-color", POST)
+def change_neopixel_color_handler_post_body(request: Request):
+    """Changes the color of the built-in NeoPixel using POST body."""
+
+    data = request.body  # e.g b"255,0,0"
+    r, g, b = data.decode().split(",")  # ["255", "0", "0"]
+
+    pixel.fill((int(r), int(g), int(b)))
+
+    return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
+
+
+@server.route("/change-neopixel-color/json", POST)
+def change_neopixel_color_handler_post_json(request: Request):
+    """Changes the color of the built-in NeoPixel using JSON POST body."""
+
+    data = request.json()  # e.g {"r": 255, "g": 0, "b": 0}
+    r, g, b = data.get("r", 0), data.get("g", 0), data.get("b", 0)
+
+    pixel.fill((r, g, b))
+
+    return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
+
+
+@server.route("/change-neopixel-color/<r>/<g>/<b>", GET)
 def change_neopixel_color_handler_url_params(
-    request: HTTPRequest, r: str, g: str, b: str
+    request: Request, r: str = "0", g: str = "0", b: str = "0"
 ):
-    """
-    Changes the color of the built-in NeoPixel using URL params.
-    """
-    pixel.fill((int(r or 0), int(g or 0), int(b or 0)))
+    """Changes the color of the built-in NeoPixel using URL params."""
 
-    with HTTPResponse(request, content_type=MIMEType.TYPE_TXT) as response:
-        response.send(f"Changed NeoPixel to color ({r}, {g}, {b})")
+    # e.g. /change-neopixel-color/255/0/0
+
+    pixel.fill((int(r), int(g), int(b)))
+
+    return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
-print(f"Listening on http://{wifi.radio.ipv4_address}:80")
 server.serve_forever(str(wifi.radio.ipv4_address))
