@@ -115,7 +115,7 @@ class Server:
         if path.endswith("/") and append_slash:
             raise ValueError("Cannot use append_slash=True when path ends with /")
 
-        methods = methods if isinstance(methods, set) else set(methods)
+        methods = set(methods) if isinstance(methods, (set, list)) else set([methods])
 
         def route_decorator(func: Callable) -> Callable:
             self._routes.add(_Route(path, methods, append_slash), func)
