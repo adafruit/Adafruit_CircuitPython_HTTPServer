@@ -36,7 +36,10 @@ class Server:
     """A basic socket-based HTTP server."""
 
     host: str = None
+    """Host name or IP address the server is listening on."""
+
     port: int = None
+    """Port the server is listening on."""
 
     def __init__(
         self, socket_source: Protocol, root_path: str = None, *, debug: bool = False
@@ -55,6 +58,8 @@ class Server:
         self._socket_source = socket_source
         self._sock = None
         self.root_path = root_path
+        if root_path in ["", "/"] and debug:
+            _debug_warning_exposed_files(root_path)
         self.stopped = False
 
         self.debug = debug
@@ -407,6 +412,15 @@ class Server:
             self._timeout = value
         else:
             raise ValueError("Server.socket_timeout must be a positive numeric value.")
+
+
+def _debug_warning_exposed_files(root_path: str):
+    """Warns about exposing all files on the device."""
+    print(
+        f"WARNING: Setting root_path to '{root_path}' will expose all files on your device through"
+        " the webserver, including potentially sensitive files like settings.toml or secrets.py. "
+        "Consider making a sub-directory on your device and using that for your root_path instead."
+    )
 
 
 def _debug_started_server(server: "Server"):
