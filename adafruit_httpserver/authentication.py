@@ -41,6 +41,10 @@ class Bearer:
 def check_authentication(request: Request, auths: List[Union[Basic, Bearer]]) -> bool:
     """
     Returns ``True`` if request is authorized by any of the authentications, ``False`` otherwise.
+
+    Example::
+
+        check_authentication(request, [Basic("username", "password")])
     """
 
     auth_header = request.headers.get("Authorization")
@@ -56,6 +60,10 @@ def require_authentication(request: Request, auths: List[Union[Basic, Bearer]]) 
     Checks if the request is authorized and raises ``AuthenticationError`` if not.
 
     If the error is not caught, the server will return ``401 Unauthorized``.
+
+    Example::
+
+        require_authentication(request, [Basic("username", "password")])
     """
 
     if not check_authentication(request, auths):
