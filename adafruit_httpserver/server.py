@@ -36,11 +36,14 @@ from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_
 class Server:  # pylint: disable=too-many-instance-attributes
     """A basic socket-based HTTP server."""
 
-    host: str = None
-    """Host name or IP address the server is listening on."""
+    host: str
+    """Host name or IP address the server is listening on. ``None`` if server is stopped."""
 
-    port: int = None
-    """Port the server is listening on."""
+    port: int
+    """Port the server is listening on. ``None`` if server is stopped."""
+
+    root_path: str
+    """Root directory to serve files from. ``None`` if serving files is disabled."""
 
     def __init__(
         self, socket_source: Protocol, root_path: str = None, *, debug: bool = False
@@ -59,6 +62,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
         self._socket_source = socket_source
         self._sock = None
         self.headers = Headers()
+        self.host, self.port = None, None
         self.root_path = root_path
         if root_path in ["", "/"] and debug:
             _debug_warning_exposed_files(root_path)
@@ -388,6 +392,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
             server = Server(pool, "/static")
             server.headers = {
+                "X-Server": "Adafruit CircuitPython HTTP Server",
                 "Access-Control-Allow-Origin": "*",
             }
         """
