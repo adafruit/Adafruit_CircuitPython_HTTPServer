@@ -97,9 +97,12 @@ Get CPU information
 You can return data from sensors or any computed value as JSON.
 That makes it easy to use the data in other applications.
 
+If you want to use the data in a web browser, it might be necessary to enable CORS.
+More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+
 .. literalinclude:: ../examples/httpserver_cpu_information.py
     :caption: examples/httpserver_cpu_information.py
-    :emphasize-lines: 9,27
+    :emphasize-lines: 9,14-17,32
     :linenos:
 
 Handling different methods
@@ -233,12 +236,15 @@ Using ``.serve_forever()`` for this is not possible because of it's blocking beh
 
 Each server **must have a different port number**.
 
+In order to distinguish between responses from different servers a 'X-Server' header is added to each response.
+**This is an optional step**, both servers will work without it.
+
 In combination with separate authentication and diffrent ``root_path`` this allows creating moderately complex setups.
 You can share same handler functions between servers or use different ones for each server.
 
 .. literalinclude:: ../examples/httpserver_multiple_servers.py
     :caption: examples/httpserver_multiple_servers.py
-    :emphasize-lines: 13-14,17,25,33-34,45-46,51-52
+    :emphasize-lines: 13-14,16-17,20,28,36-37,48-49,54-55
     :linenos:
 
 Debug mode

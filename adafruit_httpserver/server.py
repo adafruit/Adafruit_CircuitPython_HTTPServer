@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, Protocol, Union, List, Set, Tuple
+    from typing import Callable, Protocol, Union, List, Set, Tuple, Dict
     from socket import socket
     from socketpool import SocketPool
 except ImportError:
@@ -25,6 +25,7 @@ from .exceptions import (
     InvalidPathError,
     ServingFilesDisabledError,
 )
+from .headers import Headers
 from .methods import GET, HEAD
 from .request import Request
 from .response import Response, FileResponse
@@ -32,7 +33,7 @@ from .route import _Routes, _Route
 from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
 
-class Server:
+class Server:  # pylint: disable=too-many-instance-attributes
     """A basic socket-based HTTP server."""
 
     host: str = None
@@ -57,6 +58,7 @@ class Server:
         self._routes = _Routes()
         self._socket_source = socket_source
         self._sock = None
+        self.headers = Headers()
         self.root_path = root_path
         if root_path in ["", "/"] and debug:
             _debug_warning_exposed_files(root_path)
@@ -306,6 +308,12 @@ class Server:
                 status=NOT_FOUND_404,
             )
 
+    def _set_default_server_headers(self, response: Response) -> None:
+        for name, value in self.headers.items():
+            response._headers.setdefault(  # pylint: disable=protected-access
+                name, value
+            )
+
     def poll(self):
         """
         Call this method inside your main loop to get the server to check for new incoming client
@@ -333,6 +341,8 @@ class Server:
 
                 if response is None:
                     return
+
+                self._set_default_server_headers(response)
 
                 # Send the response
                 response._send()  # pylint: disable=protected-access
@@ -365,6 +375,27 @@ class Server:
             server.require_authentication([Basic("username", "password")])
         """
         self._auths = auths
+
+    @property
+    def headers(self) -> Headers:
+        """
+        Headers to be sent with every response, without the need to specify them in each handler.
+
+        If a header is specified in both the handler and the server, the handler's header will be
+        used.
+
+        Example::
+
+            server = Server(pool, "/static")
+            server.headers = {
+                "Access-Control-Allow-Origin": "*",
+            }
+        """
+        return self._headers
+
+    @headers.setter
+    def headers(self, value: Union[Headers, Dict[str, str]]) -> None:
+        self._headers = value.copy() if isinstance(value, Headers) else Headers(value)
 
     @property
     def request_buffer_size(self) -> int:
