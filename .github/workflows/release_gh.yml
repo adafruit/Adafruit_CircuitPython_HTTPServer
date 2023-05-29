@@ -17,4 +17,3 @@ jobs:
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
         upload-url: ${{ github.event.release.upload_url }}
-        package-prefix: adafruit_httpserver
