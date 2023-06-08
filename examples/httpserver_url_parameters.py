@@ -50,6 +50,18 @@ def perform_action(
     )
 
 
+@server.route("/device/<device_id>/status/<date>")
+def device_status_on_date(request: Request, **params: dict):
+    """
+    Return the status of a specified device between two dates.
+    """
+
+    device_id = params.get("device_id")
+    date = params.get("date")
+
+    return Response(request, f"Status of {device_id} on {date}: ...")
+
+
 @server.route("/device/.../status", append_slash=True)
 @server.route("/device/....", append_slash=True)
 def device_status(request: Request):
