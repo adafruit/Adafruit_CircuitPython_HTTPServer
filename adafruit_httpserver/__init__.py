@@ -51,7 +51,7 @@ from .methods import (
     CONNECT,
 )
 from .mime_types import MIMETypes
-from .request import Request
+from .request import QueryParams, FormData, Request
 from .response import (
     Response,
     FileResponse,
