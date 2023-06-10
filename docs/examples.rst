@@ -102,7 +102,7 @@ More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 
 .. literalinclude:: ../examples/httpserver_cpu_information.py
     :caption: examples/httpserver_cpu_information.py
-    :emphasize-lines: 9,14-17,32
+    :emphasize-lines: 9,15-18,33
     :linenos:
 
 Handling different methods

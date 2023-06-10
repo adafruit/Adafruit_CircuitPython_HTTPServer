@@ -8,6 +8,7 @@ import wifi
 
 from adafruit_httpserver import Server, Request, JSONResponse
 
+
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)
 
