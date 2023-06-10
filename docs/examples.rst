@@ -146,6 +146,34 @@ Tested on ESP32-S2 Feather.
     :emphasize-lines: 25-27,39,51,60,66
     :linenos:
 
+Form data parsing
+---------------------
+
+Another way to pass data to the handler function is to use form data.
+Remember that it is only possible to use it with ``POST`` method.
+`More about POST method. <https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST>`_
+
+It is important to use correct ``enctype``, depending on the type of data you want to send.
+
+- ``application/x-www-form-urlencoded`` - For sending simple text data without any special characters including spaces.
+    If you use it, values will be automatically parsed as strings, but special characters will be URL encoded
+    e.g. ``"Hello World! ^-$%"`` will be saved as ``"Hello+World%21+%5E-%24%25"``
+- ``multipart/form-data`` - For sending text and binary files and/or text data with special characters
+    When used, values will **not** be automatically parsed as strings, they will stay as bytes instead.
+    e.g. ``"Hello World! ^-$%"`` will be saved as ``b'Hello World! ^-$%'``, which can be decoded using ``.decode()`` method.
+- ``text/plain`` - For sending text data with special characters.
+    If used, values will be automatically parsed as strings, including special characters, emojis etc.
+    e.g. ``"Hello World! ^-$%"`` will be saved as ``"Hello World! ^-$%"``, this is the **recommended** option.
+
+If you pass multiple values with the same name, they will be saved as a list, that can be accessed using ``request.data.get_list()``.
+Even if there is only one value, it will still get a list, and if there multiple values, but you use ``request.data.get()`` it will
+return only the first one.
+
+.. literalinclude:: ../examples/httpserver_form_data.py
+    :caption: examples/httpserver_form_data.py
+    :emphasize-lines: 32,47,50
+    :linenos:
+
 Chunked response
 ----------------
 

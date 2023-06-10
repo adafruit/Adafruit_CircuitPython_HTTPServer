@@ -37,6 +37,9 @@ def change_neopixel_color_handler_post_body(request: Request):
 
     data = request.body  # e.g b"255,0,0"
     r, g, b = data.decode().split(",")  # ["255", "0", "0"]
+    # or
+    data = request.data  # e.g. r=255&g=0&b=0 or r=255\r\nb=0\r\ng=0
+    r, g, b = data.get("r", 0), data.get("g", 0), data.get("b", 0)
 
     pixel.fill((int(r), int(g), int(b)))
 
