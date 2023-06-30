@@ -179,8 +179,7 @@ class Request:
 
     Example::
 
-            request.client_address
-            # ('192.168.137.1', 40684)
+        request.client_address  # ('192.168.137.1', 40684)
     """
 
     method: str
@@ -195,9 +194,11 @@ class Request:
 
     Example::
 
-            request  = Request(raw_request=b"GET /?foo=bar HTTP/1.1...")
-            request.query_params
-            # QueryParams({"foo": "bar"})
+        request  = Request(..., raw_request=b"GET /?foo=bar&baz=qux HTTP/1.1...")
+
+        request.query_params                  # QueryParams({"foo": "bar"})
+        request.query_params["foo"]           # "bar"
+        request.query_params.get_list("baz")  # ["qux"]
     """
 
     http_version: str
@@ -255,7 +256,47 @@ class Request:
 
     @property
     def form_data(self) -> Union[FormData, None]:
-        """POST data of the request"""
+        """
+        POST data of the request.
+
+        Example::
+
+            # application/x-www-form-urlencoded
+            request = Request(...,
+                raw_request=b\"\"\"...
+                foo=bar&baz=qux\"\"\"
+            )
+
+            # or
+
+            # multipart/form-data
+            request = Request(...,
+                raw_request=b\"\"\"...
+                --boundary
+                Content-Disposition: form-data; name="foo"
+
+                bar
+                --boundary
+                Content-Disposition: form-data; name="baz"
+
+                qux
+                --boundary--\"\"\"
+            )
+
+            # or
+
+            # text/plain
+            request = Request(...,
+                raw_request=b\"\"\"...
+                foo=bar
+                baz=qux
+                \"\"\"
+            )
+
+            request.form_data                  # FormData({'foo': ['bar'], 'baz': ['qux']})
+            request.form_data["foo"]           # "bar"
+            request.form_data.get_list("baz")  # ["qux"]
+        """
         if self._form_data is None and self.method == "POST":
             self._form_data = FormData(self.body, self.headers["Content-Type"])
         return self._form_data
