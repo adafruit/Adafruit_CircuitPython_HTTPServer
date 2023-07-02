@@ -47,14 +47,14 @@ def form(request: Request):
     enctype = request.query_params.get("enctype", "text/plain")
 
     if request.method == POST:
-        posted_value = request.data.get("something")
+        posted_value = request.form_data.get("something")
 
     return Response(
         request,
         FORM_HTML_TEMPLATE.format(
             enctype=enctype,
             submitted_value=(
-                f"<h3>Submitted form value: {posted_value}</h3>"
+                f"<h3>Enctype: {enctype}</h3>\n<h3>Submitted form value: {posted_value}</h3>"
                 if request.method == POST
                 else ""
             ),

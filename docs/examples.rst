@@ -165,8 +165,8 @@ It is important to use correct ``enctype``, depending on the type of data you wa
     If used, values will be automatically parsed as strings, including special characters, emojis etc.
     e.g. ``"Hello World! ^-$%"`` will be saved as ``"Hello World! ^-$%"``, this is the **recommended** option.
 
-If you pass multiple values with the same name, they will be saved as a list, that can be accessed using ``request.data.get_list()``.
-Even if there is only one value, it will still get a list, and if there multiple values, but you use ``request.data.get()`` it will
+If you pass multiple values with the same name, they will be saved as a list, that can be accessed using ``request.form_data.get_list()``.
+Even if there is only one value, it will still get a list, and if there multiple values, but you use ``request.form_data.get()`` it will
 return only the first one.
 
 .. literalinclude:: ../examples/httpserver_form_data.py
