@@ -72,7 +72,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
         self.root_path = root_path
         if root_path in ["", "/"] and debug:
             _debug_warning_exposed_files(root_path)
-        self.stopped = False
+        self.stopped = True
 
         self.debug = debug
 
