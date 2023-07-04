@@ -33,6 +33,12 @@ from .route import _Routes, _Route
 from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
 
+NO_REQUEST = 0
+CONNECTION_TIMED_OUT = 1
+REQUEST_HANDLED_NO_RESPONSE = 2
+REQUEST_HANDLED_RESPONSE_SENT = 3
+
+
 class Server:  # pylint: disable=too-many-instance-attributes
     """A basic socket-based HTTP server."""
 
@@ -318,10 +324,13 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 name, value
             )
 
-    def poll(self):
+    def poll(self) -> int:
         """
         Call this method inside your main loop to get the server to check for new incoming client
         requests. When a request comes in, it will be handled by the handler function.
+
+        Returns int representing the result of the poll
+        e.g. ``NO_REQUEST`` or ``REQUEST_HANDLED_RESPONSE_SENT``.
         """
         if self.stopped:
             raise ServerStoppedError
@@ -333,7 +342,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
                 # Receive the whole request
                 if (request := self._receive_request(conn, client_address)) is None:
-                    return
+                    return CONNECTION_TIMED_OUT
 
                 # Find a handler for the route
                 handler = self._routes.find_handler(
@@ -344,7 +353,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 response = self._handle_request(request, handler)
 
                 if response is None:
-                    return
+                    return REQUEST_HANDLED_NO_RESPONSE
 
                 self._set_default_server_headers(response)
 
@@ -354,14 +363,16 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 if self.debug:
                     _debug_response_sent(response)
 
+                return REQUEST_HANDLED_RESPONSE_SENT
+
         except Exception as error:  # pylint: disable=broad-except
             if isinstance(error, OSError):
                 # There is no data available right now, try again later.
                 if error.errno == EAGAIN:
-                    return
+                    return NO_REQUEST
                 # Connection reset by peer, try again later.
                 if error.errno == ECONNRESET:
-                    return
+                    return NO_REQUEST
 
             if self.debug:
                 _debug_exception_in_handler(error)

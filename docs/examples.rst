@@ -72,6 +72,8 @@ Between calling ``.poll()`` you can do something useful,
 for example read a sensor and capture an average or
 a running total of the last 10 samples.
 
+``.poll()`` return value can be used to check if there was a request and if it was handled.
+
 .. literalinclude:: ../examples/httpserver_start_and_poll.py
     :caption: examples/httpserver_start_and_poll.py
     :emphasize-lines: 24,33
