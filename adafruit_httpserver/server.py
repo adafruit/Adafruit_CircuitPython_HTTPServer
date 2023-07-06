@@ -33,10 +33,10 @@ from .route import _Routes, _Route
 from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
 
-NO_REQUEST = 0
-CONNECTION_TIMED_OUT = 1
-REQUEST_HANDLED_NO_RESPONSE = 2
-REQUEST_HANDLED_RESPONSE_SENT = 3
+NO_REQUEST = "no_request"
+CONNECTION_TIMED_OUT = "connection_timed_out"
+REQUEST_HANDLED_NO_RESPONSE = "request_handled_no_response"
+REQUEST_HANDLED_RESPONSE_SENT = "request_handled_response_sent"
 
 
 class Server:  # pylint: disable=too-many-instance-attributes
@@ -324,12 +324,12 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 name, value
             )
 
-    def poll(self) -> int:
+    def poll(self) -> str:
         """
         Call this method inside your main loop to get the server to check for new incoming client
         requests. When a request comes in, it will be handled by the handler function.
 
-        Returns int representing the result of the poll
+        Returns str representing the result of the poll
         e.g. ``NO_REQUEST`` or ``REQUEST_HANDLED_RESPONSE_SENT``.
         """
         if self.stopped:
