@@ -28,7 +28,7 @@ from .exceptions import (
 from .methods import GET, HEAD
 from .request import Request
 from .response import Response, FileResponse
-from .route import _Routes, _Route
+from .route import _Routes, Route
 from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
 
@@ -117,13 +117,8 @@ class Server:
             def route_func(request):
                 ...
         """
-        if path.endswith("/") and append_slash:
-            raise ValueError("Cannot use append_slash=True when path ends with /")
-
-        methods = set(methods) if isinstance(methods, (set, list)) else set([methods])
-
         def route_decorator(func: Callable) -> Callable:
-            self._routes.add(_Route(path, methods, append_slash), func)
+            self._routes.add(Route(path, methods, func, append_slash=append_slash))
             return func
 
         return route_decorator
