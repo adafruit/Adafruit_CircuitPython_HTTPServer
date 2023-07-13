@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, List, Set, Union, Tuple, TYPE_CHECKING
+    from typing import Callable, List, Set, Union, Tuple, Dict, TYPE_CHECKING
 
     if TYPE_CHECKING:
         from .response import Response
@@ -56,7 +56,7 @@ class Route:
         if path.endswith("/") and append_slash:
             raise ValueError("Cannot use append_slash=True when path ends with /")
 
-    def match(self, other: "Route") -> Tuple[bool, List[str]]:
+    def match(self, other: "Route") -> Tuple[bool, Dict[str, str]]:
         """
         Checks if the route matches the other route.
 
@@ -72,31 +72,31 @@ class Route:
 
             other1a = Route("/example", GET)
             other1b = Route("/example/", GET)
-            route.matches(other1a) # True, []
-            route.matches(other1b) # True, []
+            route.matches(other1a) # True, {}
+            route.matches(other1b) # True, {}
 
             other2 = Route("/other-example", GET)
-            route.matches(other2) # False, []
+            route.matches(other2) # False, {}
 
             ...
 
             route = Route("/example/<parameter>", GET)
 
             other1 = Route("/example/123", GET)
-            route.matches(other1) # True, ["123"]
+            route.matches(other1) # True, {"parameter": "123"}
 
             other2 = Route("/other-example", GET)
-            route.matches(other2) # False, []
+            route.matches(other2) # False, {}
 
             ...
 
             route1 = Route("/example/.../something", GET)
             other1 = Route("/example/123/something", GET)
-            route1.matches(other1) # True, []
+            route1.matches(other1) # True, {}
 
             route2 = Route("/example/..../something", GET)
             other2 = Route("/example/123/456/something", GET)
-            route2.matches(other2) # True, []
+            route2.matches(other2) # True, {}
         """
 
         if not other.methods.issubset(self.methods):
