@@ -123,6 +123,29 @@ class Server:
 
         return route_decorator
 
+    def add_routes(self, routes: List[Route]) -> None:
+        """
+        Add multiple routes at once.
+
+        :param List[Route] routes: List of routes to add to the server
+
+        Example::
+
+            from separate_file import external_route1, external_route2
+
+            ...
+
+            server.add_routes([
+                Route("/example", GET, route_func1, append_slash=True),
+                Route("/example/<my_parameter>", GET, route_func2),
+                Route("/example/..../something", [GET, POST], route_func3),
+                external_route1,
+                external_route2,
+            ]}
+        """
+        for route in routes:
+            self._routes.add(route)
+
     def _verify_can_start(self, host: str, port: int) -> None:
         """Check if the server can be successfully started. Raises RuntimeError if not."""
 
