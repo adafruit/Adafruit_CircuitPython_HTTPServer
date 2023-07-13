@@ -224,6 +224,43 @@ You can specify wheter the redirect is permanent or temporary by passing ``perma
     :emphasize-lines: 14-18,26,38
     :linenos:
 
+Server-Sent Events
+------------------
+
+All types of responses until now were synchronous, meaning that the response was sent immediately after the handler function returned.
+However, sometimes you might want to send data to the client at a later time, e.g. when some event occurs.
+This can be overcomed by periodically polling the server, but it is not an elegant solution. Instead, you can use Server-Sent Events (SSE).
+
+Response is initialized on ``return``, events can be sent using ``.send_event()`` method. Due to the nature of SSE, it is necessary to store the
+response object somewhere, so that it can be accessed later.
+
+**Because of the limited number of concurrently open sockets, it is not possible to process more than one SSE response at the same time.
+This might change in the future, but for now, it is recommended to use SSE only with one client at a time.**
+
+.. literalinclude:: ../examples/httpserver_sse.py
+    :caption: examples/httpserver_sse.py
+    :emphasize-lines: 10,17,44-51,61
+    :linenos:
+
+Websockets
+----------
+
+Although SSE provide a simple way to send data from the server to the client, they are not suitable for sending data the other way around.
+
+For that purpose, you can use Websockets. They are more complex than SSE, but they provide a persistent two-way communication channel between
+the client and the server.
+
+Remember, that because Websockets also receive data, you have to explicitly call ``.receive()`` on the ``Websocket`` object to get the message.
+This is anologous to calling ``.poll()`` on the ``Server`` object.
+
+**Because of the limited number of concurrently open sockets, it is not possible to process more than one Websocket response at the same time.
+This might change in the future, but for now, it is recommended to use Websocket only with one client at a time.**
+
+.. literalinclude:: ../examples/httpserver_websocket.py
+    :caption: examples/httpserver_websocket.py
+    :emphasize-lines: 10,16-17,60-67,76,81
+    :linenos:
+
 Multiple servers
 ----------------
 
