@@ -83,12 +83,12 @@ class Response:  # pylint: disable=too-few-public-methods
         headers.setdefault(
             "Content-Type", content_type or self._content_type or MIMETypes.DEFAULT
         )
+        headers.setdefault("Content-Length", content_length)
         headers.setdefault("Connection", "close")
-        if content_length is not None:
-            headers.setdefault("Content-Length", content_length)
 
         for header, value in headers.items():
-            response_message_header += f"{header}: {value}\r\n"
+            if value is not None:
+                response_message_header += f"{header}: {value}\r\n"
         response_message_header += "\r\n"
 
         self._send_bytes(
