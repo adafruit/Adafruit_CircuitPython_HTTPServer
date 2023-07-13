@@ -59,11 +59,13 @@ from .response import (
     JSONResponse,
     Redirect,
     SSEResponse,
+    Websocket,
 )
 from .route import Route
 from .server import Server
 from .status import (
     Status,
+    SWITCHING_PROTOCOLS_101,
     OK_200,
     CREATED_201,
     ACCEPTED_202,

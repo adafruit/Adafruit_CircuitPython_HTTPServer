@@ -31,6 +31,8 @@ class Status:  # pylint: disable=too-few-public-methods
         return self.code == other.code and self.text == other.text
 
 
+SWITCHING_PROTOCOLS_101 = Status(101, "Switching Protocols")
+
 OK_200 = Status(200, "OK")
 
 CREATED_201 = Status(201, "Created")
