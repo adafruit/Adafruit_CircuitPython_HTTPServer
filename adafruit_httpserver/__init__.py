@@ -58,6 +58,7 @@ from .response import (
     ChunkedResponse,
     JSONResponse,
     Redirect,
+    SSEResponse,
 )
 from .route import Route
 from .server import Server

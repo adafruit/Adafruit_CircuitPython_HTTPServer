@@ -403,3 +403,97 @@ class Redirect(Response):  # pylint: disable=too-few-public-methods
         self._send_headers()
         self._close_connection()
 
+
+class SSEResponse(Response):  # pylint: disable=too-few-public-methods
+    """
+    Specialized version of `Response` class for sending Server-Sent Events.
+
+    Allows one way communication with the client using a persistent connection.
+
+    Keep in mind, that in order to send events, the socket must be kept open. This means that you
+    have to store the response object somewhere, so you can send events to it and close it later.
+
+    **It is very important to close the connection manually, it will not be done automatically.**
+
+    Example::
+
+        sse = None
+
+        @server.route(path, method)
+        def route_func(request: Request):
+
+            # Store the response object somewhere in global scope
+            global sse
+            sse = SSEResponse(request)
+
+            return sse
+
+        ...
+
+        # Later, when you want to send an event
+        sse.send_event("Simple message")
+        sse.send_event("Message", event="event_name", id=1, retry=5000)
+
+        # Close the connection
+        sse.close()
+    """
+
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        request: Request,
+        headers: Union[Headers, Dict[str, str]] = None,
+    ) -> None:
+        """
+        :param Request request: Request object
+        :param Headers headers: Headers to be sent with the response.
+        """
+        super().__init__(
+            request=request,
+            headers=headers,
+            content_type="text/event-stream",
+        )
+        self._headers.setdefault("Cache-Control", "no-cache")
+        self._headers.setdefault("Connection", "keep-alive")
+
+    def _send(self) -> None:
+        self._send_headers()
+
+    def send_event(  # pylint: disable=too-many-arguments
+        self,
+        data: str,
+        event: str = None,
+        id: int = None,  # pylint: disable=redefined-builtin,invalid-name
+        retry: int = None,
+        custom_fields: Dict[str, str] = None,
+    ) -> None:
+        """
+        Send event to the client.
+
+        :param str data: The data to be sent.
+        :param str event: (Optional) The name of the event.
+        :param int id: (Optional) The event ID.
+        :param int retry: (Optional) The time (in milliseconds) to wait before retrying the event.
+        :param Dict[str, str] custom_fields: (Optional) Custom fields to be sent with the event.
+        """
+        message = f"data: {data}\n"
+        if event:
+            message += f"event: {event}\n"
+        if id:
+            message += f"id: {id}\n"
+        if retry:
+            message += f"retry: {retry}\n"
+        if custom_fields:
+            for field, value in custom_fields.items():
+                message += f"{field}: {value}\n"
+        message += "\n"
+
+        self._send_bytes(self._request.connection, message.encode("utf-8"))
+
+    def close(self):
+        """
+        Close the connection.
+
+        **Always call this method when you are done sending events.**
+        """
+        self._send_bytes(self._request.connection, b"event: close\n")
+        self._close_connection()
