@@ -57,7 +57,7 @@ def client(request: Request):
 
 @server.route("/connect-websocket", GET)
 def connect_client(request: Request):
-    global websocket
+    global websocket  # pylint: disable=global-statement
 
     if websocket is not None:
         websocket.close()  # Close any existing connection

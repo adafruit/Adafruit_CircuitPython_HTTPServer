@@ -39,7 +39,9 @@ class Route:
         self.path = re.sub(r"<\w+>", r"([^/]+)", path).replace("....", r".+").replace(
             "...", r"[^/]+"
         ) + ("/?" if append_slash else "")
-        self.methods = set(methods) if isinstance(methods, (set, list)) else set([methods])
+        self.methods = (
+            set(methods) if isinstance(methods, (set, list)) else set([methods])
+        )
 
         self.handler = handler
 
@@ -98,11 +100,11 @@ class Route:
         """
 
         if not other.methods.issubset(self.methods):
-            return False, dict()
+            return False, {}
 
         regex_match = re.match(f"^{self.path}$", other.path)
         if regex_match is None:
-            return False, dict()
+            return False, {}
 
         return True, dict(zip(self.parameters_names, regex_match.groups()))
 

@@ -41,7 +41,7 @@ def client(request: Request):
 
 @server.route("/connect-client", GET)
 def connect_client(request: Request):
-    global sse_response
+    global sse_response  # pylint: disable=global-statement
 
     if sse_response is not None:
         sse_response.close()  # Close any existing connection

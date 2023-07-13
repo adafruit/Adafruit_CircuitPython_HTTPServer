@@ -548,12 +548,12 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
     FIN = 0b10000000  # FIN bit indicating the final fragment
 
     # opcodes
-    CONT = 0 # Continuation frame, TODO: Currently not supported
-    TEXT = 1 # Frame contains UTF-8 text
-    BINARY = 2 # Frame contains binary data
-    CLOSE = 8 # Frame closes the connection
-    PING = 9 # Frame is a ping, expecting a pong
-    PONG = 10 # Frame is a pong, in response to a ping
+    CONT = 0  # Continuation frame, TODO: Currently not supported
+    TEXT = 1  # Frame contains UTF-8 text
+    BINARY = 2  # Frame contains binary data
+    CLOSE = 8  # Frame closes the connection
+    PING = 9  # Frame is a ping, expecting a pong
+    PONG = 10  # Frame is a pong, in response to a ping
 
     @staticmethod
     def _check_request_initiates_handshake(request: Request):
@@ -573,7 +573,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
         if key is None:
             raise ValueError("Request does not have Sec-WebSocket-Key header")
 
-        response_key = hashlib.new('sha1', key.encode())
+        response_key = hashlib.new("sha1", key.encode())
         response_key.update(Websocket.GUID)
 
         return b2a_base64(response_key.digest()).strip().decode()
@@ -607,7 +607,6 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
 
         request.connection.setblocking(False)
 
-
     @staticmethod
     def _parse_frame_header(header):
         fin = header[0] & Websocket.FIN
@@ -626,7 +625,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
         buffer = bytearray(self._buffer_size)
 
         header_length = self._request.connection.recv_into(buffer, 2)
-        header_bytes  = buffer[:header_length]
+        header_bytes = buffer[:header_length]
 
         fin, opcode, has_mask, length = self._parse_frame_header(header_bytes)
 
@@ -640,7 +639,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
 
         if length < 0:
             length = self._request.connection.recv_into(buffer, -length)
-            length = int.from_bytes(buffer[:length], 'big')
+            length = int.from_bytes(buffer[:length], "big")
 
         if has_mask:
             mask_length = self._request.connection.recv_into(buffer, 4)
@@ -648,7 +647,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
 
         while 0 < length:
             payload_length = self._request.connection.recv_into(buffer, length)
-            payload += buffer[:min(payload_length, length)]
+            payload += buffer[: min(payload_length, length)]
             length -= min(payload_length, length)
 
         if has_mask:
@@ -656,7 +655,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
 
         return opcode, payload
 
-    def _handle_frame(self, opcode: int, payload: bytes):
+    def _handle_frame(self, opcode: int, payload: bytes) -> Union[str, bytes, None]:
         # TODO: Handle continuation frames, currently not supported
         if opcode == Websocket.CONT:
             return None
@@ -667,14 +666,13 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
 
         if opcode == Websocket.PONG:
             return None
-        elif opcode == Websocket.PING:
+        if opcode == Websocket.PING:
             self.send_message(payload, Websocket.PONG)
             return payload
 
         try:
             payload = payload.decode() if opcode == Websocket.TEXT else payload
-        except UnicodeError as error:
-            print("Payload UnicodeError: ", error, payload)
+        except UnicodeError:
             pass
 
         return payload
@@ -688,7 +686,9 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
         if self.closed:
             if fail_silently:
                 return None
-            raise RuntimeError("Websocket connection is closed, cannot receive messages")
+            raise RuntimeError(
+                "Websocket connection is closed, cannot receive messages"
+            )
 
         try:
             opcode, payload = self._read_frame()
@@ -700,7 +700,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
                 return None
             if error.errno == ETIMEDOUT:  # Connection timed out
                 return None
-            if error.errno == ENOTCONN:  # Client disconnected without closing connection
+            if error.errno == ENOTCONN:  # Client disconnected
                 self.close()
                 return None
             raise error
@@ -720,12 +720,12 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
         # Message between 126 and 65535 bytes, use 2 bytes for length
         elif payload_length < 65536:
             frame.append(126)
-            frame.extend(payload_length.to_bytes(2, 'big'))
+            frame.extend(payload_length.to_bytes(2, "big"))
 
         # Message over 65535 bytes, use 8 bytes for length
         else:
             frame.append(127)
-            frame.extend(payload_length.to_bytes(8, 'big'))
+            frame.extend(payload_length.to_bytes(8, "big"))
 
         frame.extend(message)
         return frame
@@ -734,7 +734,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
         self,
         message: Union[str, bytes],
         opcode: int = None,
-        fail_silently: bool = False
+        fail_silently: bool = False,
     ):
         """
         Send a message to the client.
@@ -746,7 +746,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
         """
         if self.closed:
             if fail_silently:
-                return None
+                return
             raise RuntimeError("Websocket connection is closed, cannot send message")
 
         determined_opcode = opcode or (
@@ -762,7 +762,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
             self._send_bytes(self._request.connection, frame)
         except BrokenPipeError as error:
             if fail_silently:
-                return None
+                return
             raise error
 
     def _send(self) -> None:
@@ -775,6 +775,6 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
         **Always call this method when you are done sending events.**
         """
         if not self.closed:
-            self.send_message(b'', Websocket.CLOSE, fail_silently=True)
+            self.send_message(b"", Websocket.CLOSE, fail_silently=True)
             self._close_connection()
             self.closed = True

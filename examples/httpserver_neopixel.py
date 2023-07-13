@@ -65,15 +65,20 @@ def change_neopixel_color_handler_url_params(
 
     return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
 
+
 url_params_route = Route(
     "/change-neopixel-color/<r>/<g>/<b>", GET, change_neopixel_color_handler_url_params
 )
 
 # Alternative way of registering routes.
-server.add_routes([
-    Route("/change-neopixel-color/json", GET, change_neopixel_color_handler_post_json),
-    url_params_route,
-])
+server.add_routes(
+    [
+        Route(
+            "/change-neopixel-color/json", GET, change_neopixel_color_handler_post_json
+        ),
+        url_params_route,
+    ]
+)
 
 
 server.serve_forever(str(wifi.radio.ipv4_address))

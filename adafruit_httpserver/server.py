@@ -117,6 +117,7 @@ class Server:
             def route_func(request):
                 ...
         """
+
         def route_decorator(func: Callable) -> Callable:
             self._routes.add(Route(path, methods, func, append_slash=append_slash))
             return func
