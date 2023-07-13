@@ -102,6 +102,7 @@ class Response:  # pylint: disable=too-few-public-methods
 
         self._send_headers(len(encoded_body), self._content_type)
         self._send_bytes(self._request.connection, encoded_body)
+        self._close_connection()
 
     def _send_bytes(
         self,
@@ -121,6 +122,12 @@ class Response:  # pylint: disable=too-few-public-methods
                     return
                 raise
         self._size += bytes_sent
+
+    def _close_connection(self) -> None:
+        try:
+            self._request.connection.close()
+        except (BrokenPipeError, OSError):
+            pass
 
 
 class FileResponse(Response):  # pylint: disable=too-few-public-methods
@@ -246,6 +253,7 @@ class FileResponse(Response):  # pylint: disable=too-few-public-methods
             with open(self._full_file_path, "rb") as file:
                 while bytes_read := file.read(self._buffer_size):
                     self._send_bytes(self._request.connection, bytes_read)
+        self._close_connection()
 
 
 class ChunkedResponse(Response):  # pylint: disable=too-few-public-methods
@@ -309,6 +317,7 @@ class ChunkedResponse(Response):  # pylint: disable=too-few-public-methods
 
         # Empty chunk to indicate end of response
         self._send_chunk()
+        self._close_connection()
 
 
 class JSONResponse(Response):  # pylint: disable=too-few-public-methods
@@ -352,6 +361,7 @@ class JSONResponse(Response):  # pylint: disable=too-few-public-methods
 
         self._send_headers(len(encoded_data), "application/json")
         self._send_bytes(self._request.connection, encoded_data)
+        self._close_connection()
 
 
 class Redirect(Response):  # pylint: disable=too-few-public-methods
@@ -391,3 +401,5 @@ class Redirect(Response):  # pylint: disable=too-few-public-methods
 
     def _send(self) -> None:
         self._send_headers()
+        self._close_connection()
+

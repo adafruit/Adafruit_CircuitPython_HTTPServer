@@ -334,29 +334,30 @@ class Server:
 
         try:
             conn, client_address = self._sock.accept()
-            with conn:
-                conn.settimeout(self._timeout)
+            conn.settimeout(self._timeout)
 
-                # Receive the whole request
-                if (request := self._receive_request(conn, client_address)) is None:
-                    return
+            # Receive the whole request
+            if (request := self._receive_request(conn, client_address)) is None:
+                conn.close()
+                return
 
-                # Find a handler for the route
-                handler = self._routes.find_handler(
-                    _Route(request.path, request.method)
-                )
+            # Find a handler for the route
+            handler = self._routes.find_handler(Route(request.path, request.method))
 
-                # Handle the request
-                response = self._handle_request(request, handler)
+            # Handle the request
+            response = self._handle_request(request, handler)
 
-                if response is None:
-                    return
+            if response is None:
+                conn.close()
+                return
 
-                # Send the response
-                response._send()  # pylint: disable=protected-access
+            # Send the response
+            response._send()  # pylint: disable=protected-access
 
-                if self.debug:
-                    _debug_response_sent(response)
+            if self.debug:
+                _debug_response_sent(response)
+
+            return
 
         except Exception as error:  # pylint: disable=broad-except
             if isinstance(error, OSError):
@@ -370,6 +371,7 @@ class Server:
             if self.debug:
                 _debug_exception_in_handler(error)
 
+            conn.close()
             raise error  # Raise the exception again to be handled by the user.
 
     def require_authentication(self, auths: List[Union[Basic, Bearer]]) -> None:
