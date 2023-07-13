@@ -98,13 +98,13 @@ class Route:
         """
 
         if not other.methods.issubset(self.methods):
-            return False, []
+            return False, dict()
 
         regex_match = re.match(f"^{self.path}$", other.path)
         if regex_match is None:
-            return False, []
+            return False, dict()
 
-        return True, regex_match.groups()
+        return True, dict(zip(self.parameters_names, regex_match.groups()))
 
     def __repr__(self) -> str:
         path = repr(self.path)
@@ -141,7 +141,7 @@ class _Routes:
         found_route, _route = False, None
 
         for _route in self._routes:
-            matches, parameters_values = _route.match(route)
+            matches, keyword_parameters = _route.match(route)
 
             if matches:
                 found_route = True
@@ -151,8 +151,6 @@ class _Routes:
             return None
 
         handler = _route.handler
-
-        keyword_parameters = dict(zip(_route.parameters_names, parameters_values))
 
         def wrapped_handler(request):
             return handler(request, **keyword_parameters)
