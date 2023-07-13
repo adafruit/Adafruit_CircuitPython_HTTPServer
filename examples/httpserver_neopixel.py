@@ -7,7 +7,7 @@ import neopixel
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response, GET, POST
+from adafruit_httpserver import Server, Route, Request, Response, GET, POST
 
 
 pool = socketpool.SocketPool(wifi.radio)
@@ -43,7 +43,6 @@ def change_neopixel_color_handler_post_body(request: Request):
     return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
-@server.route("/change-neopixel-color/json", POST)
 def change_neopixel_color_handler_post_json(request: Request):
     """Changes the color of the built-in NeoPixel using JSON POST body."""
 
@@ -55,7 +54,6 @@ def change_neopixel_color_handler_post_json(request: Request):
     return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
-@server.route("/change-neopixel-color/<r>/<g>/<b>", GET)
 def change_neopixel_color_handler_url_params(
     request: Request, r: str = "0", g: str = "0", b: str = "0"
 ):
@@ -66,6 +64,16 @@ def change_neopixel_color_handler_url_params(
     pixel.fill((int(r), int(g), int(b)))
 
     return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
+
+url_params_route = Route(
+    "/change-neopixel-color/<r>/<g>/<b>", GET, change_neopixel_color_handler_url_params
+)
+
+# Alternative way of registering routes.
+server.add_routes([
+    Route("/change-neopixel-color/json", GET, change_neopixel_color_handler_post_json),
+    url_params_route,
+])
 
 
 server.serve_forever(str(wifi.radio.ipv4_address))
