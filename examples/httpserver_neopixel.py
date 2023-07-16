@@ -7,7 +7,7 @@ import neopixel
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Route, Request, Response, GET, POST
+from adafruit_httpserver import Server, Route, as_route, Request, Response, GET, POST
 
 
 pool = socketpool.SocketPool(wifi.radio)
@@ -16,6 +16,7 @@ server = Server(pool, "/static", debug=True)
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 
 
+# This is the simplest way to register a route. It uses the Server object in current scope.
 @server.route("/change-neopixel-color", GET)
 def change_neopixel_color_handler_query_params(request: Request):
     """Changes the color of the built-in NeoPixel using query/GET params."""
@@ -31,7 +32,9 @@ def change_neopixel_color_handler_query_params(request: Request):
     return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
-@server.route("/change-neopixel-color", POST)
+# This is another way to register a route. It uses the decorator that converts the function into
+# a Route object that can be imported and registered later.
+@as_route("/change-neopixel-color", POST)
 def change_neopixel_color_handler_post_body(request: Request):
     """Changes the color of the built-in NeoPixel using POST body."""
 
@@ -54,6 +57,13 @@ def change_neopixel_color_handler_post_json(request: Request):
     return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
+# You can always manually create a Route object and import or register it later.
+# Using this approach you can also use the same handler for multiple routes.
+post_json_route = Route(
+    "/change-neopixel-color/json", GET, change_neopixel_color_handler_post_json
+)
+
+
 def change_neopixel_color_handler_url_params(
     request: Request, r: str = "0", g: str = "0", b: str = "0"
 ):
@@ -66,17 +76,17 @@ def change_neopixel_color_handler_url_params(
     return Response(request, f"Changed NeoPixel to color ({r}, {g}, {b})")
 
 
-url_params_route = Route(
-    "/change-neopixel-color/<r>/<g>/<b>", GET, change_neopixel_color_handler_url_params
-)
-
-# Alternative way of registering routes.
+# Registering Route objects
 server.add_routes(
     [
+        change_neopixel_color_handler_post_body,
+        post_json_route,
+        # You can also register a inline created Route object
         Route(
-            "/change-neopixel-color/json", GET, change_neopixel_color_handler_post_json
+            path="/change-neopixel-color/<r>/<g>/<b>",
+            methods=GET,
+            handler=change_neopixel_color_handler_url_params,
         ),
-        url_params_route,
     ]
 )
 

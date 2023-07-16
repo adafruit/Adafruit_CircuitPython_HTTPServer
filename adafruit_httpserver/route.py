@@ -111,8 +111,55 @@ class Route:
     def __repr__(self) -> str:
         path = repr(self.path)
         methods = repr(self.methods)
+        handler = repr(self.handler)
 
-        return f"Route(path={path}, methods={methods})"
+        return f"Route({path=}, {methods=}, {handler=})"
+
+
+def as_route(
+    path: str,
+    methods: Union[str, Set[str]] = GET,
+    *,
+    append_slash: bool = False,
+) -> "Callable[[Callable[..., Response]], Route]":
+    """
+    Decorator used to convert a function into a ``Route`` object.
+
+    It is a shorthand for manually creating a ``Route`` object, that can be used only one time
+    per function. Later it can be imported and registered in the ``Server``.
+
+    :param str path: URL path
+    :param str methods: HTTP method(s): ``"GET"``, ``"POST"``, ``["GET", "POST"]`` etc.
+    :param bool append_slash: If True, the route will be accessible with and without a
+        trailing slash
+
+    Example::
+
+        # Default method is GET
+        @as_route("/example")
+        def some_func(request):
+            ...
+
+        some_func  # Route(path="/example", methods={"GET"}, handler=<function some_func at 0x...>)
+
+        # If a route in another file, you can import it and register it to the server
+
+        from .routes import some_func
+
+        ...
+
+        server.add_routes([
+            some_func,
+        ])
+    """
+
+    def route_decorator(func: Callable) -> Route:
+        if isinstance(func, Route):
+            raise ValueError("as_route can be used only once per function.")
+
+        return Route(path, methods, func, append_slash=append_slash)
+
+    return route_decorator
 
 
 class _Routes:

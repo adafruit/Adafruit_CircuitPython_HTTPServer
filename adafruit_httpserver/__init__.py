@@ -61,7 +61,7 @@ from .response import (
     SSEResponse,
     Websocket,
 )
-from .route import Route
+from .route import Route, as_route
 from .server import Server
 from .status import (
     Status,
