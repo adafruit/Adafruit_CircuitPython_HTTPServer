@@ -27,7 +27,7 @@ HTTP Server for CircuitPython.
 - HTTP 1.1.
 - Serves files from a designated root.
 - Routing for serving computed responses from handlers.
-- Gives access to request headers, query parameters, body and client's address, the one from which the request came.
+- Gives access to request headers, query parameters, form data, body and client's address (the one from which the request came).
 - Supports chunked transfer encoding.
 - Supports URL parameters and wildcard URLs.
 - Supports HTTP Basic and Bearer Authentication on both server and route per level.

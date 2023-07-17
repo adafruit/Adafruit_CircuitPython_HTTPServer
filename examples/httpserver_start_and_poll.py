@@ -5,7 +5,12 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, FileResponse
+from adafruit_httpserver import (
+    Server,
+    REQUEST_HANDLED_RESPONSE_SENT,
+    Request,
+    FileResponse,
+)
 
 
 pool = socketpool.SocketPool(wifi.radio)
@@ -30,7 +35,11 @@ while True:
         # or a running total of the last 10 samples
 
         # Process any waiting requests
-        server.poll()
+        pool_result = server.poll()
+
+        if pool_result == REQUEST_HANDLED_RESPONSE_SENT:
+            # Do something only after handling a request
+            pass
 
         # If you want you can stop the server by calling server.stop() anywhere in your code
     except OSError as error:

@@ -72,6 +72,8 @@ Between calling ``.poll()`` you can do something useful,
 for example read a sensor and capture an average or
 a running total of the last 10 samples.
 
+``.poll()`` return value can be used to check if there was a request and if it was handled.
+
 .. literalinclude:: ../examples/httpserver_start_and_poll.py
     :caption: examples/httpserver_start_and_poll.py
     :emphasize-lines: 24,33
@@ -97,9 +99,12 @@ Get CPU information
 You can return data from sensors or any computed value as JSON.
 That makes it easy to use the data in other applications.
 
+If you want to use the data in a web browser, it might be necessary to enable CORS.
+More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+
 .. literalinclude:: ../examples/httpserver_cpu_information.py
     :caption: examples/httpserver_cpu_information.py
-    :emphasize-lines: 9,27
+    :emphasize-lines: 9,15-18,33
     :linenos:
 
 Handling different methods
@@ -143,6 +148,34 @@ Tested on ESP32-S2 Feather.
     :emphasize-lines: 25-27,39,51,60,66
     :linenos:
 
+Form data parsing
+---------------------
+
+Another way to pass data to the handler function is to use form data.
+Remember that it is only possible to use it with ``POST`` method.
+`More about POST method. <https://developer.mozilla.org/en-US/docs/Web/HTTP/Methods/POST>`_
+
+It is important to use correct ``enctype``, depending on the type of data you want to send.
+
+- ``application/x-www-form-urlencoded`` - For sending simple text data without any special characters including spaces.
+    If you use it, values will be automatically parsed as strings, but special characters will be URL encoded
+    e.g. ``"Hello World! ^-$%"`` will be saved as ``"Hello+World%21+%5E-%24%25"``
+- ``multipart/form-data`` - For sending text and binary files and/or text data with special characters
+    When used, values will **not** be automatically parsed as strings, they will stay as bytes instead.
+    e.g. ``"Hello World! ^-$%"`` will be saved as ``b'Hello World! ^-$%'``, which can be decoded using ``.decode()`` method.
+- ``text/plain`` - For sending text data with special characters.
+    If used, values will be automatically parsed as strings, including special characters, emojis etc.
+    e.g. ``"Hello World! ^-$%"`` will be saved as ``"Hello World! ^-$%"``, this is the **recommended** option.
+
+If you pass multiple values with the same name, they will be saved as a list, that can be accessed using ``request.form_data.get_list()``.
+Even if there is only one value, it will still get a list, and if there multiple values, but you use ``request.form_data.get()`` it will
+return only the first one.
+
+.. literalinclude:: ../examples/httpserver_form_data.py
+    :caption: examples/httpserver_form_data.py
+    :emphasize-lines: 32,47,50
+    :linenos:
+
 Chunked response
 ----------------
 
@@ -177,6 +210,8 @@ In the example below the second route has only one URL parameter, so the ``actio
 Keep in mind that URL parameters are always passed as strings, so you need to convert them to the desired type.
 Also note that the names of the function parameters **have to match** with the ones used in route, but they **do not have to** be in the same order.
 
+Alternatively you can use e.g. ``**params`` to get all the parameters as a dictionary and access them using ``params['parameter_name']``.
+
 It is also possible to specify a wildcard route:
 
 - ``...`` - matches one path segment, e.g ``/api/...`` will match ``/api/123``, but **not** ``/api/123/456``
@@ -186,7 +221,7 @@ In both cases, wildcards will not match empty path segment, so ``/api/.../users`
 
 .. literalinclude:: ../examples/httpserver_url_parameters.py
     :caption: examples/httpserver_url_parameters.py
-    :emphasize-lines: 30-34,53-54
+    :emphasize-lines: 30-34,53-54,65-66
     :linenos:
 
 Authentication
@@ -233,12 +268,15 @@ Using ``.serve_forever()`` for this is not possible because of it's blocking beh
 
 Each server **must have a different port number**.
 
+In order to distinguish between responses from different servers a 'X-Server' header is added to each response.
+**This is an optional step**, both servers will work without it.
+
 In combination with separate authentication and diffrent ``root_path`` this allows creating moderately complex setups.
 You can share same handler functions between servers or use different ones for each server.
 
 .. literalinclude:: ../examples/httpserver_multiple_servers.py
     :caption: examples/httpserver_multiple_servers.py
-    :emphasize-lines: 13-14,17,25,33-34,45-46,51-52
+    :emphasize-lines: 13-14,16-17,20,28,36-37,48-49,54-55
     :linenos:
 
 Debug mode

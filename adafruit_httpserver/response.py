@@ -305,7 +305,8 @@ class ChunkedResponse(Response):  # pylint: disable=too-few-public-methods
         self._send_headers()
 
         for chunk in self._body():
-            self._send_chunk(chunk)
+            if 0 < len(chunk):  # Don't send empty chunks
+                self._send_chunk(chunk)
 
         # Empty chunk to indicate end of response
         self._send_chunk()

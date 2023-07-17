@@ -11,7 +11,10 @@ from adafruit_httpserver import Server, Request, Response
 pool = socketpool.SocketPool(wifi.radio)
 
 bedroom_server = Server(pool, "/bedroom", debug=True)
+bedroom_server.headers["X-Server"] = "Bedroom"
+
 office_server = Server(pool, "/office", debug=True)
+office_server.headers["X-Server"] = "Office"
 
 
 @bedroom_server.route("/bedroom")
