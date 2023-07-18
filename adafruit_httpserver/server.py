@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, Protocol, Union, List, Set, Tuple
+    from typing import Callable, Protocol, Union, List, Set, Tuple, Dict
     from socket import socket
     from socketpool import SocketPool
 except ImportError:
@@ -25,6 +25,7 @@ from .exceptions import (
     InvalidPathError,
     ServingFilesDisabledError,
 )
+from .headers import Headers
 from .methods import GET, HEAD
 from .request import Request
 from .response import Response, FileResponse
@@ -32,14 +33,23 @@ from .route import _Routes, Route
 from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
 
-class Server:
+NO_REQUEST = "no_request"
+CONNECTION_TIMED_OUT = "connection_timed_out"
+REQUEST_HANDLED_NO_RESPONSE = "request_handled_no_response"
+REQUEST_HANDLED_RESPONSE_SENT = "request_handled_response_sent"
+
+
+class Server:  # pylint: disable=too-many-instance-attributes
     """A basic socket-based HTTP server."""
 
-    host: str = None
-    """Host name or IP address the server is listening on."""
+    host: str
+    """Host name or IP address the server is listening on. ``None`` if server is stopped."""
 
-    port: int = None
-    """Port the server is listening on."""
+    port: int
+    """Port the server is listening on. ``None`` if server is stopped."""
+
+    root_path: str
+    """Root directory to serve files from. ``None`` if serving files is disabled."""
 
     def __init__(
         self, socket_source: Protocol, root_path: str = None, *, debug: bool = False
@@ -57,10 +67,12 @@ class Server:
         self._routes = _Routes()
         self._socket_source = socket_source
         self._sock = None
+        self.headers = Headers()
+        self.host, self.port = None, None
         self.root_path = root_path
         if root_path in ["", "/"] and debug:
             _debug_warning_exposed_files(root_path)
-        self.stopped = False
+        self.stopped = True
 
         self.debug = debug
 
@@ -325,10 +337,19 @@ class Server:
                 status=NOT_FOUND_404,
             )
 
-    def poll(self):
+    def _set_default_server_headers(self, response: Response) -> None:
+        for name, value in self.headers.items():
+            response._headers.setdefault(  # pylint: disable=protected-access
+                name, value
+            )
+
+    def poll(self) -> str:
         """
         Call this method inside your main loop to get the server to check for new incoming client
         requests. When a request comes in, it will be handled by the handler function.
+
+        Returns str representing the result of the poll
+        e.g. ``NO_REQUEST`` or ``REQUEST_HANDLED_RESPONSE_SENT``.
         """
         if self.stopped:
             raise ServerStoppedError
@@ -340,7 +361,7 @@ class Server:
             # Receive the whole request
             if (request := self._receive_request(conn, client_address)) is None:
                 conn.close()
-                return
+                return CONNECTION_TIMED_OUT
 
             # Find a handler for the route
             handler = self._routes.find_handler(Route(request.path, request.method))
@@ -350,7 +371,9 @@ class Server:
 
             if response is None:
                 conn.close()
-                return
+                return REQUEST_HANDLED_NO_RESPONSE
+
+            self._set_default_server_headers(response)
 
             # Send the response
             response._send()  # pylint: disable=protected-access
@@ -358,16 +381,16 @@ class Server:
             if self.debug:
                 _debug_response_sent(response)
 
-            return
+            return REQUEST_HANDLED_RESPONSE_SENT
 
         except Exception as error:  # pylint: disable=broad-except
             if isinstance(error, OSError):
                 # There is no data available right now, try again later.
                 if error.errno == EAGAIN:
-                    return
+                    return NO_REQUEST
                 # Connection reset by peer, try again later.
                 if error.errno == ECONNRESET:
-                    return
+                    return NO_REQUEST
 
             if self.debug:
                 _debug_exception_in_handler(error)
@@ -383,9 +406,31 @@ class Server:
         Example::
 
             server = Server(pool, "/static")
-            server.require_authentication([Basic("user", "pass")])
+            server.require_authentication([Basic("username", "password")])
         """
         self._auths = auths
+
+    @property
+    def headers(self) -> Headers:
+        """
+        Headers to be sent with every response, without the need to specify them in each handler.
+
+        If a header is specified in both the handler and the server, the handler's header will be
+        used.
+
+        Example::
+
+            server = Server(pool, "/static")
+            server.headers = {
+                "X-Server": "Adafruit CircuitPython HTTP Server",
+                "Access-Control-Allow-Origin": "*",
+            }
+        """
+        return self._headers
+
+    @headers.setter
+    def headers(self, value: Union[Headers, Dict[str, str]]) -> None:
+        self._headers = value.copy() if isinstance(value, Headers) else Headers(value)
 
     @property
     def request_buffer_size(self) -> int:

@@ -8,8 +8,14 @@ import wifi
 
 from adafruit_httpserver import Server, Request, JSONResponse
 
+
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)
+
+# (Optional) Allow cross-origin requests.
+server.headers = {
+    "Access-Control-Allow-Origin": "*",
+}
 
 
 @server.route("/cpu-information", append_slash=True)

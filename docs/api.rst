@@ -12,6 +12,7 @@
 
 .. automodule:: adafruit_httpserver.request
     :members:
+    :inherited-members:
 
 .. automodule:: adafruit_httpserver.response
     :members:

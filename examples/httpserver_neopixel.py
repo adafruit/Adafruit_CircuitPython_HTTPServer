@@ -34,12 +34,12 @@ def change_neopixel_color_handler_query_params(request: Request):
 
 # This is another way to register a route. It uses the decorator that converts the function into
 # a Route object that can be imported and registered later.
-@as_route("/change-neopixel-color", POST)
-def change_neopixel_color_handler_post_body(request: Request):
-    """Changes the color of the built-in NeoPixel using POST body."""
+@as_route("/change-neopixel-color/form-data", POST)
+def change_neopixel_color_handler_post_form_data(request: Request):
+    """Changes the color of the built-in NeoPixel using POST form data."""
 
-    data = request.body  # e.g b"255,0,0"
-    r, g, b = data.decode().split(",")  # ["255", "0", "0"]
+    data = request.form_data  # e.g. r=255&g=0&b=0 or r=255\r\nb=0\r\ng=0
+    r, g, b = data.get("r", 0), data.get("g", 0), data.get("b", 0)
 
     pixel.fill((int(r), int(g), int(b)))
 
@@ -79,7 +79,7 @@ def change_neopixel_color_handler_url_params(
 # Registering Route objects
 server.add_routes(
     [
-        change_neopixel_color_handler_post_body,
+        change_neopixel_color_handler_post_form_data,
         post_json_route,
         # You can also register a inline created Route object
         Route(
