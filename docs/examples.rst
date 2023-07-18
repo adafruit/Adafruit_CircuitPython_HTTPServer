@@ -15,6 +15,14 @@ It also manually connects to the WiFi network.
     :emphasize-lines: 12-17
     :linenos:
 
+It is also possible to use Ethernet instead of WiFi.
+The only difference in usage is related to configuring the ``socket_source`` differently.
+
+.. literalinclude:: ../examples/httpserver_ethernet_simpletest.py
+    :caption: examples/httpserver_ethernet_simpletest.py
+    :emphasize-lines: 13-23
+    :linenos:
+
 Although there is nothing wrong with this approach, from the version 8.0.0 of CircuitPython,
 `it is possible to use the environment variables <https://docs.circuitpython.org/en/latest/docs/environment.html#circuitpython-behavior>`_
 defined in ``settings.toml`` file to store secrets and configure the WiFi network.
@@ -32,6 +40,7 @@ Note that we still need to import ``socketpool`` and ``wifi`` modules.
 
 .. literalinclude:: ../examples/httpserver_simpletest_auto.py
     :caption: examples/httpserver_simpletest_auto.py
+    :emphasize-lines: 11
     :linenos:
 
 Serving static files
@@ -76,7 +85,7 @@ a running total of the last 10 samples.
 
 .. literalinclude:: ../examples/httpserver_start_and_poll.py
     :caption: examples/httpserver_start_and_poll.py
-    :emphasize-lines: 24,33
+    :emphasize-lines: 29,38
     :linenos:
 
 Server with MDNS
@@ -145,7 +154,7 @@ Tested on ESP32-S2 Feather.
 
 .. literalinclude:: ../examples/httpserver_neopixel.py
     :caption: examples/httpserver_neopixel.py
-    :emphasize-lines: 25-27,39,51,60,66
+    :emphasize-lines: 26-28,41,52,68,74
     :linenos:
 
 Form data parsing
@@ -293,7 +302,7 @@ This might change in the future, but for now, it is recommended to use Websocket
 
 .. literalinclude:: ../examples/httpserver_websocket.py
     :caption: examples/httpserver_websocket.py
-    :emphasize-lines: 10,16-17,60-67,76,81
+    :emphasize-lines: 9,16-17,60-67,76,81
     :linenos:
 
 Multiple servers
