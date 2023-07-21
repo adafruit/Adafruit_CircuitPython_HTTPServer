@@ -125,8 +125,10 @@ def as_route(
     """
     Decorator used to convert a function into a ``Route`` object.
 
-    It is a shorthand for manually creating a ``Route`` object, that can be used only one time
-    per function. Later it can be imported and registered in the ``Server``.
+    ``as_route`` can be only used once per function, because it replaces the function with
+    a ``Route`` object that has the same name as the function.
+
+    Later it can be imported and registered in the ``Server``.
 
     :param str path: URL path
     :param str methods: HTTP method(s): ``"GET"``, ``"POST"``, ``["GET", "POST"]`` etc.
@@ -141,6 +143,12 @@ def as_route(
             ...
 
         some_func  # Route(path="/example", methods={"GET"}, handler=<function some_func at 0x...>)
+
+        # WRONG: as_route can be used only once per function
+        @as_route("/wrong-example1")
+        @as_route("/wrong-example2")
+        def wrong_func2(request):
+            ...
 
         # If a route is in another file, you can import it and register it to the server
 
