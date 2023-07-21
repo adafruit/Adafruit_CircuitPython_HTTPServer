@@ -135,14 +135,14 @@ def as_route(
 
     Example::
 
-        # Default method is GET
+        # Converts a function into a Route object
         @as_route("/example")
         def some_func(request):
             ...
 
         some_func  # Route(path="/example", methods={"GET"}, handler=<function some_func at 0x...>)
 
-        # If a route in another file, you can import it and register it to the server
+        # If a route is in another file, you can import it and register it to the server
 
         from .routes import some_func
 
