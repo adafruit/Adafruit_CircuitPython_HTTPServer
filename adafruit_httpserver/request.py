@@ -33,7 +33,8 @@ class _IFieldStorage:
         else:
             self._storage[field_name].append(value)
 
-    def _html_output_encode(self, value):
+    @staticmethod
+    def _html_output_encode(value):
         return (
             str(value)
             .replace("&", "&amp;")
@@ -43,12 +44,13 @@ class _IFieldStorage:
             .replace("'", "&#x27;")
         )
 
-    def _debug_warning_nonencoded_output(self):
+    @staticmethod
+    def _debug_warning_nonencoded_output():
         """Warns about exposing all files on the device."""
         print(
-            f"WARNING: Setting html_output_encode to False will make XSS vulnerabilities possible by "
+            "WARNING: Setting html_output_encode to False makes XSS vulnerabilities possible by "
             "allowing access to raw untrusted values submitted by users. If this data is reflected "
-            "or shown within HTML without proper encoding it could enable Cross-Site Scripting attacks."
+            "or shown within HTML without proper encoding it could enable Cross-Site Scripting."
         )
 
     def get(
@@ -57,9 +59,9 @@ class _IFieldStorage:
         """Get the value of a field."""
         if html_output_encode:
             return self._html_output_encode(self._storage.get(field_name, [default])[0])
-        else:
-            self._debug_warning_nonencoded_output()
-            return self._storage.get(field_name, [default])[0]
+
+        self._debug_warning_nonencoded_output()
+        return self._storage.get(field_name, [default])[0]
 
     def get_list(self, field_name: str) -> List[Union[str, bytes]]:
         """Get the list of values of a field."""
