@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries
+# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries, Michał Pokusa
 #
 # SPDX-License-Identifier: MIT
 """
