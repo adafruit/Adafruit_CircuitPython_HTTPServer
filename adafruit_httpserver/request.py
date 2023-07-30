@@ -35,6 +35,7 @@ class _IFieldStorage:
 
     @staticmethod
     def _html_output_encode(value):
+        """Encodes unsafe HTML characters."""
         return (
             str(value)
             .replace("&", "&amp;")
@@ -46,7 +47,7 @@ class _IFieldStorage:
 
     @staticmethod
     def _debug_warning_nonencoded_output():
-        """Warns about exposing all files on the device."""
+        """Warns about XSS risks."""
         print(
             "WARNING: Setting html_output_encode to False makes XSS vulnerabilities possible by "
             "allowing access to raw untrusted values submitted by users. If this data is reflected "
