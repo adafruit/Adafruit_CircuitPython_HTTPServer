@@ -23,11 +23,13 @@ HTML_TEMPLATE = """
         <title>Server-Sent Events Client</title>
     </head>
     <body>
+        <p>CPU temperature: <strong>-</strong>&deg;C</p>
         <script>
             const eventSource = new EventSource('/connect-client');
+            const cpuTemp = document.querySelector('strong');
 
-            eventSource.onmessage = event => console.log('Event data:', event.data);
-            eventSource.onerror = error => console.error('SSE error:', error);
+            eventSource.onmessage = event => cpuTemp.textContent = event.data;
+            eventSource.onerror = error => cpuTemp.textContent = error;
         </script>
     </body>
 </html>
@@ -58,5 +60,5 @@ while True:
     # Send an event every second
     if sse_response is not None and next_event_time < monotonic():
         cpu_temp = round(microcontroller.cpu.temperature, 2)
-        sse_response.send_event(f"CPU: {cpu_temp}°C")
+        sse_response.send_event(str(cpu_temp))
         next_event_time = monotonic() + 1

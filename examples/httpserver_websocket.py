@@ -3,6 +3,9 @@
 # SPDX-License-Identifier: Unlicense
 
 from time import monotonic
+import board
+import microcontroller
+import neopixel
 import socketpool
 import wifi
 
@@ -11,6 +14,8 @@ from adafruit_httpserver import Server, Request, Response, Websocket, GET
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)
+
+pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 
 
 websocket: Websocket = None
@@ -22,28 +27,30 @@ HTML_TEMPLATE = """
         <title>Websocket Client</title>
     </head>
     <body>
-        <input id="message" type="text" placeholder="Message..."><br>
-        <button id="send">Send</button>
-
-
+        <p>CPU temperature: <strong>-</strong>&deg;C</p>
+        <p>NeoPixel Color: <input type="color"></p>
         <script>
-            const messageInput = document.querySelector('#message');
-            const sendButton = document.querySelector('#send');
+            const cpuTemp = document.querySelector('strong');
+            const colorPicker = document.querySelector('input[type="color"]');
 
             let ws = new WebSocket('ws://' + location.host + '/connect-websocket');
 
             ws.onopen = () => console.log('WebSocket connection opened');
-            ws.onerror = error => console.error('WebSocket error:', error);
-            ws.onmessage = event => console.log('Received message from server: ', event.data);
+            ws.onclose = () => console.log('WebSocket connection closed');
+            ws.onmessage = event => cpuTemp.textContent = event.data;
+            ws.onerror = error => cpuTemp.textContent = error;
 
-            let interval = setInterval(() => ws.send("Hello from client"), 1000);
+            colorPicker.oninput = debounce(() => ws.send(colorPicker.value), 200);
 
-            ws.onclose = x => {
-                console.log('WebSocket connection closed');
-                clearInterval(interval);
-            };
-
-            sendButton.onclick = () => ws.send(messageInput.value);
+            function debounce(callback, delay = 1000) {
+                let timeout
+                return (...args) => {
+                    clearTimeout(timeout)
+                    timeout = setTimeout(() => {
+                    callback(...args)
+                  }, delay)
+                }
+            }
         </script>
     </body>
 </html>
@@ -73,10 +80,12 @@ while True:
 
     # Check for incoming messages from client
     if websocket is not None:
-        if (message := websocket.receive(True)) is not None:
-            print("Received message from client:", message)
+        if (data := websocket.receive(True)) is not None:
+            r, g, b = int(data[1:3], 16), int(data[3:5], 16), int(data[5:7], 16)
+            pixel.fill((r, g, b))
 
     # Send a message every second
     if websocket is not None and next_message_time < monotonic():
-        websocket.send_message("Hello from server")
+        cpu_temp = round(microcontroller.cpu.temperature, 2)
+        websocket.send_message(str(cpu_temp))
         next_message_time = monotonic() + 1

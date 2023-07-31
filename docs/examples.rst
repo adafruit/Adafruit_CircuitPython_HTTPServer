@@ -283,7 +283,7 @@ This might change in the future, but for now, it is recommended to use SSE only 
 
 .. literalinclude:: ../examples/httpserver_sse.py
     :caption: examples/httpserver_sse.py
-    :emphasize-lines: 10,17,44-51,61
+    :emphasize-lines: 10,17,46-53,63
     :linenos:
 
 Websockets
@@ -302,7 +302,7 @@ This might change in the future, but for now, it is recommended to use Websocket
 
 .. literalinclude:: ../examples/httpserver_websocket.py
     :caption: examples/httpserver_websocket.py
-    :emphasize-lines: 9,16-17,60-67,76,81
+    :emphasize-lines: 12,21,67-73,83,90
     :linenos:
 
 Multiple servers
