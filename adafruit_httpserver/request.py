@@ -34,7 +34,7 @@ class _IFieldStorage:
             self._storage[field_name].append(value)
 
     @staticmethod
-    def _html_output_encode(value):
+    def _encode_html_entities(value):
         """Encodes unsafe HTML characters."""
         return (
             str(value)
@@ -42,26 +42,17 @@ class _IFieldStorage:
             .replace("<", "&lt;")
             .replace(">", "&gt;")
             .replace('"', "&quot;")
-            .replace("'", "&#x27;")
-        )
-
-    @staticmethod
-    def _debug_warning_nonencoded_output():
-        """Warns about XSS risks."""
-        print(
-            "WARNING: Setting html_output_encode to False makes XSS vulnerabilities possible by "
-            "allowing access to raw untrusted values submitted by users. If this data is reflected "
-            "or shown within HTML without proper encoding it could enable Cross-Site Scripting."
+            .replace("'", "&apos;")
         )
 
     def get(
-        self, field_name: str, default: Any = None, html_output_encode=True
+        self, field_name: str, default: Any = None, *, safe=True
     ) -> Union[str, bytes, None]:
         """Get the value of a field."""
-        if html_output_encode:
-            return self._html_output_encode(self._storage.get(field_name, [default])[0])
+        if safe:
+            return self._encode_html_entities(self._storage.get(field_name, [default])[0])
 
-        self._debug_warning_nonencoded_output()
+        _debug_warning_nonencoded_output()
         return self._storage.get(field_name, [default])[0]
 
     def get_list(self, field_name: str) -> List[Union[str, bytes]]:
@@ -375,3 +366,12 @@ class Request:
                 for name, value in [header_line.split(": ", 1)]
             }
         )
+
+
+def _debug_warning_nonencoded_output():
+    """Warns about XSS risks."""
+    print(
+        "WARNING: Setting safe to False makes XSS vulnerabilities possible by "
+        "allowing access to raw untrusted values submitted by users. If this data is reflected "
+        "or shown within HTML without proper encoding it could enable Cross-Site Scripting."
+    )
