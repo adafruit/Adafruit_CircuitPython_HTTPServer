@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries
+# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries, Michał Pokusa
 #
 # SPDX-License-Identifier: MIT
 """
@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, List, Set, Union, Tuple, TYPE_CHECKING
+    from typing import Callable, List, Set, Union, Tuple, Dict, TYPE_CHECKING
 
     if TYPE_CHECKING:
         from .response import Response
@@ -20,16 +20,18 @@ import re
 from .methods import GET
 
 
-class _Route:
+class Route:
     """Route definition for different paths, see `adafruit_httpserver.server.Server.route`."""
 
     def __init__(
         self,
         path: str = "",
         methods: Union[str, Set[str]] = GET,
+        handler: Callable = None,
+        *,
         append_slash: bool = False,
     ) -> None:
-        self._validate_path(path)
+        self._validate_path(path, append_slash)
 
         self.parameters_names = [
             name[1:-1] for name in re.compile(r"/[^<>]*/?").split(path) if name != ""
@@ -37,17 +39,24 @@ class _Route:
         self.path = re.sub(r"<\w+>", r"([^/]+)", path).replace("....", r".+").replace(
             "...", r"[^/]+"
         ) + ("/?" if append_slash else "")
-        self.methods = methods if isinstance(methods, set) else {methods}
+        self.methods = (
+            set(methods) if isinstance(methods, (set, list)) else set([methods])
+        )
+
+        self.handler = handler
 
     @staticmethod
-    def _validate_path(path: str) -> None:
+    def _validate_path(path: str, append_slash: bool) -> None:
         if not path.startswith("/"):
             raise ValueError("Path must start with a slash.")
 
         if "<>" in path:
             raise ValueError("All URL parameters must be named.")
 
-    def match(self, other: "_Route") -> Tuple[bool, List[str]]:
+        if path.endswith("/") and append_slash:
+            raise ValueError("Cannot use append_slash=True when path ends with /")
+
+    def match(self, other: "Route") -> Tuple[bool, Dict[str, str]]:
         """
         Checks if the route matches the other route.
 
@@ -59,67 +68,119 @@ class _Route:
 
         Examples::
 
-            route = _Route("/example", GET, True)
+            route = Route("/example", GET, True)
 
-            other1a = _Route("/example", GET)
-            other1b = _Route("/example/", GET)
-            route.matches(other1a) # True, []
-            route.matches(other1b) # True, []
+            other1a = Route("/example", GET)
+            other1b = Route("/example/", GET)
+            route.matches(other1a) # True, {}
+            route.matches(other1b) # True, {}
 
-            other2 = _Route("/other-example", GET)
-            route.matches(other2) # False, []
-
-            ...
-
-            route = _Route("/example/<parameter>", GET)
-
-            other1 = _Route("/example/123", GET)
-            route.matches(other1) # True, ["123"]
-
-            other2 = _Route("/other-example", GET)
-            route.matches(other2) # False, []
+            other2 = Route("/other-example", GET)
+            route.matches(other2) # False, {}
 
             ...
 
-            route1 = _Route("/example/.../something", GET)
-            other1 = _Route("/example/123/something", GET)
-            route1.matches(other1) # True, []
+            route = Route("/example/<parameter>", GET)
 
-            route2 = _Route("/example/..../something", GET)
-            other2 = _Route("/example/123/456/something", GET)
-            route2.matches(other2) # True, []
+            other1 = Route("/example/123", GET)
+            route.matches(other1) # True, {"parameter": "123"}
+
+            other2 = Route("/other-example", GET)
+            route.matches(other2) # False, {}
+
+            ...
+
+            route1 = Route("/example/.../something", GET)
+            other1 = Route("/example/123/something", GET)
+            route1.matches(other1) # True, {}
+
+            route2 = Route("/example/..../something", GET)
+            other2 = Route("/example/123/456/something", GET)
+            route2.matches(other2) # True, {}
         """
 
         if not other.methods.issubset(self.methods):
-            return False, []
+            return False, {}
 
         regex_match = re.match(f"^{self.path}$", other.path)
         if regex_match is None:
-            return False, []
+            return False, {}
 
-        return True, regex_match.groups()
+        return True, dict(zip(self.parameters_names, regex_match.groups()))
 
     def __repr__(self) -> str:
         path = repr(self.path)
         methods = repr(self.methods)
+        handler = repr(self.handler)
 
-        return f"_Route(path={path}, methods={methods})"
+        return f"Route({path=}, {methods=}, {handler=})"
+
+
+def as_route(
+    path: str,
+    methods: Union[str, Set[str]] = GET,
+    *,
+    append_slash: bool = False,
+) -> "Callable[[Callable[..., Response]], Route]":
+    """
+    Decorator used to convert a function into a ``Route`` object.
+
+    ``as_route`` can be only used once per function, because it replaces the function with
+    a ``Route`` object that has the same name as the function.
+
+    Later it can be imported and registered in the ``Server``.
+
+    :param str path: URL path
+    :param str methods: HTTP method(s): ``"GET"``, ``"POST"``, ``["GET", "POST"]`` etc.
+    :param bool append_slash: If True, the route will be accessible with and without a
+        trailing slash
+
+    Example::
+
+        # Converts a function into a Route object
+        @as_route("/example")
+        def some_func(request):
+            ...
+
+        some_func  # Route(path="/example", methods={"GET"}, handler=<function some_func at 0x...>)
+
+        # WRONG: as_route can be used only once per function
+        @as_route("/wrong-example1")
+        @as_route("/wrong-example2")
+        def wrong_func2(request):
+            ...
+
+        # If a route is in another file, you can import it and register it to the server
+
+        from .routes import some_func
+
+        ...
+
+        server.add_routes([
+            some_func,
+        ])
+    """
+
+    def route_decorator(func: Callable) -> Route:
+        if isinstance(func, Route):
+            raise ValueError("as_route can be used only once per function.")
+
+        return Route(path, methods, func, append_slash=append_slash)
+
+    return route_decorator
 
 
 class _Routes:
     """A collection of routes and their corresponding handlers."""
 
     def __init__(self) -> None:
-        self._routes: List[_Route] = []
-        self._handlers: List[Callable] = []
+        self._routes: List[Route] = []
 
-    def add(self, route: _Route, handler: Callable):
+    def add(self, route: Route):
         """Adds a route and its handler to the collection."""
-
         self._routes.append(route)
-        self._handlers.append(handler)
 
-    def find_handler(self, route: _Route) -> Union[Callable["...", "Response"], None]:
+    def find_handler(self, route: Route) -> Union[Callable["...", "Response"], None]:
         """
         Finds a handler for a given route.
 
@@ -137,7 +198,7 @@ class _Routes:
         found_route, _route = False, None
 
         for _route in self._routes:
-            matches, parameters_values = _route.match(route)
+            matches, keyword_parameters = _route.match(route)
 
             if matches:
                 found_route = True
@@ -146,9 +207,7 @@ class _Routes:
         if not found_route:
             return None
 
-        handler = self._handlers[self._routes.index(_route)]
-
-        keyword_parameters = dict(zip(_route.parameters_names, parameters_values))
+        handler = _route.handler
 
         def wrapped_handler(request):
             return handler(request, **keyword_parameters)

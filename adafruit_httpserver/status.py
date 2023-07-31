@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries
+# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries, Michał Pokusa
 #
 # SPDX-License-Identifier: MIT
 """
@@ -30,6 +30,8 @@ class Status:  # pylint: disable=too-few-public-methods
     def __eq__(self, other: "Status"):
         return self.code == other.code and self.text == other.text
 
+
+SWITCHING_PROTOCOLS_101 = Status(101, "Switching Protocols")
 
 OK_200 = Status(200, "OK")
 

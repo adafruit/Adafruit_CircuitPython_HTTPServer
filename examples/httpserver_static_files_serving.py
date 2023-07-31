@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Dan Halbert for Adafruit Industries
+# SPDX-FileCopyrightText: 2023 Michał Pokusa
 #
 # SPDX-License-Identifier: Unlicense
 

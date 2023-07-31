@@ -15,6 +15,14 @@ It also manually connects to the WiFi network.
     :emphasize-lines: 12-17
     :linenos:
 
+It is also possible to use Ethernet instead of WiFi.
+The only difference in usage is related to configuring the ``socket_source`` differently.
+
+.. literalinclude:: ../examples/httpserver_ethernet_simpletest.py
+    :caption: examples/httpserver_ethernet_simpletest.py
+    :emphasize-lines: 13-23
+    :linenos:
+
 Although there is nothing wrong with this approach, from the version 8.0.0 of CircuitPython,
 `it is possible to use the environment variables <https://docs.circuitpython.org/en/latest/docs/environment.html#circuitpython-behavior>`_
 defined in ``settings.toml`` file to store secrets and configure the WiFi network.
@@ -32,6 +40,7 @@ Note that we still need to import ``socketpool`` and ``wifi`` modules.
 
 .. literalinclude:: ../examples/httpserver_simpletest_auto.py
     :caption: examples/httpserver_simpletest_auto.py
+    :emphasize-lines: 11
     :linenos:
 
 Serving static files
@@ -76,7 +85,7 @@ a running total of the last 10 samples.
 
 .. literalinclude:: ../examples/httpserver_start_and_poll.py
     :caption: examples/httpserver_start_and_poll.py
-    :emphasize-lines: 24,33
+    :emphasize-lines: 29,38
     :linenos:
 
 Server with MDNS
@@ -145,7 +154,7 @@ Tested on ESP32-S2 Feather.
 
 .. literalinclude:: ../examples/httpserver_neopixel.py
     :caption: examples/httpserver_neopixel.py
-    :emphasize-lines: 25-27,39,51,60,66
+    :emphasize-lines: 26-28,41,52,68,74
     :linenos:
 
 Form data parsing
@@ -257,6 +266,43 @@ You can specify wheter the redirect is permanent or temporary by passing ``perma
 .. literalinclude:: ../examples/httpserver_redirects.py
     :caption: examples/httpserver_redirects.py
     :emphasize-lines: 14-18,26,38
+    :linenos:
+
+Server-Sent Events
+------------------
+
+All types of responses until now were synchronous, meaning that the response was sent immediately after the handler function returned.
+However, sometimes you might want to send data to the client at a later time, e.g. when some event occurs.
+This can be overcomed by periodically polling the server, but it is not an elegant solution. Instead, you can use Server-Sent Events (SSE).
+
+Response is initialized on ``return``, events can be sent using ``.send_event()`` method. Due to the nature of SSE, it is necessary to store the
+response object somewhere, so that it can be accessed later.
+
+**Because of the limited number of concurrently open sockets, it is not possible to process more than one SSE response at the same time.
+This might change in the future, but for now, it is recommended to use SSE only with one client at a time.**
+
+.. literalinclude:: ../examples/httpserver_sse.py
+    :caption: examples/httpserver_sse.py
+    :emphasize-lines: 10,17,46-53,63
+    :linenos:
+
+Websockets
+----------
+
+Although SSE provide a simple way to send data from the server to the client, they are not suitable for sending data the other way around.
+
+For that purpose, you can use Websockets. They are more complex than SSE, but they provide a persistent two-way communication channel between
+the client and the server.
+
+Remember, that because Websockets also receive data, you have to explicitly call ``.receive()`` on the ``Websocket`` object to get the message.
+This is anologous to calling ``.poll()`` on the ``Server`` object.
+
+**Because of the limited number of concurrently open sockets, it is not possible to process more than one Websocket response at the same time.
+This might change in the future, but for now, it is recommended to use Websocket only with one client at a time.**
+
+.. literalinclude:: ../examples/httpserver_websocket.py
+    :caption: examples/httpserver_websocket.py
+    :emphasize-lines: 12,21,67-73,83,90
     :linenos:
 
 Multiple servers

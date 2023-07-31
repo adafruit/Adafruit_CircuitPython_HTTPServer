@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries
+# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries, Michał Pokusa
 #
 # SPDX-License-Identifier: MIT
 """
@@ -58,7 +58,10 @@ from .response import (
     ChunkedResponse,
     JSONResponse,
     Redirect,
+    SSEResponse,
+    Websocket,
 )
+from .route import Route, as_route
 from .server import (
     Server,
     NO_REQUEST,
@@ -68,6 +71,7 @@ from .server import (
 )
 from .status import (
     Status,
+    SWITCHING_PROTOCOLS_101,
     OK_200,
     CREATED_201,
     ACCEPTED_202,

@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries
+# SPDX-FileCopyrightText: Copyright (c) 2022 Dan Halbert for Adafruit Industries, Michał Pokusa
 #
 # SPDX-License-Identifier: MIT
 """
@@ -29,7 +29,7 @@ from .headers import Headers
 from .methods import GET, HEAD
 from .request import Request
 from .response import Response, FileResponse
-from .route import _Routes, _Route
+from .route import _Routes, Route
 from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
 
@@ -129,16 +129,35 @@ class Server:  # pylint: disable=too-many-instance-attributes
             def route_func(request):
                 ...
         """
-        if path.endswith("/") and append_slash:
-            raise ValueError("Cannot use append_slash=True when path ends with /")
-
-        methods = set(methods) if isinstance(methods, (set, list)) else set([methods])
 
         def route_decorator(func: Callable) -> Callable:
-            self._routes.add(_Route(path, methods, append_slash), func)
+            self._routes.add(Route(path, methods, func, append_slash=append_slash))
             return func
 
         return route_decorator
+
+    def add_routes(self, routes: List[Route]) -> None:
+        """
+        Add multiple routes at once.
+
+        :param List[Route] routes: List of routes to add to the server
+
+        Example::
+
+            from separate_file import external_route1, external_route2
+
+            ...
+
+            server.add_routes([
+                Route("/example", GET, route_func1, append_slash=True),
+                Route("/example/<my_parameter>", GET, route_func2),
+                Route("/example/..../something", [GET, POST], route_func3),
+                external_route1,
+                external_route2,
+            ]}
+        """
+        for route in routes:
+            self._routes.add(route)
 
     def _verify_can_start(self, host: str, port: int) -> None:
         """Check if the server can be successfully started. Raises RuntimeError if not."""
@@ -337,33 +356,32 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
         try:
             conn, client_address = self._sock.accept()
-            with conn:
-                conn.settimeout(self._timeout)
+            conn.settimeout(self._timeout)
 
-                # Receive the whole request
-                if (request := self._receive_request(conn, client_address)) is None:
-                    return CONNECTION_TIMED_OUT
+            # Receive the whole request
+            if (request := self._receive_request(conn, client_address)) is None:
+                conn.close()
+                return CONNECTION_TIMED_OUT
 
-                # Find a handler for the route
-                handler = self._routes.find_handler(
-                    _Route(request.path, request.method)
-                )
+            # Find a handler for the route
+            handler = self._routes.find_handler(Route(request.path, request.method))
 
-                # Handle the request
-                response = self._handle_request(request, handler)
+            # Handle the request
+            response = self._handle_request(request, handler)
 
-                if response is None:
-                    return REQUEST_HANDLED_NO_RESPONSE
+            if response is None:
+                conn.close()
+                return REQUEST_HANDLED_NO_RESPONSE
 
-                self._set_default_server_headers(response)
+            self._set_default_server_headers(response)
 
-                # Send the response
-                response._send()  # pylint: disable=protected-access
+            # Send the response
+            response._send()  # pylint: disable=protected-access
 
-                if self.debug:
-                    _debug_response_sent(response)
+            if self.debug:
+                _debug_response_sent(response)
 
-                return REQUEST_HANDLED_RESPONSE_SENT
+            return REQUEST_HANDLED_RESPONSE_SENT
 
         except Exception as error:  # pylint: disable=broad-except
             if isinstance(error, OSError):
@@ -377,6 +395,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
             if self.debug:
                 _debug_exception_in_handler(error)
 
+            conn.close()
             raise error  # Raise the exception again to be handled by the user.
 
     def require_authentication(self, auths: List[Union[Basic, Bearer]]) -> None:
