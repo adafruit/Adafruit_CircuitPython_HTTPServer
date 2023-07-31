@@ -60,7 +60,7 @@ def change_neopixel_color_handler_post_json(request: Request):
 # You can always manually create a Route object and import or register it later.
 # Using this approach you can also use the same handler for multiple routes.
 post_json_route = Route(
-    "/change-neopixel-color/json", GET, change_neopixel_color_handler_post_json
+    "/change-neopixel-color/json", POST, change_neopixel_color_handler_post_json
 )
 
 

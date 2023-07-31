@@ -302,8 +302,8 @@ class Request:
         return self._form_data
 
     def json(self) -> Union[dict, None]:
-        """Body of the request, as a JSON-decoded dictionary."""
-        return json.loads(self.body) if self.body else None
+        """Body of the request, as a JSON-decoded dictionary. Only available for POST requests."""
+        return json.loads(self.body) if (self.body and self.method == "POST") else None
 
     @property
     def _raw_header_bytes(self) -> bytes:
