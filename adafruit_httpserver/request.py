@@ -50,7 +50,9 @@ class _IFieldStorage:
     ) -> Union[str, bytes, None]:
         """Get the value of a field."""
         if safe:
-            return self._encode_html_entities(self._storage.get(field_name, [default])[0])
+            return self._encode_html_entities(
+                self._storage.get(field_name, [default])[0]
+            )
 
         _debug_warning_nonencoded_output()
         return self._storage.get(field_name, [default])[0]
