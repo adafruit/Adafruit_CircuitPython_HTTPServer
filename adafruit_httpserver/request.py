@@ -33,8 +33,28 @@ class _IFieldStorage:
         else:
             self._storage[field_name].append(value)
 
-    def get(self, field_name: str, default: Any = None) -> Union[str, bytes, None]:
+    @staticmethod
+    def _encode_html_entities(value):
+        """Encodes unsafe HTML characters."""
+        return (
+            str(value)
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace('"', "&quot;")
+            .replace("'", "&apos;")
+        )
+
+    def get(
+        self, field_name: str, default: Any = None, *, safe=True
+    ) -> Union[str, bytes, None]:
         """Get the value of a field."""
+        if safe:
+            return self._encode_html_entities(
+                self._storage.get(field_name, [default])[0]
+            )
+
+        _debug_warning_nonencoded_output()
         return self._storage.get(field_name, [default])[0]
 
     def get_list(self, field_name: str) -> List[Union[str, bytes]]:
@@ -348,3 +368,12 @@ class Request:
                 for name, value in [header_line.split(": ", 1)]
             }
         )
+
+
+def _debug_warning_nonencoded_output():
+    """Warns about XSS risks."""
+    print(
+        "WARNING: Setting safe to False makes XSS vulnerabilities possible by "
+        "allowing access to raw untrusted values submitted by users. If this data is reflected "
+        "or shown within HTML without proper encoding it could enable Cross-Site Scripting."
+    )
