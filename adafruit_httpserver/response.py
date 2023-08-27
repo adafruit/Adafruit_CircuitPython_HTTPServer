@@ -178,14 +178,14 @@ class FileResponse(Response):  # pylint: disable=too-few-public-methods
         :param str filename: Name of the file to send.
         :param str root_path: Path to the root directory from which to serve files. Defaults to
           server's ``root_path``.
-        :param Status status: Status code and text. Defaults to 200 OK.
+        :param Status status: Status code and text. Defaults to ``200 OK``.
         :param Headers headers: Headers to include in response.
         :param str content_type: Content type of response.
-        :param bool as_attachment: If True, the file will be sent as an attachment.
+        :param bool as_attachment: If ``True``, the file will be sent as an attachment.
         :param str download_filename: Name of the file to send as an attachment.
-        :param int buffer_size: Size of the buffer used to send the file. Defaults to 1024.
-        :param bool head_only: If True, only headers will be sent. Defaults to False.
-        :param bool safe: If True, checks if ``filename`` is valid. Defaults to True.
+        :param int buffer_size: Size of the buffer used to send the file. Defaults to ``1024``.
+        :param bool head_only: If ``True``, only headers will be sent. Defaults to ``False``.
+        :param bool safe: If ``True``, checks if ``filename`` is valid. Defaults to ``True``.
         """
         if safe:
             self._verify_file_path_is_valid(filename)

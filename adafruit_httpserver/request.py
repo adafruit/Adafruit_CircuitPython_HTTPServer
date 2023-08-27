@@ -34,7 +34,7 @@ class _IFieldStorage:
             self._storage[field_name].append(value)
 
     @staticmethod
-    def _encode_html_entities(value):
+    def _encode_html_entities(value: str) -> str:
         """Encodes unsafe HTML characters."""
         return (
             str(value)
@@ -84,11 +84,11 @@ class _IFieldStorage:
 
 class QueryParams(_IFieldStorage):
     """
-    Class for parsing and storing GET quer parameters requests.
+    Class for parsing and storing GET query parameters requests.
 
     Examples::
 
-        query_params = QueryParams(b"foo=bar&baz=qux&baz=quux")
+        query_params = QueryParams("foo=bar&baz=qux&baz=quux")
         # QueryParams({"foo": "bar", "baz": ["qux", "quux"]})
 
         query_params.get("foo") # "bar"
@@ -99,7 +99,7 @@ class QueryParams(_IFieldStorage):
         query_params.fields # ["foo", "baz"]
     """
 
-    _storage: Dict[str, List[Union[str, bytes]]]
+    _storage: Dict[str, List[str]]
 
     def __init__(self, query_string: str) -> None:
         self._storage = {}
@@ -151,7 +151,7 @@ class FormData(_IFieldStorage):
             self._parse_text_plain(data)
 
     def _parse_x_www_form_urlencoded(self, data: bytes) -> None:
-        decoded_data = data.decode()
+        decoded_data = data.decode("utf-8")
 
         for field_name, value in [
             key_value.split("=", 1) for key_value in decoded_data.split("&")
@@ -169,12 +169,12 @@ class FormData(_IFieldStorage):
             self._add_field_value(field_name, value)
 
     def _parse_text_plain(self, data: bytes) -> None:
-        lines = data.split(b"\r\n")[:-1]
+        lines = data.decode("utf-8").split("\r\n")[:-1]
 
         for line in lines:
-            field_name, value = line.split(b"=", 1)
+            field_name, value = line.split("=", 1)
 
-            self._add_field_value(field_name.decode(), value.decode())
+            self._add_field_value(field_name, value)
 
 
 class Request:
@@ -231,7 +231,7 @@ class Request:
 
     raw_request: bytes
     """
-    Raw 'bytes' that were received from the client.
+    Raw ``bytes`` that were received from the client.
 
     Should **not** be modified directly.
     """
@@ -340,10 +340,10 @@ class Request:
         return self.raw_request[empty_line_index + 4 :]
 
     @staticmethod
-    def _parse_start_line(header_bytes: bytes) -> Tuple[str, str, Dict[str, str], str]:
+    def _parse_start_line(header_bytes: bytes) -> Tuple[str, str, QueryParams, str]:
         """Parse HTTP Start line to method, path, query_params and http_version."""
 
-        start_line = header_bytes.decode("utf8").splitlines()[0]
+        start_line = header_bytes.decode("utf-8").splitlines()[0]
 
         method, path, http_version = start_line.split()
 
@@ -359,7 +359,7 @@ class Request:
     @staticmethod
     def _parse_headers(header_bytes: bytes) -> Headers:
         """Parse HTTP headers from raw request."""
-        header_lines = header_bytes.decode("utf8").splitlines()[1:]
+        header_lines = header_bytes.decode("utf-8").splitlines()[1:]
 
         return Headers(
             {

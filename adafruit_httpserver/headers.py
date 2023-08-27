@@ -52,7 +52,7 @@ class Headers:
 
         self._storage = {key.lower(): [key, value] for key, value in headers.items()}
 
-    def get(self, name: str, default: str = None):
+    def get(self, name: str, default: str = None) -> Union[str, None]:
         """Returns the value for the given header name, or default if not found."""
         return self._storage.get(name.lower(), [None, default])[1]
 
@@ -66,11 +66,11 @@ class Headers:
 
     def keys(self):
         """Returns a list of header names."""
-        return dict(self._storage.values()).keys()
+        return list(dict(self._storage.values()).keys())
 
     def values(self):
         """Returns a list of header values."""
-        return dict(self._storage.values()).values()
+        return list(dict(self._storage.values()).values())
 
     def update(self, headers: Dict[str, str]):
         """Updates the headers with the given dict."""
