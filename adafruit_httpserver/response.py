@@ -31,6 +31,8 @@ from .status import (
     Status,
     SWITCHING_PROTOCOLS_101,
     OK_200,
+    MOVED_PERMANENTLY_301,
+    FOUND_302,
     TEMPORARY_REDIRECT_307,
     PERMANENT_REDIRECT_308,
 )
@@ -393,19 +395,40 @@ class Redirect(Response):  # pylint: disable=too-few-public-methods
         url: str,
         *,
         permanent: bool = False,
+        preserve_method: bool = False,
+        status: Union[Status, Tuple[int, str]] = None,
         headers: Union[Headers, Dict[str, str]] = None,
     ) -> None:
         """
+        By default uses ``permament`` and ``preserve_method`` to determine the ``status`` code to
+        use, but if you prefer you can specify it directly.
+
+        Note that ``301 Moved Permanently`` and ``302 Found`` can change the method to ``GET``
+        while ``307 Temporary Redirect`` and ``308 Permanent Redirect`` preserve the method.
+
+        More information:
+        https://developer.mozilla.org/en-US/docs/Web/HTTP/Status#redirection_messages
+
         :param Request request: Request that this is a response to.
         :param str url: URL to redirect to.
-        :param bool permanent: Whether to use a permanent redirect (308) or a temporary one (307).
+        :param bool permanent: Whether to use a permanent redirect or a temporary one.
+        :param bool preserve_method: Whether to preserve the method of the request.
+        :param Status status: Status object or tuple with code and message.
         :param Headers headers: Headers to include in response.
         """
-        super().__init__(
-            request,
-            status=PERMANENT_REDIRECT_308 if permanent else TEMPORARY_REDIRECT_307,
-            headers=headers,
-        )
+
+        if status is not None and (permanent or preserve_method):
+            raise ValueError(
+                "Cannot specify both status and permanent/preserve_method argument"
+            )
+
+        if status is None:
+            if preserve_method:
+                status = PERMANENT_REDIRECT_308 if permanent else TEMPORARY_REDIRECT_307
+            else:
+                status = MOVED_PERMANENTLY_301 if permanent else FOUND_302
+
+        super().__init__(request, status=status, headers=headers)
         self._headers.update({"Location": url})
 
     def _send(self) -> None:

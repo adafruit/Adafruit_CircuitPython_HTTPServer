@@ -43,6 +43,10 @@ NO_CONTENT_204 = Status(204, "No Content")
 
 PARTIAL_CONTENT_206 = Status(206, "Partial Content")
 
+MOVED_PERMANENTLY_301 = Status(301, "Moved Permanently")
+
+FOUND_302 = Status(302, "Found")
+
 TEMPORARY_REDIRECT_307 = Status(307, "Temporary Redirect")
 
 PERMANENT_REDIRECT_308 = Status(308, "Permanent Redirect")
