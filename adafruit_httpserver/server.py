@@ -243,7 +243,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
         request = Request(self, sock, client_address, header_bytes)
 
-        content_length = int(request.headers.get("Content-Length", 0))
+        content_length = int(request.headers.get_directive("Content-Length", 0))
         received_body_bytes = request.body
 
         # Receiving remaining body bytes

@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Dict, Tuple
+    from typing import Dict, Tuple, Union
 except ImportError:
     pass
 
@@ -55,6 +55,43 @@ class Headers:
     def get(self, name: str, default: str = None) -> Union[str, None]:
         """Returns the value for the given header name, or default if not found."""
         return self._storage.get(name.lower(), [None, default])[1]
+
+    def get_directive(self, name: str, default: str = None) -> Union[str, None]:
+        """
+        Returns the main value (directive) for the given header name, or default if not found.
+
+        Example::
+
+            headers = Headers({"Content-Type": "text/html; charset=utf-8"})
+            headers.get_directive("Content-Type")
+            # 'text/html'
+        """
+
+        header_value = self.get(name)
+        if header_value is None:
+            return default
+        return header_value.split(";")[0].strip('" ')
+
+    def get_parameter(
+        self, name: str, parameter: str, default: str = None
+    ) -> Union[str, None]:
+        """
+        Returns the value of the given parameter for the given header name, or default if not found.
+
+        Example::
+
+            headers = Headers({"Content-Type": "text/html; charset=utf-8"})
+            headers.get_parameter("Content-Type", "charset")
+            # 'utf-8'
+        """
+
+        header_value = self.get(name)
+        if header_value is None:
+            return default
+        for header_parameter in header_value.split(";"):
+            if header_parameter.strip().startswith(parameter):
+                return header_parameter.strip().split("=")[1].strip('" ')
+        return default
 
     def setdefault(self, name: str, default: str = None):
         """Sets the value for the given header name if it does not exist."""

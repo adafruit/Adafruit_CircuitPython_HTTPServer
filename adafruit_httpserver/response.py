@@ -581,18 +581,18 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
 
     @staticmethod
     def _check_request_initiates_handshake(request: Request):
-        if any(
+        if not all(
             [
-                "websocket" not in request.headers.get("Upgrade", "").lower(),
-                "upgrade" not in request.headers.get("Connection", "").lower(),
-                "Sec-WebSocket-Key" not in request.headers,
+                "websocket" in request.headers.get_directive("Upgrade", "").lower(),
+                "upgrade" in request.headers.get_directive("Connection", "").lower(),
+                "Sec-WebSocket-Key" in request.headers,
             ]
         ):
             raise ValueError("Request does not initiate websocket handshake")
 
     @staticmethod
     def _process_sec_websocket_key(request: Request) -> str:
-        key = request.headers.get("Sec-WebSocket-Key")
+        key = request.headers.get_directive("Sec-WebSocket-Key")
 
         if key is None:
             raise ValueError("Request does not have Sec-WebSocket-Key header")
