@@ -262,10 +262,13 @@ Sometimes you might want to redirect the user to a different URL, either on the 
 You can do that by returning ``Redirect`` from your handler function.
 
 You can specify wheter the redirect is permanent or temporary by passing ``permanent=...``  to ``Redirect``.
+If you need the redirect to preserve the original request method, you can set ``preserve_method=True``.
+
+Alternatively, you can pass a ``status`` object directly to ``Redirect`` constructor.
 
 .. literalinclude:: ../examples/httpserver_redirects.py
     :caption: examples/httpserver_redirects.py
-    :emphasize-lines: 14-18,26,38
+    :emphasize-lines: 22-26,32,38,44,56
     :linenos:
 
 Server-Sent Events
