@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, List, Set, Union, Tuple, Dict, TYPE_CHECKING
+    from typing import Callable, List, Iterable, Union, Tuple, Dict, TYPE_CHECKING
 
     if TYPE_CHECKING:
         from .response import Response
@@ -26,7 +26,7 @@ class Route:
     def __init__(
         self,
         path: str = "",
-        methods: Union[str, Set[str]] = GET,
+        methods: Union[str, Iterable[str]] = GET,
         handler: Callable = None,
         *,
         append_slash: bool = False,
@@ -40,7 +40,7 @@ class Route:
             "...", r"[^/]+"
         ) + ("/?" if append_slash else "")
         self.methods = (
-            set(methods) if isinstance(methods, (set, list)) else set([methods])
+            set(methods) if isinstance(methods, (set, list, tuple)) else set([methods])
         )
 
         self.handler = handler
@@ -118,7 +118,7 @@ class Route:
 
 def as_route(
     path: str,
-    methods: Union[str, Set[str]] = GET,
+    methods: Union[str, Iterable[str]] = GET,
     *,
     append_slash: bool = False,
 ) -> "Callable[[Callable[..., Response]], Route]":
