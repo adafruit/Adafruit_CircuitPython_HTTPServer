@@ -17,7 +17,7 @@ except ImportError:
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
 from traceback import print_exception
 
-from .authentication import Basic, Bearer, require_authentication
+from .authentication import Basic, Token, Bearer, require_authentication
 from .exceptions import (
     ServerStoppedError,
     AuthenticationError,
@@ -398,7 +398,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
             conn.close()
             raise error  # Raise the exception again to be handled by the user.
 
-    def require_authentication(self, auths: List[Union[Basic, Bearer]]) -> None:
+    def require_authentication(self, auths: List[Union[Basic, Token, Bearer]]) -> None:
         """
         Requires authentication for all routes and files in ``root_path``.
         Any non-authenticated request will be rejected with a 401 status code.

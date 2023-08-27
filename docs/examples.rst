@@ -243,7 +243,7 @@ If you want to apply authentication to the whole server, you need to call ``.req
 
 .. literalinclude:: ../examples/httpserver_authentication_server.py
     :caption: examples/httpserver_authentication_server.py
-    :emphasize-lines: 8,11-15,19
+    :emphasize-lines: 8,11-16,20
     :linenos:
 
 On the other hand, if you want to apply authentication to a set of routes, you need to call ``require_authentication`` function.
@@ -251,7 +251,7 @@ In both cases you can check if ``request`` is authenticated by calling ``check_a
 
 .. literalinclude:: ../examples/httpserver_authentication_handlers.py
     :caption: examples/httpserver_authentication_handlers.py
-    :emphasize-lines: 9-15,21-25,33,47,59
+    :emphasize-lines: 9-16,22-27,35,49,61
     :linenos:
 
 Redirects

@@ -25,6 +25,7 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_HTTPServer.git"
 
 from .authentication import (
     Basic,
+    Token,
     Bearer,
     check_authentication,
     require_authentication,

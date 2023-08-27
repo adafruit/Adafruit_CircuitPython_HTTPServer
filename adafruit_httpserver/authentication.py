@@ -28,17 +28,27 @@ class Basic:
         return f"Basic {self._value}"
 
 
-class Bearer:
-    """Represents HTTP Bearer Token Authentication."""
+class Token:
+    """Represents HTTP Token Authentication."""
+
+    prefix = "Token"
 
     def __init__(self, token: str) -> None:
         self._value = token
 
     def __str__(self) -> str:
-        return f"Bearer {self._value}"
+        return f"{self.prefix} {self._value}"
 
 
-def check_authentication(request: Request, auths: List[Union[Basic, Bearer]]) -> bool:
+class Bearer(Token):  # pylint: disable=too-few-public-methods
+    """Represents HTTP Bearer Token Authentication."""
+
+    prefix = "Bearer"
+
+
+def check_authentication(
+    request: Request, auths: List[Union[Basic, Token, Bearer]]
+) -> bool:
     """
     Returns ``True`` if request is authorized by any of the authentications, ``False`` otherwise.
 
@@ -47,7 +57,7 @@ def check_authentication(request: Request, auths: List[Union[Basic, Bearer]]) ->
         check_authentication(request, [Basic("username", "password")])
     """
 
-    auth_header = request.headers.get("Authorization")
+    auth_header = request.headers.get_directive("Authorization")
 
     if auth_header is None:
         return False
@@ -55,7 +65,9 @@ def check_authentication(request: Request, auths: List[Union[Basic, Bearer]]) ->
     return any(auth_header == str(auth) for auth in auths)
 
 
-def require_authentication(request: Request, auths: List[Union[Basic, Bearer]]) -> None:
+def require_authentication(
+    request: Request, auths: List[Union[Basic, Token, Bearer]]
+) -> None:
     """
     Checks if the request is authorized and raises ``AuthenticationError`` if not.
 

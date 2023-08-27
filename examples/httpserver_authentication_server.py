@@ -5,12 +5,13 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response, Basic, Bearer
+from adafruit_httpserver import Server, Request, Response, Basic, Token, Bearer
 
 
 # Create a list of available authentication methods.
 auths = [
     Basic("user", "password"),
+    Token("2db53340-4f9c-4f70-9037-d25bee77eca6"),
     Bearer("642ec696-2a79-4d60-be3a-7c9a3164d766"),
 ]
 

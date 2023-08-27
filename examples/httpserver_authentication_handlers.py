@@ -9,6 +9,7 @@ from adafruit_httpserver import Server, Request, Response, UNATUHORIZED_401
 from adafruit_httpserver.authentication import (
     AuthenticationError,
     Basic,
+    Token,
     Bearer,
     check_authentication,
     require_authentication,
@@ -21,6 +22,7 @@ server = Server(pool, debug=True)
 # Create a list of available authentication methods.
 auths = [
     Basic("user", "password"),
+    Token("2db53340-4f9c-4f70-9037-d25bee77eca6"),
     Bearer("642ec696-2a79-4d60-be3a-7c9a3164d766"),
 ]
 
