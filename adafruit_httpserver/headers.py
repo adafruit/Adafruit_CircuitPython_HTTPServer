@@ -23,6 +23,8 @@ class Headers:
 
     Examples::
 
+        headers = Headers("Content-Type: text/html\\r\\nContent-Length: 1024\\r\\n")
+        # or
         headers = Headers({"Content-Type": "text/html", "Content-Length": "1024"})
 
         len(headers)
@@ -47,8 +49,15 @@ class Headers:
 
     _storage: Dict[str, Tuple[str, str]]
 
-    def __init__(self, headers: Dict[str, str] = None) -> None:
-        headers = headers or {}
+    def __init__(self, headers: Union[str, Dict[str, str]] = None) -> None:
+        if isinstance(headers, str):
+            headers = {
+                name: value
+                for header_line in headers.strip().splitlines()
+                for name, value in [header_line.split(": ", 1)]
+            }
+        else:
+            headers = headers or {}
 
         self._storage = {key.lower(): [key, value] for key, value in headers.items()}
 

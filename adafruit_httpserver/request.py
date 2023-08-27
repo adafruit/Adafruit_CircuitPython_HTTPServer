@@ -252,16 +252,14 @@ class Request:
         if raw_request is None:
             raise ValueError("raw_request cannot be None")
 
-        header_bytes = self._raw_header_bytes
-
         try:
             (
                 self.method,
                 self.path,
                 self.query_params,
                 self.http_version,
-            ) = self._parse_start_line(header_bytes)
-            self.headers = self._parse_headers(header_bytes)
+                self.headers,
+            ) = self._parse_request_header(self._raw_header_bytes)
         except Exception as error:
             raise ValueError("Unparseable raw_request: ", raw_request) from error
 
@@ -340,12 +338,16 @@ class Request:
         return self.raw_request[empty_line_index + 4 :]
 
     @staticmethod
-    def _parse_start_line(header_bytes: bytes) -> Tuple[str, str, QueryParams, str]:
+    def _parse_request_header(
+        header_bytes: bytes,
+    ) -> Tuple[str, str, QueryParams, str, Headers]:
         """Parse HTTP Start line to method, path, query_params and http_version."""
 
-        start_line = header_bytes.decode("utf-8").splitlines()[0]
+        start_line, headers_string = (
+            header_bytes.decode("utf-8").strip().split("\r\n", 1)
+        )
 
-        method, path, http_version = start_line.split()
+        method, path, http_version = start_line.strip().split()
 
         if "?" not in path:
             path += "?"
@@ -353,21 +355,9 @@ class Request:
         path, query_string = path.split("?", 1)
 
         query_params = QueryParams(query_string)
+        headers = Headers(headers_string)
 
-        return method, path, query_params, http_version
-
-    @staticmethod
-    def _parse_headers(header_bytes: bytes) -> Headers:
-        """Parse HTTP headers from raw request."""
-        header_lines = header_bytes.decode("utf-8").splitlines()[1:]
-
-        return Headers(
-            {
-                name: value
-                for header_line in header_lines
-                for name, value in [header_line.split(": ", 1)]
-            }
-        )
+        return method, path, query_params, http_version, headers
 
 
 def _debug_warning_nonencoded_output():
