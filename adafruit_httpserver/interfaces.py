@@ -14,7 +14,7 @@ except ImportError:
 
 
 class _IFieldStorage:
-    """Interface with shared methods for QueryParams and FormData."""
+    """Interface with shared methods for QueryParams, FormData and Headers."""
 
     _storage: Dict[str, List[Any]]
 
@@ -36,6 +36,18 @@ class _IFieldStorage:
     def fields(self):
         """Returns a list of field names."""
         return list(self._storage.keys())
+
+    def items(self):
+        """Returns a list of (name, value) tuples."""
+        return [(key, value) for key in self.fields for value in self.get_list(key)]
+
+    def keys(self):
+        """Returns a list of header names."""
+        return self.fields
+
+    def values(self):
+        """Returns a list of header values."""
+        return [value for key in self.keys() for value in self.get_list(key)]
 
     def __getitem__(self, field_name: str):
         return self._storage[field_name][0]

@@ -8,12 +8,14 @@
 """
 
 try:
-    from typing import Dict, Tuple, Union
+    from typing import Dict, List, Union
 except ImportError:
     pass
 
+from .interfaces import _IFieldStorage
 
-class Headers:
+
+class Headers(_IFieldStorage):
     """
     A dict-like class for storing HTTP headers.
 
@@ -47,23 +49,30 @@ class Headers:
         # True
     """
 
-    _storage: Dict[str, Tuple[str, str]]
+    _storage: Dict[str, List[str]]
 
     def __init__(self, headers: Union[str, Dict[str, str]] = None) -> None:
+        self._storage = {}
+
         if isinstance(headers, str):
-            headers = {
-                name: value
-                for header_line in headers.strip().splitlines()
-                for name, value in [header_line.split(": ", 1)]
-            }
+            for header_line in headers.strip().splitlines():
+                name, value = header_line.split(": ", 1)
+                self.add(name, value)
         else:
-            headers = headers or {}
+            for key, value in (headers or {}).items():
+                self.add(key, value)
 
-        self._storage = {key.lower(): [key, value] for key, value in headers.items()}
+    def add(self, field_name: str, value: str):
+        """Adds a header with the given field name and value."""
+        self._add_field_value(field_name.lower(), value)
 
-    def get(self, name: str, default: str = None) -> Union[str, None]:
+    def get(self, field_name: str, default: str = None) -> Union[str, None]:
         """Returns the value for the given header name, or default if not found."""
-        return self._storage.get(name.lower(), [None, default])[1]
+        return super().get(field_name.lower(), default)
+
+    def get_list(self, field_name: str) -> List[str]:
+        """Get the list of values of a field."""
+        return super().get_list(field_name.lower())
 
     def get_directive(self, name: str, default: str = None) -> Union[str, None]:
         """
@@ -102,49 +111,36 @@ class Headers:
                 return header_parameter.strip().split("=")[1].strip('" ')
         return default
 
+    def set(self, name: str, value: str):
+        """Sets the value for the given header name."""
+        self._storage[name.lower()] = [value]
+
     def setdefault(self, name: str, default: str = None):
         """Sets the value for the given header name if it does not exist."""
-        return self._storage.setdefault(name.lower(), [name, default])[1]
-
-    def items(self):
-        """Returns a list of (name, value) tuples."""
-        return dict(self._storage.values()).items()
-
-    def keys(self):
-        """Returns a list of header names."""
-        return list(dict(self._storage.values()).keys())
-
-    def values(self):
-        """Returns a list of header values."""
-        return list(dict(self._storage.values()).values())
+        return self._storage.setdefault(name.lower(), [default])
 
     def update(self, headers: Dict[str, str]):
         """Updates the headers with the given dict."""
         return self._storage.update(
-            {key.lower(): [key, value] for key, value in headers.items()}
+            {key.lower(): [value] for key, value in headers.items()}
         )
 
     def copy(self):
         """Returns a copy of the headers."""
-        return Headers(dict(self._storage.values()))
+        return Headers(
+            "\r\n".join(
+                f"{key}: {value}" for key in self.fields for value in self.get_list(key)
+            )
+        )
 
     def __getitem__(self, name: str):
-        return self._storage[name.lower()][1]
+        return super().__getitem__(name.lower())
 
     def __setitem__(self, name: str, value: str):
-        self._storage[name.lower()] = [name, value]
+        self._storage[name.lower()] = [value]
 
     def __delitem__(self, name: str):
         del self._storage[name.lower()]
 
-    def __iter__(self):
-        return iter(dict(self._storage.values()))
-
-    def __len__(self):
-        return len(self._storage)
-
     def __contains__(self, key: str):
-        return key.lower() in self._storage.keys()
-
-    def __repr__(self):
-        return f"{self.__class__.__name__}({dict(self._storage.values())})"
+        return super().__contains__(key.lower())
