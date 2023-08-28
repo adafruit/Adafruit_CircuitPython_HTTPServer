@@ -169,9 +169,9 @@ It is important to use correct ``enctype``, depending on the type of data you wa
 - ``application/x-www-form-urlencoded`` - For sending simple text data without any special characters including spaces.
     If you use it, values will be automatically parsed as strings, but special characters will be URL encoded
     e.g. ``"Hello World! ^-$%"`` will be saved as ``"Hello+World%21+%5E-%24%25"``
-- ``multipart/form-data`` - For sending text and binary files and/or text data with special characters
-    When used, values will **not** be automatically parsed as strings, they will stay as bytes instead.
-    e.g. ``"Hello World! ^-$%"`` will be saved as ``b'Hello World! ^-$%'``, which can be decoded using ``.decode()`` method.
+- ``multipart/form-data`` - For sending textwith special characters and files
+    When used, non-file values will be automatically parsed as strings and non plain text files will be saved as ``bytes``.
+    e.g. ``"Hello World! ^-$%"`` will be saved as ``'Hello World! ^-$%'``, and e.g. a PNG file will be saved as ``b'\x89PNG\r\n\x1a\n\x00\...``.
 - ``text/plain`` - For sending text data with special characters.
     If used, values will be automatically parsed as strings, including special characters, emojis etc.
     e.g. ``"Hello World! ^-$%"`` will be saved as ``"Hello World! ^-$%"``, this is the **recommended** option.

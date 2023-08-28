@@ -20,76 +20,17 @@ except ImportError:
 import json
 
 from .headers import Headers
+from .interfaces import _IFieldStorage, _IXSSSafeFieldStorage
 
 
-class _IFieldStorage:
-    """Interface with shared methods for QueryParams and FormData."""
-
-    _storage: Dict[str, List[Union[str, bytes]]]
-
-    def _add_field_value(self, field_name: str, value: Union[str, bytes]) -> None:
-        if field_name not in self._storage:
-            self._storage[field_name] = [value]
-        else:
-            self._storage[field_name].append(value)
-
-    @staticmethod
-    def _encode_html_entities(value: str) -> str:
-        """Encodes unsafe HTML characters."""
-        return (
-            str(value)
-            .replace("&", "&amp;")
-            .replace("<", "&lt;")
-            .replace(">", "&gt;")
-            .replace('"', "&quot;")
-            .replace("'", "&apos;")
-        )
-
-    def get(
-        self, field_name: str, default: Any = None, *, safe=True
-    ) -> Union[str, bytes, None]:
-        """Get the value of a field."""
-        if safe:
-            return self._encode_html_entities(
-                self._storage.get(field_name, [default])[0]
-            )
-
-        _debug_warning_nonencoded_output()
-        return self._storage.get(field_name, [default])[0]
-
-    def get_list(self, field_name: str) -> List[Union[str, bytes]]:
-        """Get the list of values of a field."""
-        return self._storage.get(field_name, [])
-
-    @property
-    def fields(self):
-        """Returns a list of field names."""
-        return list(self._storage.keys())
-
-    def __getitem__(self, field_name: str):
-        return self.get(field_name)
-
-    def __iter__(self):
-        return iter(self._storage)
-
-    def __len__(self):
-        return len(self._storage)
-
-    def __contains__(self, key: str):
-        return key in self._storage
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({repr(self._storage)})"
-
-
-class QueryParams(_IFieldStorage):
+class QueryParams(_IXSSSafeFieldStorage):
     """
     Class for parsing and storing GET query parameters requests.
 
     Examples::
 
         query_params = QueryParams("foo=bar&baz=qux&baz=quux")
-        # QueryParams({"foo": "bar", "baz": ["qux", "quux"]})
+        # QueryParams({"foo": ["bar"], "baz": ["qux", "quux"]})
 
         query_params.get("foo") # "bar"
         query_params["foo"] # "bar"
@@ -111,8 +52,80 @@ class QueryParams(_IFieldStorage):
             elif query_param:
                 self._add_field_value(query_param, "")
 
+    def _add_field_value(self, field_name: str, value: str) -> None:
+        super()._add_field_value(field_name, value)
 
-class FormData(_IFieldStorage):
+    def get(
+        self, field_name: str, default: str = None, *, safe=True
+    ) -> Union[str, None]:
+        return super().get(field_name, default, safe=safe)
+
+    def get_list(self, field_name: str, *, safe=True) -> List[str]:
+        return super().get_list(field_name, safe=safe)
+
+
+class File:
+    """
+    Class representing a file uploaded via POST.
+
+    Examples::
+
+        file = request.form_data.files.get("uploaded_file")
+        # File(filename="foo.txt", content_type="text/plain", size=14)
+
+        file.content
+        # "Hello, world!\\n"
+    """
+
+    filename: str
+    """Filename of the file."""
+
+    content_type: str
+    """Content type of the file."""
+
+    content: Union[str, bytes]
+    """Content of the file."""
+
+    def __init__(
+        self, filename: str, content_type: str, content: Union[str, bytes]
+    ) -> None:
+        self.filename = filename
+        self.content_type = content_type
+        self.content = content
+
+    @property
+    def size(self) -> int:
+        """Length of the file content."""
+        return len(self.content)
+
+    def __repr__(self) -> str:
+        filename, content_type, size = (
+            repr(self.filename),
+            repr(self.content_type),
+            repr(self.size),
+        )
+        return f"{self.__class__.__name__}({filename=}, {content_type=}, {size=})"
+
+
+class Files(_IFieldStorage):
+    """Class for files uploaded via POST."""
+
+    _storage: Dict[str, List[File]]
+
+    def __init__(self) -> None:
+        self._storage = {}
+
+    def _add_field_value(self, field_name: str, value: File) -> None:
+        super()._add_field_value(field_name, value)
+
+    def get(self, field_name: str, default: Any = None) -> Union[File, Any, None]:
+        return super().get(field_name, default)
+
+    def get_list(self, field_name: str) -> List[File]:
+        return super().get_list(field_name)
+
+
+class FormData(_IXSSSafeFieldStorage):
     """
     Class for parsing and storing form data from POST requests.
 
@@ -124,7 +137,7 @@ class FormData(_IFieldStorage):
         form_data = FormData(b"foo=bar&baz=qux&baz=quuz", "application/x-www-form-urlencoded")
         # or
         form_data = FormData(b"foo=bar\\r\\nbaz=qux\\r\\nbaz=quux", "text/plain")
-        # FormData({"foo": "bar", "baz": "qux"})
+        # FormData({"foo": ["bar"], "baz": ["qux", "quux"]})
 
         form_data.get("foo") # "bar"
         form_data["foo"] # "bar"
@@ -135,10 +148,12 @@ class FormData(_IFieldStorage):
     """
 
     _storage: Dict[str, List[Union[str, bytes]]]
+    files: Files
 
     def __init__(self, data: bytes, content_type: str) -> None:
         self.content_type = content_type
         self._storage = {}
+        self.files = Files()
 
         if content_type.startswith("application/x-www-form-urlencoded"):
             self._parse_x_www_form_urlencoded(data)
@@ -162,11 +177,25 @@ class FormData(_IFieldStorage):
         blocks = data.split(b"--" + boundary.encode())[1:-1]
 
         for block in blocks:
-            disposition, content = block.split(b"\r\n\r\n", 1)
-            field_name = disposition.split(b'"', 2)[1].decode()
-            value = content[:-2]
+            header_bytes, content_bytes = block.split(b"\r\n\r\n", 1)
+            headers = Headers(header_bytes.decode("utf-8").strip())
 
-            self._add_field_value(field_name, value)
+            field_name = headers.get_parameter("Content-Disposition", "name")
+            filename = headers.get_parameter("Content-Disposition", "filename")
+            content_type = headers.get_directive("Content-Type", "text/plain")
+            charset = headers.get_parameter("Content-Type", "charset", "utf-8")
+
+            content = content_bytes[:-2]  # remove trailing \r\n
+            value = content.decode(charset) if content_type == "text/plain" else content
+
+            # TODO: Other text content types (e.g. application/json) should be decoded as well and
+
+            if filename is not None:
+                self.files._add_field_value(  # pylint: disable=protected-access
+                    field_name, File(filename, content_type, value)
+                )
+            else:
+                self._add_field_value(field_name, value)
 
     def _parse_text_plain(self, data: bytes) -> None:
         lines = data.decode("utf-8").split("\r\n")[:-1]
@@ -175,6 +204,21 @@ class FormData(_IFieldStorage):
             field_name, value = line.split("=", 1)
 
             self._add_field_value(field_name, value)
+
+    def _add_field_value(self, field_name: str, value: Union[str, bytes]) -> None:
+        super()._add_field_value(field_name, value)
+
+    def get(
+        self, field_name: str, default: Union[str, bytes] = None, *, safe=True
+    ) -> Union[str, bytes, None]:
+        return super().get(field_name, default, safe=safe)
+
+    def get_list(self, field_name: str, *, safe=True) -> List[Union[str, bytes]]:
+        return super().get_list(field_name, safe=safe)
+
+    def __repr__(self) -> str:
+        class_name = self.__class__.__name__
+        return f"{class_name}({repr(self._storage)}, files={repr(self.files._storage)})"
 
 
 class Request:
@@ -358,12 +402,3 @@ class Request:
         headers = Headers(headers_string)
 
         return method, path, query_params, http_version, headers
-
-
-def _debug_warning_nonencoded_output():
-    """Warns about XSS risks."""
-    print(
-        "WARNING: Setting safe to False makes XSS vulnerabilities possible by "
-        "allowing access to raw untrusted values submitted by users. If this data is reflected "
-        "or shown within HTML without proper encoding it could enable Cross-Site Scripting."
-    )
