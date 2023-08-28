@@ -60,6 +60,7 @@ class Response:  # pylint: disable=too-few-public-methods
         *,
         status: Union[Status, Tuple[int, str]] = OK_200,
         headers: Union[Headers, Dict[str, str]] = None,
+        cookies: Dict[str, str] = None,
         content_type: str = None,
     ) -> None:
         """
@@ -67,6 +68,7 @@ class Response:  # pylint: disable=too-few-public-methods
         :param str body: Body of response. Defaults to empty string.
         :param Status status: Status code and text. Defaults to 200 OK.
         :param Headers headers: Headers to include in response. Defaults to empty dict.
+        :param Dict[str, str] cookies: Cookies to be sent with the response.
         :param str content_type: Content type of response. Defaults to None.
         """
 
@@ -76,6 +78,7 @@ class Response:  # pylint: disable=too-few-public-methods
         self._headers = (
             headers.copy() if isinstance(headers, Headers) else Headers(headers)
         )
+        self._cookies = cookies.copy() if cookies else {}
         self._content_type = content_type
         self._size = 0
 
@@ -95,6 +98,9 @@ class Response:  # pylint: disable=too-few-public-methods
         )
         headers.setdefault("Content-Length", content_length)
         headers.setdefault("Connection", "close")
+
+        for cookie_name, cookie_value in self._cookies.items():
+            headers.add("Set-Cookie", f"{cookie_name}={cookie_value}")
 
         for header, value in headers.items():
             if value is not None:
@@ -166,6 +172,7 @@ class FileResponse(Response):  # pylint: disable=too-few-public-methods
         *,
         status: Union[Status, Tuple[int, str]] = OK_200,
         headers: Union[Headers, Dict[str, str]] = None,
+        cookies: Dict[str, str] = None,
         content_type: str = None,
         as_attachment: bool = False,
         download_filename: str = None,
@@ -180,6 +187,7 @@ class FileResponse(Response):  # pylint: disable=too-few-public-methods
           server's ``root_path``.
         :param Status status: Status code and text. Defaults to ``200 OK``.
         :param Headers headers: Headers to include in response.
+        :param Dict[str, str] cookies: Cookies to be sent with the response.
         :param str content_type: Content type of response.
         :param bool as_attachment: If ``True``, the file will be sent as an attachment.
         :param str download_filename: Name of the file to send as an attachment.
@@ -193,6 +201,7 @@ class FileResponse(Response):  # pylint: disable=too-few-public-methods
         super().__init__(
             request=request,
             headers=headers,
+            cookies=cookies,
             content_type=content_type,
             status=status,
         )
@@ -293,6 +302,7 @@ class ChunkedResponse(Response):  # pylint: disable=too-few-public-methods
         *,
         status: Union[Status, Tuple[int, str]] = OK_200,
         headers: Union[Headers, Dict[str, str]] = None,
+        cookies: Dict[str, str] = None,
         content_type: str = None,
     ) -> None:
         """
@@ -300,12 +310,14 @@ class ChunkedResponse(Response):  # pylint: disable=too-few-public-methods
         :param Generator body: Generator that yields chunks of data.
         :param Status status: Status object or tuple with code and message.
         :param Headers headers: Headers to be sent with the response.
+        :param Dict[str, str] cookies: Cookies to be sent with the response.
         :param str content_type: Content type of the response.
         """
 
         super().__init__(
             request=request,
             headers=headers,
+            cookies=cookies,
             status=status,
             content_type=content_type,
         )
@@ -352,17 +364,20 @@ class JSONResponse(Response):  # pylint: disable=too-few-public-methods
         data: Dict[Any, Any],
         *,
         headers: Union[Headers, Dict[str, str]] = None,
+        cookies: Dict[str, str] = None,
         status: Union[Status, Tuple[int, str]] = OK_200,
     ) -> None:
         """
         :param Request request: Request that this is a response to.
         :param dict data: Data to be sent as JSON.
         :param Headers headers: Headers to include in response.
+        :param Dict[str, str] cookies: Cookies to be sent with the response.
         :param Status status: Status code and text. Defaults to 200 OK.
         """
         super().__init__(
             request=request,
             headers=headers,
+            cookies=cookies,
             status=status,
         )
         self._data = data
@@ -398,6 +413,7 @@ class Redirect(Response):  # pylint: disable=too-few-public-methods
         preserve_method: bool = False,
         status: Union[Status, Tuple[int, str]] = None,
         headers: Union[Headers, Dict[str, str]] = None,
+        cookies: Dict[str, str] = None,
     ) -> None:
         """
         By default uses ``permament`` and ``preserve_method`` to determine the ``status`` code to
@@ -415,6 +431,7 @@ class Redirect(Response):  # pylint: disable=too-few-public-methods
         :param bool preserve_method: Whether to preserve the method of the request.
         :param Status status: Status object or tuple with code and message.
         :param Headers headers: Headers to include in response.
+        :param Dict[str, str] cookies: Cookies to be sent with the response.
         """
 
         if status is not None and (permanent or preserve_method):
@@ -428,7 +445,7 @@ class Redirect(Response):  # pylint: disable=too-few-public-methods
             else:
                 status = MOVED_PERMANENTLY_301 if permanent else FOUND_302
 
-        super().__init__(request, status=status, headers=headers)
+        super().__init__(request, status=status, headers=headers, cookies=cookies)
         self._headers.update({"Location": url})
 
     def _send(self) -> None:
@@ -474,14 +491,17 @@ class SSEResponse(Response):  # pylint: disable=too-few-public-methods
         self,
         request: Request,
         headers: Union[Headers, Dict[str, str]] = None,
+        cookies: Dict[str, str] = None,
     ) -> None:
         """
         :param Request request: Request object
         :param Headers headers: Headers to be sent with the response.
+        :param Dict[str, str] cookies: Cookies to be sent with the response.
         """
         super().__init__(
             request=request,
             headers=headers,
+            cookies=cookies,
             content_type="text/event-stream",
         )
         self._headers.setdefault("Cache-Control", "no-cache")
@@ -606,11 +626,13 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
         self,
         request: Request,
         headers: Union[Headers, Dict[str, str]] = None,
+        cookies: Dict[str, str] = None,
         buffer_size: int = 1024,
     ) -> None:
         """
         :param Request request: Request object
         :param Headers headers: Headers to be sent with the response.
+        :param Dict[str, str] cookies: Cookies to be sent with the response.
         :param int buffer_size: Size of the buffer used to send and receive messages.
         """
         self._check_request_initiates_handshake(request)
@@ -621,6 +643,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
             request=request,
             status=SWITCHING_PROTOCOLS_101,
             headers=headers,
+            cookies=cookies,
         )
         self._headers.setdefault("Upgrade", "websocket")
         self._headers.setdefault("Connection", "Upgrade")

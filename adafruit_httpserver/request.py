@@ -221,7 +221,7 @@ class FormData(_IXSSSafeFieldStorage):
         return f"{class_name}({repr(self._storage)}, files={repr(self.files._storage)})"
 
 
-class Request:
+class Request:  # pylint: disable=too-many-instance-attributes
     """
     Incoming request, constructed from raw incoming bytes.
     It is passed as first argument to all route handlers.
@@ -292,6 +292,7 @@ class Request:
         self.client_address = client_address
         self.raw_request = raw_request
         self._form_data = None
+        self._cookies = None
 
         if raw_request is None:
             raise ValueError("raw_request cannot be None")
@@ -315,6 +316,36 @@ class Request:
     @body.setter
     def body(self, body: bytes) -> None:
         self.raw_request = self._raw_header_bytes + b"\r\n\r\n" + body
+
+    @staticmethod
+    def _parse_cookies(cookie_header: str) -> None:
+        """Parse cookies from headers."""
+        if cookie_header is None:
+            return {}
+
+        return {
+            name: value.strip('"')
+            for name, value in [
+                cookie.strip().split("=", 1) for cookie in cookie_header.split(";")
+            ]
+        }
+
+    @property
+    def cookies(self) -> Dict[str, str]:
+        """
+        Cookies sent with the request.
+
+        Example::
+
+            request.headers["Cookie"]
+            # "foo=bar; baz=qux; foo=quux"
+
+            request.cookies
+            # {"foo": "quux", "baz": "qux"}
+        """
+        if self._cookies is None:
+            self._cookies = self._parse_cookies(self.headers.get("Cookie"))
+        return self._cookies
 
     @property
     def form_data(self) -> Union[FormData, None]:

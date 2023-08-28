@@ -185,6 +185,20 @@ return only the first one.
     :emphasize-lines: 32,47,50
     :linenos:
 
+Cookies
+---------------------
+
+You can use cookies to store data on the client side, that will be sent back to the server with every request.
+They are often used to store authentication tokens, session IDs, but also to user preferences e.g. theme.
+
+To access cookies, use ``request.cookies`` dictionary.
+In order to set cookies,  pass ``cookies`` dictionary to ``Response`` constructor.
+
+.. literalinclude:: ../examples/httpserver_cookies.py
+    :caption: examples/httpserver_cookies.py
+    :emphasize-lines: 70,77
+    :linenos:
+
 Chunked response
 ----------------
 
