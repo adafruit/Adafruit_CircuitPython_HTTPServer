@@ -357,19 +357,19 @@ occurs during handling of the request in ``.serve_forever()``.
 This is how the logs might look like when debug mode is enabled::
 
     Started development server on http://192.168.0.100:80
-    192.168.0.101 -- "GET /" 194 -- "200 OK" 154
-    192.168.0.101 -- "GET /example" 134 -- "404 Not Found" 172
-    192.168.0.102 -- "POST /api" 1241 -- "401 Unauthorized" 95
+    192.168.0.101 -- "GET /" 194 -- "200 OK" 154 -- 96ms
+    192.168.0.101 -- "GET /example" 134 -- "404 Not Found" 172 -- 123ms
+    192.168.0.102 -- "POST /api" 1241 -- "401 Unauthorized" 95 -- 64ms
     Traceback (most recent call last):
         ...
         File "code.py", line 55, in example_handler
     KeyError: non_existent_key
-    192.168.0.103 -- "GET /index.html" 242 -- "200 OK" 154
+    192.168.0.103 -- "GET /index.html" 242 -- "200 OK" 154 -- 182ms
     Stopped development server
 
 This is the default format of the logs::
 
-    {client_ip} -- "{request_method} {path}" {request_size} -- "{response_status}" {response_size}
+    {client_ip} -- "{request_method} {path}" {request_size} -- "{response_status}" {response_size} -- {elapsed_ms}
 
 If you need more information about the server or request, or you want it in a different format you can modify
 functions at the bottom of ``adafruit_httpserver/server.py`` that start with ``_debug_...``.

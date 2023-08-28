@@ -15,6 +15,7 @@ except ImportError:
     pass
 
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
+from time import monotonic
 from traceback import print_exception
 
 from .authentication import Basic, Token, Bearer, require_authentication
@@ -358,6 +359,8 @@ class Server:  # pylint: disable=too-many-instance-attributes
             conn, client_address = self._sock.accept()
             conn.settimeout(self._timeout)
 
+            _debug_start_time = monotonic()
+
             # Receive the whole request
             if (request := self._receive_request(conn, client_address)) is None:
                 conn.close()
@@ -378,8 +381,10 @@ class Server:  # pylint: disable=too-many-instance-attributes
             # Send the response
             response._send()  # pylint: disable=protected-access
 
+            _debug_end_time = monotonic()
+
             if self.debug:
-                _debug_response_sent(response)
+                _debug_response_sent(response, _debug_end_time - _debug_start_time)
 
             return REQUEST_HANDLED_RESPONSE_SENT
 
@@ -496,7 +501,7 @@ def _debug_started_server(server: "Server"):
     print(f"Started development server on http://{host}:{port}")
 
 
-def _debug_response_sent(response: "Response"):
+def _debug_response_sent(response: "Response", time_elapsed: float):
     """Prints a message when after a response is sent."""
     # pylint: disable=protected-access
     client_ip = response._request.client_address[0]
@@ -505,8 +510,11 @@ def _debug_response_sent(response: "Response"):
     req_size = len(response._request.raw_request)
     status = response._status
     res_size = response._size
+    time_elapsed_ms = f"{round(time_elapsed*1000)}ms"
 
-    print(f'{client_ip} -- "{method} {path}" {req_size} -- "{status}" {res_size}')
+    print(
+        f'{client_ip} -- "{method} {path}" {req_size} -- "{status}" {res_size} -- {time_elapsed_ms}'
+    )
 
 
 def _debug_stopped_server(server: "Server"):  # pylint: disable=unused-argument
