@@ -5,7 +5,7 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response, GET
+from adafruit_httpserver import Server, Request, Response, GET, Headers
 
 
 pool = socketpool.SocketPool(wifi.radio)
@@ -69,6 +69,10 @@ def themed_from_cookie(request: Request):
 
     user_theme = request.cookies.get("theme", "light")
     wanted_theme = request.query_params.get("theme", user_theme)
+
+    headers = Headers()
+    headers.add("Set-Cookie", "cookie1=value1")
+    headers.add("Set-Cookie", "cookie2=value2")
 
     return Response(
         request,

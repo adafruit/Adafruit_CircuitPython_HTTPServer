@@ -192,11 +192,11 @@ You can use cookies to store data on the client side, that will be sent back to 
 They are often used to store authentication tokens, session IDs, but also to user preferences e.g. theme.
 
 To access cookies, use ``request.cookies`` dictionary.
-In order to set cookies,  pass ``cookies`` dictionary to ``Response`` constructor.
+In order to set cookies,  pass ``cookies`` dictionary to ``Response`` constructor or manually add ``Set-Cookie`` header.
 
 .. literalinclude:: ../examples/httpserver_cookies.py
     :caption: examples/httpserver_cookies.py
-    :emphasize-lines: 70,77
+    :emphasize-lines: 70,74-75,81
     :linenos:
 
 Chunked response

@@ -63,7 +63,10 @@ class Headers(_IFieldStorage):
                 self.add(key, value)
 
     def add(self, field_name: str, value: str):
-        """Adds a header with the given field name and value."""
+        """
+        Adds a header with the given field name and value.
+        Allows adding multiple headers with the same name.
+        """
         self._add_field_value(field_name.lower(), value)
 
     def get(self, field_name: str, default: str = None) -> Union[str, None]:
