@@ -15,7 +15,7 @@ except ImportError:
     pass
 
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
-from time import monotonic
+from time import monotonic, sleep
 from traceback import print_exception
 
 from .authentication import Basic, Token, Bearer, require_authentication
@@ -171,7 +171,9 @@ class Server:  # pylint: disable=too-many-instance-attributes
         except OSError as error:
             raise RuntimeError(f"Cannot start server on {host}:{port}") from error
 
-    def serve_forever(self, host: str, port: int = 80) -> None:
+    def serve_forever(
+        self, host: str, port: int = 80, *, poll_interval: float = None
+    ) -> None:
         """
         Wait for HTTP requests at the given host and port. Does not return.
         Ignores any exceptions raised by the handler function and continues to serve.
@@ -179,6 +181,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
         :param str host: host name or IP address
         :param int port: port
+        :param float poll_interval: interval between polls in seconds
         """
         self.start(host, port)
 
@@ -190,6 +193,9 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 return
             except Exception:  # pylint: disable=broad-except
                 pass  # Ignore exceptions in handler function
+
+            if poll_interval is not None:
+                sleep(poll_interval)
 
     def start(self, host: str, port: int = 80) -> None:
         """
