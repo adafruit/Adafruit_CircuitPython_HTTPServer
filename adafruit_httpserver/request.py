@@ -150,20 +150,32 @@ class FormData(_IXSSSafeFieldStorage):
     _storage: Dict[str, List[Union[str, bytes]]]
     files: Files
 
-    def __init__(self, data: bytes, content_type: str) -> None:
-        self.content_type = content_type
+    def _check_is_supported_content_type(self, content_type: str) -> None:
+        return content_type in (
+            "application/x-www-form-urlencoded",
+            "multipart/form-data",
+            "text/plain",
+        )
+
+    def __init__(self, data: bytes, headers: Headers, *, debug: bool = False) -> None:
         self._storage = {}
         self.files = Files()
 
-        if content_type.startswith("application/x-www-form-urlencoded"):
-            self._parse_x_www_form_urlencoded(data)
+        self.content_type = headers.get_directive("Content-Type")
+        content_length = int(headers.get("Content-Length", 0))
 
-        elif content_type.startswith("multipart/form-data"):
-            boundary = content_type.split("boundary=")[1]
-            self._parse_multipart_form_data(data, boundary)
+        if not self._check_is_supported_content_type(self.content_type):
+            debug and _debug_unsupported_form_content_type(self.content_type)
 
-        elif content_type.startswith("text/plain"):
-            self._parse_text_plain(data)
+        if self.content_type == "application/x-www-form-urlencoded":
+            self._parse_x_www_form_urlencoded(data[:content_length])
+
+        elif self.content_type == "multipart/form-data":
+            boundary = headers.get_parameter("Content-Type", "boundary")
+            self._parse_multipart_form_data(data[:content_length], boundary)
+
+        elif self.content_type == "text/plain":
+            self._parse_text_plain(data[:content_length])
 
     def _parse_x_www_form_urlencoded(self, data: bytes) -> None:
         if not (decoded_data := data.decode("utf-8").strip("&")):
@@ -393,7 +405,7 @@ class Request:  # pylint: disable=too-many-instance-attributes
             request.form_data.get_list("baz")  # ["qux"]
         """
         if self._form_data is None and self.method == "POST":
-            self._form_data = FormData(self.body, self.headers["Content-Type"])
+            self._form_data = FormData(self.body, self.headers, debug=self.server.debug)
         return self._form_data
 
     def json(self) -> Union[dict, None]:
@@ -435,3 +447,11 @@ class Request:  # pylint: disable=too-many-instance-attributes
         headers = Headers(headers_string)
 
         return method, path, query_params, http_version, headers
+
+
+def _debug_unsupported_form_content_type(content_type: str) -> None:
+    """Warns when an unsupported form content type is used."""
+    print(
+        f"WARNING: Unsupported Content-Type: {content_type}. "
+        "Only `application/x-www-form-urlencoded`, `multipart/form-data` and `text/plain` are supported."
+    )
