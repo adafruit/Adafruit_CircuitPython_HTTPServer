@@ -38,10 +38,16 @@ def redirect_adafruit(request: Request):
     return Redirect(request, "https://www.adafruit.com/", status=MOVED_PERMANENTLY_301)
 
 
+@server.route("/fake-login", POST)
+def fake_login(request: Request):
+    """Fake login page."""
+    return Response(request, "Fake login page with POST data preserved.")
+
+
 @server.route("/login", POST)
 def temporary_login_redirect(request: Request):
     """Temporary moved login page with preserved POST data."""
-    return Redirect(request, "https://circuitpython.org/blinka", preserve_method=True)
+    return Redirect(request, "/fake-login", preserve_method=True)
 
 
 @server.route("/<slug>")
@@ -50,7 +56,7 @@ def redirect_other(request: Request, slug: str = None):
     Redirect to a URL based on the slug.
     """
 
-    if slug is None or not slug in REDIRECTS:
+    if slug is None or slug not in REDIRECTS:
         return Response(request, "Unknown redirect", status=NOT_FOUND_404)
 
     return Redirect(request, REDIRECTS.get(slug))

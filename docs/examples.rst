@@ -282,7 +282,7 @@ Alternatively, you can pass a ``status`` object directly to ``Redirect`` constru
 
 .. literalinclude:: ../examples/httpserver_redirects.py
     :caption: examples/httpserver_redirects.py
-    :emphasize-lines: 22-26,32,38,44,56
+    :emphasize-lines: 22-26,32,38,50,62
     :linenos:
 
 Server-Sent Events
