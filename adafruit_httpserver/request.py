@@ -21,6 +21,7 @@ import json
 
 from .headers import Headers
 from .interfaces import _IFieldStorage, _IXSSSafeFieldStorage
+from .methods import POST, PUT, PATCH, DELETE
 
 
 class QueryParams(_IXSSSafeFieldStorage):
@@ -410,8 +411,15 @@ class Request:  # pylint: disable=too-many-instance-attributes
         return self._form_data
 
     def json(self) -> Union[dict, None]:
-        """Body of the request, as a JSON-decoded dictionary. Only available for POST requests."""
-        return json.loads(self.body) if (self.body and self.method == "POST") else None
+        """
+        Body of the request, as a JSON-decoded dictionary.
+        Only available for POST, PUT, PATCH and DELETE requests.
+        """
+        return (
+            json.loads(self.body)
+            if (self.body and self.method in (POST, PUT, PATCH, DELETE))
+            else None
+        )
 
     @property
     def _raw_header_bytes(self) -> bytes:
