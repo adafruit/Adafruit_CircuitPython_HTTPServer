@@ -166,10 +166,12 @@ class FormData(_IXSSSafeFieldStorage):
             self._parse_text_plain(data)
 
     def _parse_x_www_form_urlencoded(self, data: bytes) -> None:
-        decoded_data = data.decode("utf-8")
+        if not (decoded_data := data.decode("utf-8").strip("&")):
+            return
 
         for field_name, value in [
-            key_value.split("=", 1) for key_value in decoded_data.split("&")
+            key_value.split("=", 1) if "=" in key_value else (key_value, "")
+            for key_value in decoded_data.split("&")
         ]:
             self._add_field_value(field_name, value)
 
