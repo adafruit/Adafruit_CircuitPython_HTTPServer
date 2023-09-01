@@ -196,7 +196,7 @@ In order to set cookies,  pass ``cookies`` dictionary to ``Response`` constructo
 
 .. literalinclude:: ../examples/httpserver_cookies.py
     :caption: examples/httpserver_cookies.py
-    :emphasize-lines: 70,74-75,81
+    :emphasize-lines: 70,74-75,82
     :linenos:
 
 Chunked response

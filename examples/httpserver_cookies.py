@@ -78,6 +78,7 @@ def themed_from_cookie(request: Request):
         request,
         themed_template(wanted_theme),
         content_type="text/html",
+        headers=headers,
         cookies={} if user_theme == wanted_theme else {"theme": wanted_theme},
     )
 
