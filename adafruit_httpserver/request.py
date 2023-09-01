@@ -150,7 +150,8 @@ class FormData(_IXSSSafeFieldStorage):
     _storage: Dict[str, List[Union[str, bytes]]]
     files: Files
 
-    def _check_is_supported_content_type(self, content_type: str) -> None:
+    @staticmethod
+    def _check_is_supported_content_type(content_type: str) -> None:
         return content_type in (
             "application/x-www-form-urlencoded",
             "multipart/form-data",
@@ -164,8 +165,8 @@ class FormData(_IXSSSafeFieldStorage):
         self.content_type = headers.get_directive("Content-Type")
         content_length = int(headers.get("Content-Length", 0))
 
-        if not self._check_is_supported_content_type(self.content_type):
-            debug and _debug_unsupported_form_content_type(self.content_type)
+        if debug and not self._check_is_supported_content_type(self.content_type):
+            _debug_unsupported_form_content_type(self.content_type)
 
         if self.content_type == "application/x-www-form-urlencoded":
             self._parse_x_www_form_urlencoded(data[:content_length])
@@ -453,5 +454,6 @@ def _debug_unsupported_form_content_type(content_type: str) -> None:
     """Warns when an unsupported form content type is used."""
     print(
         f"WARNING: Unsupported Content-Type: {content_type}. "
-        "Only `application/x-www-form-urlencoded`, `multipart/form-data` and `text/plain` are supported."
+        "Only `application/x-www-form-urlencoded`, `multipart/form-data` and `text/plain` are "
+        "supported."
     )
