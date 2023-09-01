@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, Protocol, Union, List, Set, Tuple, Dict
+    from typing import Callable, Protocol, Union, List, Tuple, Dict, Iterable
     from socket import socket
     from socketpool import SocketPool
 except ImportError:
@@ -80,7 +80,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
     def route(
         self,
         path: str,
-        methods: Union[str, Set[str]] = GET,
+        methods: Union[str, Iterable[str]] = GET,
         *,
         append_slash: bool = False,
     ) -> Callable:
