@@ -65,8 +65,11 @@ class _IFieldStorage:
         return f"{self.__class__.__name__}({repr(self._storage)})"
 
 
-def _encode_html_entities(value: str) -> str:
+def _encode_html_entities(value: Union[str, None]) -> Union[str, None]:
     """Encodes unsafe HTML characters that could enable XSS attacks."""
+    if value is None:
+        return None
+
     return (
         str(value)
         .replace("&", "&amp;")
