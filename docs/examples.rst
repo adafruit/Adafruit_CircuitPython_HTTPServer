@@ -95,7 +95,8 @@ It is possible to use the MDNS protocol to make the server accessible via a host
 to an IP address. It is worth noting that it takes a bit longer to get the response from the server
 when accessing it via the hostname.
 
-In this example, the server is accessible via ``http://custom-mdns-hostname/`` and ``http://custom-mdns-hostname.local/``.
+In this example, the server is accessible via the IP and ``http://custom-mdns-hostname.local/``.
+On some routes it is also possible to use ``http://custom-mdns-hostname/``, but **this is not guaranteed to work**.
 
 .. literalinclude:: ../examples/httpserver_mdns.py
     :caption: examples/httpserver_mdns.py
