@@ -508,7 +508,7 @@ def _debug_started_server(server: "Server"):
 
 
 def _debug_response_sent(response: "Response", time_elapsed: float):
-    """Prints a message when after a response is sent."""
+    """Prints a message after a response is sent."""
     # pylint: disable=protected-access
     client_ip = response._request.client_address[0]
     method = response._request.method
