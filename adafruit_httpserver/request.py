@@ -95,6 +95,25 @@ class File:
         self.content = content
 
     @property
+    def content_bytes(self) -> bytes:
+        """
+        Content of the file as bytes.
+        It is recommended to use this instead of ``content`` as it will always return bytes.
+
+        Example::
+
+            file = request.form_data.files.get("uploaded_file")
+
+            with open(file.filename, "wb") as f:
+                f.write(file.content_bytes)
+        """
+        return (
+            self.content.encode("utf-8")
+            if isinstance(self.content, str)
+            else self.content
+        )
+
+    @property
     def size(self) -> int:
         """Length of the file content."""
         return len(self.content)
