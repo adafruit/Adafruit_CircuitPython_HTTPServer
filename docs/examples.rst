@@ -96,7 +96,7 @@ to an IP address. It is worth noting that it takes a bit longer to get the respo
 when accessing it via the hostname.
 
 In this example, the server is accessible via the IP and ``http://custom-mdns-hostname.local/``.
-On some routes it is also possible to use ``http://custom-mdns-hostname/``, but **this is not guaranteed to work**.
+On some routers it is also possible to use ``http://custom-mdns-hostname/``, but **this is not guaranteed to work**.
 
 .. literalinclude:: ../examples/httpserver_mdns.py
     :caption: examples/httpserver_mdns.py
@@ -190,7 +190,7 @@ Cookies
 ---------------------
 
 You can use cookies to store data on the client side, that will be sent back to the server with every request.
-They are often used to store authentication tokens, session IDs, but also to user preferences e.g. theme.
+They are often used to store authentication tokens, session IDs, but also user preferences e.g. theme.
 
 To access cookies, use ``request.cookies`` dictionary.
 In order to set cookies,  pass ``cookies`` dictionary to ``Response`` constructor or manually add ``Set-Cookie`` header.
