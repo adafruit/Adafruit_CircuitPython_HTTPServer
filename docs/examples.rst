@@ -95,7 +95,8 @@ It is possible to use the MDNS protocol to make the server accessible via a host
 to an IP address. It is worth noting that it takes a bit longer to get the response from the server
 when accessing it via the hostname.
 
-In this example, the server is accessible via ``http://custom-mdns-hostname/`` and ``http://custom-mdns-hostname.local/``.
+In this example, the server is accessible via the IP and ``http://custom-mdns-hostname.local/``.
+On some routers it is also possible to use ``http://custom-mdns-hostname/``, but **this is not guaranteed to work**.
 
 .. literalinclude:: ../examples/httpserver_mdns.py
     :caption: examples/httpserver_mdns.py
@@ -169,9 +170,9 @@ It is important to use correct ``enctype``, depending on the type of data you wa
 - ``application/x-www-form-urlencoded`` - For sending simple text data without any special characters including spaces.
     If you use it, values will be automatically parsed as strings, but special characters will be URL encoded
     e.g. ``"Hello World! ^-$%"`` will be saved as ``"Hello+World%21+%5E-%24%25"``
-- ``multipart/form-data`` - For sending text and binary files and/or text data with special characters
-    When used, values will **not** be automatically parsed as strings, they will stay as bytes instead.
-    e.g. ``"Hello World! ^-$%"`` will be saved as ``b'Hello World! ^-$%'``, which can be decoded using ``.decode()`` method.
+- ``multipart/form-data`` - For sending textwith special characters and files
+    When used, non-file values will be automatically parsed as strings and non plain text files will be saved as ``bytes``.
+    e.g. ``"Hello World! ^-$%"`` will be saved as ``'Hello World! ^-$%'``, and e.g. a PNG file will be saved as ``b'\x89PNG\r\n\x1a\n\x00\...``.
 - ``text/plain`` - For sending text data with special characters.
     If used, values will be automatically parsed as strings, including special characters, emojis etc.
     e.g. ``"Hello World! ^-$%"`` will be saved as ``"Hello World! ^-$%"``, this is the **recommended** option.
@@ -183,6 +184,20 @@ return only the first one.
 .. literalinclude:: ../examples/httpserver_form_data.py
     :caption: examples/httpserver_form_data.py
     :emphasize-lines: 32,47,50
+    :linenos:
+
+Cookies
+---------------------
+
+You can use cookies to store data on the client side, that will be sent back to the server with every request.
+They are often used to store authentication tokens, session IDs, but also user preferences e.g. theme.
+
+To access cookies, use ``request.cookies`` dictionary.
+In order to set cookies,  pass ``cookies`` dictionary to ``Response`` constructor or manually add ``Set-Cookie`` header.
+
+.. literalinclude:: ../examples/httpserver_cookies.py
+    :caption: examples/httpserver_cookies.py
+    :emphasize-lines: 70,74-75,82
     :linenos:
 
 Chunked response
@@ -243,7 +258,7 @@ If you want to apply authentication to the whole server, you need to call ``.req
 
 .. literalinclude:: ../examples/httpserver_authentication_server.py
     :caption: examples/httpserver_authentication_server.py
-    :emphasize-lines: 8,11-15,19
+    :emphasize-lines: 8,11-16,20
     :linenos:
 
 On the other hand, if you want to apply authentication to a set of routes, you need to call ``require_authentication`` function.
@@ -251,7 +266,7 @@ In both cases you can check if ``request`` is authenticated by calling ``check_a
 
 .. literalinclude:: ../examples/httpserver_authentication_handlers.py
     :caption: examples/httpserver_authentication_handlers.py
-    :emphasize-lines: 9-15,21-25,33,47,59
+    :emphasize-lines: 9-16,22-27,35,49,61
     :linenos:
 
 Redirects
@@ -262,10 +277,13 @@ Sometimes you might want to redirect the user to a different URL, either on the 
 You can do that by returning ``Redirect`` from your handler function.
 
 You can specify wheter the redirect is permanent or temporary by passing ``permanent=...``  to ``Redirect``.
+If you need the redirect to preserve the original request method, you can set ``preserve_method=True``.
+
+Alternatively, you can pass a ``status`` object directly to ``Redirect`` constructor.
 
 .. literalinclude:: ../examples/httpserver_redirects.py
     :caption: examples/httpserver_redirects.py
-    :emphasize-lines: 14-18,26,38
+    :emphasize-lines: 22-26,32,38,50,62
     :linenos:
 
 Server-Sent Events
@@ -340,19 +358,19 @@ occurs during handling of the request in ``.serve_forever()``.
 This is how the logs might look like when debug mode is enabled::
 
     Started development server on http://192.168.0.100:80
-    192.168.0.101 -- "GET /" 194 -- "200 OK" 154
-    192.168.0.101 -- "GET /example" 134 -- "404 Not Found" 172
-    192.168.0.102 -- "POST /api" 1241 -- "401 Unauthorized" 95
+    192.168.0.101 -- "GET /" 194 -- "200 OK" 154 -- 96ms
+    192.168.0.101 -- "GET /example" 134 -- "404 Not Found" 172 -- 123ms
+    192.168.0.102 -- "POST /api" 1241 -- "401 Unauthorized" 95 -- 64ms
     Traceback (most recent call last):
         ...
         File "code.py", line 55, in example_handler
     KeyError: non_existent_key
-    192.168.0.103 -- "GET /index.html" 242 -- "200 OK" 154
+    192.168.0.103 -- "GET /index.html" 242 -- "200 OK" 154 -- 182ms
     Stopped development server
 
 This is the default format of the logs::
 
-    {client_ip} -- "{request_method} {path}" {request_size} -- "{response_status}" {response_size}
+    {client_ip} -- "{request_method} {path}" {request_size} -- "{response_status}" {response_size} -- {elapsed_ms}
 
 If you need more information about the server or request, or you want it in a different format you can modify
 functions at the bottom of ``adafruit_httpserver/server.py`` that start with ``_debug_...``.

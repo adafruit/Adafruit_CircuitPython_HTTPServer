@@ -19,6 +19,7 @@
 
 .. automodule:: adafruit_httpserver.headers
     :members:
+    :inherited-members:
 
 .. automodule:: adafruit_httpserver.status
     :members:

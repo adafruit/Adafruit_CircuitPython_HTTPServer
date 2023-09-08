@@ -8,16 +8,17 @@
 """
 
 try:
-    from typing import Callable, Protocol, Union, List, Set, Tuple, Dict
+    from typing import Callable, Protocol, Union, List, Tuple, Dict, Iterable
     from socket import socket
     from socketpool import SocketPool
 except ImportError:
     pass
 
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
+from time import monotonic, sleep
 from traceback import print_exception
 
-from .authentication import Basic, Bearer, require_authentication
+from .authentication import Basic, Token, Bearer, require_authentication
 from .exceptions import (
     ServerStoppedError,
     AuthenticationError,
@@ -79,7 +80,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
     def route(
         self,
         path: str,
-        methods: Union[str, Set[str]] = GET,
+        methods: Union[str, Iterable[str]] = GET,
         *,
         append_slash: bool = False,
     ) -> Callable:
@@ -170,7 +171,9 @@ class Server:  # pylint: disable=too-many-instance-attributes
         except OSError as error:
             raise RuntimeError(f"Cannot start server on {host}:{port}") from error
 
-    def serve_forever(self, host: str, port: int = 80) -> None:
+    def serve_forever(
+        self, host: str, port: int = 80, *, poll_interval: float = None
+    ) -> None:
         """
         Wait for HTTP requests at the given host and port. Does not return.
         Ignores any exceptions raised by the handler function and continues to serve.
@@ -178,6 +181,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
         :param str host: host name or IP address
         :param int port: port
+        :param float poll_interval: interval between polls in seconds
         """
         self.start(host, port)
 
@@ -189,6 +193,9 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 return
             except Exception:  # pylint: disable=broad-except
                 pass  # Ignore exceptions in handler function
+
+            if poll_interval is not None:
+                sleep(poll_interval)
 
     def start(self, host: str, port: int = 80) -> None:
         """
@@ -243,7 +250,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
         request = Request(self, sock, client_address, header_bytes)
 
-        content_length = int(request.headers.get("Content-Length", 0))
+        content_length = int(request.headers.get_directive("Content-Length", 0))
         received_body_bytes = request.body
 
         # Receiving remaining body bytes
@@ -358,6 +365,8 @@ class Server:  # pylint: disable=too-many-instance-attributes
             conn, client_address = self._sock.accept()
             conn.settimeout(self._timeout)
 
+            _debug_start_time = monotonic()
+
             # Receive the whole request
             if (request := self._receive_request(conn, client_address)) is None:
                 conn.close()
@@ -378,8 +387,10 @@ class Server:  # pylint: disable=too-many-instance-attributes
             # Send the response
             response._send()  # pylint: disable=protected-access
 
+            _debug_end_time = monotonic()
+
             if self.debug:
-                _debug_response_sent(response)
+                _debug_response_sent(response, _debug_end_time - _debug_start_time)
 
             return REQUEST_HANDLED_RESPONSE_SENT
 
@@ -398,7 +409,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
             conn.close()
             raise error  # Raise the exception again to be handled by the user.
 
-    def require_authentication(self, auths: List[Union[Basic, Bearer]]) -> None:
+    def require_authentication(self, auths: List[Union[Basic, Token, Bearer]]) -> None:
         """
         Requires authentication for all routes and files in ``root_path``.
         Any non-authenticated request will be rejected with a 401 status code.
@@ -496,8 +507,8 @@ def _debug_started_server(server: "Server"):
     print(f"Started development server on http://{host}:{port}")
 
 
-def _debug_response_sent(response: "Response"):
-    """Prints a message when after a response is sent."""
+def _debug_response_sent(response: "Response", time_elapsed: float):
+    """Prints a message after a response is sent."""
     # pylint: disable=protected-access
     client_ip = response._request.client_address[0]
     method = response._request.method
@@ -505,8 +516,11 @@ def _debug_response_sent(response: "Response"):
     req_size = len(response._request.raw_request)
     status = response._status
     res_size = response._size
+    time_elapsed_ms = f"{round(time_elapsed*1000)}ms"
 
-    print(f'{client_ip} -- "{method} {path}" {req_size} -- "{status}" {res_size}')
+    print(
+        f'{client_ip} -- "{method} {path}" {req_size} -- "{status}" {res_size} -- {time_elapsed_ms}'
+    )
 
 
 def _debug_stopped_server(server: "Server"):  # pylint: disable=unused-argument
