@@ -88,6 +88,18 @@ a running total of the last 10 samples.
     :emphasize-lines: 29,38
     :linenos:
 
+
+If you need to perform some action periodically, or there are multiple tasks that need to be done,
+it might be better to use ``asyncio`` module to handle them, which makes it really easy to add new tasks
+without needing to manually manage the timing of each task.
+
+``asyncio`` **is not included in CircuitPython by default, it has to be installed separately.**
+
+.. literalinclude:: ../examples/httpserver_start_and_poll_asyncio.py
+    :caption: examples/httpserver_start_and_poll_asyncio.py
+    :emphasize-lines: 5,33,42,45,50,55-62
+    :linenos:
+
 Server with MDNS
 ----------------
 
