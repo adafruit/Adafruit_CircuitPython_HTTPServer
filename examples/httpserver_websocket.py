@@ -1,8 +1,8 @@
-# SPDX-FileCopyrightText: 2023 Dan Halbert for Adafruit Industries
+# SPDX-FileCopyrightText: 2023 Michał Pokusa
 #
 # SPDX-License-Identifier: Unlicense
 
-from time import monotonic
+from asyncio import create_task, gather, run, sleep as async_sleep
 import board
 import microcontroller
 import neopixel
@@ -17,9 +17,7 @@ server = Server(pool, debug=True)
 
 pixel = neopixel.NeoPixel(board.NEOPIXEL, 1)
 
-
 websocket: Websocket = None
-next_message_time = monotonic()
 
 HTML_TEMPLATE = """
 <html lang="en">
@@ -75,17 +73,40 @@ def connect_client(request: Request):
 
 
 server.start(str(wifi.radio.ipv4_address))
-while True:
-    server.poll()
 
-    # Check for incoming messages from client
-    if websocket is not None:
-        if (data := websocket.receive(True)) is not None:
-            r, g, b = int(data[1:3], 16), int(data[3:5], 16), int(data[5:7], 16)
-            pixel.fill((r, g, b))
 
-    # Send a message every second
-    if websocket is not None and next_message_time < monotonic():
-        cpu_temp = round(microcontroller.cpu.temperature, 2)
-        websocket.send_message(str(cpu_temp))
-        next_message_time = monotonic() + 1
+async def handle_http_requests():
+    while True:
+        server.poll()
+
+        await async_sleep(0)
+
+
+async def handle_websocket_requests():
+    while True:
+        if websocket is not None:
+            if (data := websocket.receive(fail_silently=True)) is not None:
+                r, g, b = int(data[1:3], 16), int(data[3:5], 16), int(data[5:7], 16)
+                pixel.fill((r, g, b))
+
+        await async_sleep(0)
+
+
+async def send_websocket_messages():
+    while True:
+        if websocket is not None:
+            cpu_temp = round(microcontroller.cpu.temperature, 2)
+            websocket.send_message(str(cpu_temp), fail_silently=True)
+
+        await async_sleep(1)
+
+
+async def main():
+    await gather(
+        create_task(handle_http_requests()),
+        create_task(handle_websocket_requests()),
+        create_task(send_websocket_messages()),
+    )
+
+
+run(main())
