@@ -88,6 +88,18 @@ a running total of the last 10 samples.
     :emphasize-lines: 29,38
     :linenos:
 
+
+If you need to perform some action periodically, or there are multiple tasks that need to be done,
+it might be better to use ``asyncio`` module to handle them, which makes it really easy to add new tasks
+without needing to manually manage the timing of each task.
+
+``asyncio`` **is not included in CircuitPython by default, it has to be installed separately.**
+
+.. literalinclude:: ../examples/httpserver_start_and_poll_asyncio.py
+    :caption: examples/httpserver_start_and_poll_asyncio.py
+    :emphasize-lines: 5,33,42,45,50,55-62
+    :linenos:
+
 Server with MDNS
 ----------------
 
@@ -315,12 +327,15 @@ the client and the server.
 Remember, that because Websockets also receive data, you have to explicitly call ``.receive()`` on the ``Websocket`` object to get the message.
 This is anologous to calling ``.poll()`` on the ``Server`` object.
 
+The following example uses ``asyncio``, which has to be installed separately. It is not necessary to use ``asyncio`` to use Websockets,
+but it is recommended as it makes it easier to handle multiple tasks. It can be used in any of the examples, but here it is particularly useful.
+
 **Because of the limited number of concurrently open sockets, it is not possible to process more than one Websocket response at the same time.
 This might change in the future, but for now, it is recommended to use Websocket only with one client at a time.**
 
 .. literalinclude:: ../examples/httpserver_websocket.py
     :caption: examples/httpserver_websocket.py
-    :emphasize-lines: 12,21,67-73,83,90
+    :emphasize-lines: 12,20,65-72,88,99
     :linenos:
 
 Multiple servers
