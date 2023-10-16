@@ -5,7 +5,7 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response, UNATUHORIZED_401
+from adafruit_httpserver import Server, Request, Response, UNAUTHORIZED_401
 from adafruit_httpserver.authentication import (
     AuthenticationError,
     Basic,
@@ -67,7 +67,7 @@ def require_authentication_or_manually_handle(request: Request):
             request,
             body="Not authenticated - Manually handled",
             content_type="text/plain",
-            status=UNATUHORIZED_401,
+            status=UNAUTHORIZED_401,
         )
 
 
