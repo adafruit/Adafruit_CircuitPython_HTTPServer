@@ -170,6 +170,31 @@ Tested on ESP32-S2 Feather.
     :emphasize-lines: 26-28,41,52,68,74
     :linenos:
 
+Templates
+---------
+
+With the help of the ``adafruit_templateengine`` library, it is possible to achieve somewhat of a
+server-side rendering of HTML pages.
+
+Instead of using string formatting, you can use templates, which can include more complex logic like loops and conditionals.
+This makes it very easy to create dynamic pages, witout using JavaScript and exposing any API endpoints.
+
+Templates also allow splitting the code into multiple files, that can be reused in different places.
+You can find more information about the template syntax in the
+`adafruit_templateengine documentation <https://docs.circuitpython.org/projects/templateengine/en/latest/>`_.
+
+.. literalinclude:: ../examples/directory_listing.tpl.html
+    :caption: examples/directory_listing.tpl.html
+    :language: django
+    :lines: 5-
+    :emphasize-lines: 3-4,8,12,17-25,29
+    :linenos:
+
+.. literalinclude:: ../examples/httpserver_templates.py
+    :caption: examples/httpserver_templates.py
+    :emphasize-lines: 12-15,49-55
+    :linenos:
+
 Form data parsing
 ---------------------
 
