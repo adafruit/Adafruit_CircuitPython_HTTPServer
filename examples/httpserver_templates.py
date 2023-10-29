@@ -29,8 +29,8 @@ except OSError as e:
 def directory_listing(request: Request):
     path = request.query_params.get("path") or ""
 
-    # Remove .. and . from path
-    path = re.sub(r"\/(\.\.|\.)\/|\/(\.\.|\.)|(\.\.|\.)\/", "/", path).strip("/")
+    # Preventing path travelsal by removing all ../ from path
+    path = re.sub(r"\/(\.\.)\/|\/(\.\.)|(\.\.)\/", "/", path).strip("/")
 
     if path:
         is_file = (
