@@ -27,7 +27,7 @@ except OSError as e:
 
 @server.route("/")
 def directory_listing(request: Request):
-    path = request.query_params.get("path") or ""
+    path = request.query_params.get("path", "").replace("%20", " ")
 
     # Preventing path traversal by removing all ../ from path
     path = re.sub(r"\/(\.\.)\/|\/(\.\.)|(\.\.)\/", "/", path).strip("/")
