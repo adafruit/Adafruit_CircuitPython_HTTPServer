@@ -186,8 +186,8 @@ You can find more information about the template syntax in the
 .. literalinclude:: ../examples/directory_listing.tpl.html
     :caption: examples/directory_listing.tpl.html
     :language: django
-    :lines: 5-
-    :emphasize-lines: 3-4,8,12,17-25,29
+    :lines: 9-
+    :emphasize-lines: 1-2,6,10,15-23,27
     :linenos:
 
 .. literalinclude:: ../examples/httpserver_templates.py
