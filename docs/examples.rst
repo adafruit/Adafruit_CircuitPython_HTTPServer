@@ -68,7 +68,7 @@ By default ``FileResponse`` looks for the file in the server's ``root_path`` dir
 .. literalinclude:: ../examples/home.html
     :language: html
     :caption: www/home.html
-    :lines: 5-
+    :lines: 7-
     :linenos:
 
 Tasks between requests
