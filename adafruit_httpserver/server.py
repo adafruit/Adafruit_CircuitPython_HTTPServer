@@ -313,11 +313,10 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 raise ServingFilesDisabledError
 
             # Method is GET or HEAD, try to serve a file from the filesystem.
-            if request.method in [GET, HEAD]:
+            if request.method in (GET, HEAD):
                 return FileResponse(
                     request,
                     filename=request.path,
-                    root_path=self.root_path,
                     head_only=request.method == HEAD,
                 )
 
