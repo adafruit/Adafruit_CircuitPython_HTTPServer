@@ -65,7 +65,11 @@ class QueryParams(_IXSSSafeFieldStorage):
         return super().get_list(field_name, safe=safe)
 
     def __str__(self) -> str:
-        return "&".join(f"{key}={value}" for key, value in self.items())
+        return "&".join(
+            f"{field_name}={value}"
+            for field_name in self.fields
+            for value in self.get_list(field_name)
+        )
 
 
 class File:
@@ -469,9 +473,7 @@ class Request:  # pylint: disable=too-many-instance-attributes
 
         method, path, http_version = start_line.strip().split()
 
-        if "?" not in path:
-            path += "?"
-
+        path = path if "?" in path else path + "?"
         path, query_string = path.split("?", 1)
 
         query_params = QueryParams(query_string)

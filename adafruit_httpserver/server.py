@@ -512,7 +512,7 @@ def _debug_response_sent(response: "Response", time_elapsed: float):
     client_ip = response._request.client_address[0]
     method = response._request.method
     query_params = response._request.query_params
-    path = response._request.path + f"?{query_params or ''}"
+    path = response._request.path + (f"?{query_params}" if query_params else "")
     req_size = len(response._request.raw_request)
     status = response._status
     res_size = response._size
