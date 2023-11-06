@@ -64,6 +64,9 @@ class QueryParams(_IXSSSafeFieldStorage):
     def get_list(self, field_name: str, *, safe=True) -> List[str]:
         return super().get_list(field_name, safe=safe)
 
+    def __str__(self) -> str:
+        return "&".join(f"{key}={value}" for key, value in self.items())
+
 
 class File:
     """
