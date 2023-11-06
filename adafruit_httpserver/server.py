@@ -313,11 +313,10 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 raise ServingFilesDisabledError
 
             # Method is GET or HEAD, try to serve a file from the filesystem.
-            if request.method in [GET, HEAD]:
+            if request.method in (GET, HEAD):
                 return FileResponse(
                     request,
                     filename=request.path,
-                    root_path=self.root_path,
                     head_only=request.method == HEAD,
                 )
 
@@ -512,7 +511,8 @@ def _debug_response_sent(response: "Response", time_elapsed: float):
     # pylint: disable=protected-access
     client_ip = response._request.client_address[0]
     method = response._request.method
-    path = response._request.path
+    query_params = response._request.query_params
+    path = response._request.path + (f"?{query_params}" if query_params else "")
     req_size = len(response._request.raw_request)
     status = response._status
     res_size = response._size
