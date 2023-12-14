@@ -17,8 +17,18 @@ except ImportError:
 import os
 import json
 from binascii import b2a_base64
-import hashlib
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT, ENOTCONN
+
+try:
+    try:
+        import hashlib
+    except ImportError:
+        import adafruit_hashlib as hashlib
+except ImportError:
+    print(
+        "WARNING: hashlib module not available and adafruit_hashlib not installed.",
+        "Websocket support will not work.",
+    )
 
 from .exceptions import (
     BackslashInPathError,
