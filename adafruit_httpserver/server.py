@@ -234,32 +234,6 @@ class Server:  # pylint: disable=too-many-instance-attributes
         if self.debug:
             _debug_stopped_server(self)
 
-    def _receive_request(
-        self,
-        sock: Union["SocketPool.Socket", "socket.socket"],
-        client_address: Tuple[str, int],
-    ) -> Request:
-        """Receive bytes from socket until the whole request is received."""
-
-        # Receiving data until empty line
-        header_bytes = self._receive_header_bytes(sock)
-
-        # Return if no data received
-        if not header_bytes:
-            return None
-
-        request = Request(self, sock, client_address, header_bytes)
-
-        content_length = int(request.headers.get_directive("Content-Length", 0))
-        received_body_bytes = request.body
-
-        # Receiving remaining body bytes
-        request.body = self._receive_body_bytes(
-            sock, received_body_bytes, content_length
-        )
-
-        return request
-
     def _receive_header_bytes(
         self, sock: Union["SocketPool.Socket", "socket.socket"]
     ) -> bytes:
@@ -295,6 +269,32 @@ class Server:  # pylint: disable=too-many-instance-attributes
             except Exception as ex:
                 raise ex
         return received_body_bytes[:content_length]
+
+    def _receive_request(
+        self,
+        sock: Union["SocketPool.Socket", "socket.socket"],
+        client_address: Tuple[str, int],
+    ) -> Request:
+        """Receive bytes from socket until the whole request is received."""
+
+        # Receiving data until empty line
+        header_bytes = self._receive_header_bytes(sock)
+
+        # Return if no data received
+        if not header_bytes:
+            return None
+
+        request = Request(self, sock, client_address, header_bytes)
+
+        content_length = int(request.headers.get_directive("Content-Length", 0))
+        received_body_bytes = request.body
+
+        # Receiving remaining body bytes
+        request.body = self._receive_body_bytes(
+            sock, received_body_bytes, content_length
+        )
+
+        return request
 
     def _handle_request(
         self, request: Request, handler: Union[Callable, None]
