@@ -30,7 +30,7 @@ from .headers import Headers
 from .methods import GET, HEAD
 from .request import Request
 from .response import Response, FileResponse
-from .route import _Routes, Route
+from .route import Route
 from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
 
@@ -65,7 +65,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
         self._auths = []
         self._buffer = bytearray(1024)
         self._timeout = 1
-        self._routes = _Routes()
+        self._routes: "List[Route]" = []
         self._socket_source = socket_source
         self._sock = None
         self.headers = Headers()
@@ -132,7 +132,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
         """
 
         def route_decorator(func: Callable) -> Callable:
-            self._routes.add(Route(path, methods, func, append_slash=append_slash))
+            self._routes.append(Route(path, methods, func, append_slash=append_slash))
             return func
 
         return route_decorator
@@ -157,8 +157,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 external_route2,
             ]}
         """
-        for route in routes:
-            self._routes.add(route)
+        self._routes.extend(routes)
 
     def _verify_can_start(self, host: str, port: int) -> None:
         """Check if the server can be successfully started. Raises RuntimeError if not."""
@@ -296,6 +295,35 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
         return request
 
+    def _find_handler(
+        self, method: str, path: str
+    ) -> Union[Callable[..., "Response"], None]:
+        """
+        Finds a handler for a given route.
+
+        If route used URL parameters, the handler will be wrapped to pass the parameters to the
+        handler.
+
+        Example::
+
+            @server.route("/example/<my_parameter>", GET)
+            def route_func(request, my_parameter):
+                ...
+                request.path == "/example/123" # True
+                my_parameter == "123" # True
+        """
+        for route in self._routes:
+            route_matches, url_parameters = route.matches(method, path)
+
+            if route_matches:
+
+                def wrapped_handler(request):
+                    return route.handler(request, **url_parameters)
+
+                return wrapped_handler
+
+        return None
+
     def _handle_request(
         self, request: Request, handler: Union[Callable, None]
     ) -> Union[Response, None]:
@@ -371,8 +399,8 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 conn.close()
                 return CONNECTION_TIMED_OUT
 
-            # Find a handler for the route
-            handler = self._routes.find_handler(Route(request.path, request.method))
+            # Find a route that matches the request's method and path and get its handler
+            handler = self._find_handler(request.method, request.path)
 
             # Handle the request
             response = self._handle_request(request, handler)
