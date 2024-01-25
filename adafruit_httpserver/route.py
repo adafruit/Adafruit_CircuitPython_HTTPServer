@@ -88,13 +88,14 @@ class Route:
         self, method: str, path: str
     ) -> Union[Tuple[Literal[False], None], Tuple[Literal[True], Dict[str, str]]]:
         """
-        Checks if the route matches the other route.
+        Checks if the route matches given ``method`` and ``path``.
 
-        If the route contains parameters, it will check if the ``other`` route contains values for
+        If the route contains parameters, it will check if the ``path`` contains values for
         them.
 
-        Returns tuple of a boolean and a list of strings. The boolean indicates if the routes match,
-        and the list contains the values of the url parameters from the ``other`` route.
+        Returns tuple of a boolean that indicates if the routes matches and a dict containing
+        values for url parameters.
+        If the route does not match ``path`` or ``method`` if will return ``None`` instead of dict.
 
         Examples::
 
