@@ -58,11 +58,15 @@ In order to save memory, we are unregistering unused MIME types and registering 
     :linenos:
 
 You can also serve a specific file from the handler.
-By default ``FileResponse`` looks for the file in the server's ``root_path`` directory, but you can change it.
+By default ``FileResponse`` looks for the file in the server's ``root_path`` directory
+(``/default-static-directory`` in the example below), but you can change it manually in every ``FileResponse``
+(to e.g. ``/other-static-directory``, as in example below).
+
+By doing that, you can serve files from multiple directories, and decide exactly which files are accessible.
 
 .. literalinclude:: ../examples/httpserver_handler_serves_file.py
     :caption: examples/httpserver_handler_serves_file.py
-    :emphasize-lines: 22
+    :emphasize-lines: 13,22
     :linenos:
 
 .. literalinclude:: ../examples/home.html
