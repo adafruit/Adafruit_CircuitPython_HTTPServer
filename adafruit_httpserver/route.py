@@ -55,11 +55,23 @@ class Route:
         if not path.startswith("/"):
             raise ValueError("Path must start with a slash.")
 
+        if path.endswith("/") and append_slash:
+            raise ValueError("Cannot use append_slash=True when path ends with /")
+
+        if "//" in path:
+            raise ValueError("Path cannot contain double slashes.")
+
         if "<>" in path:
             raise ValueError("All URL parameters must be named.")
 
-        if path.endswith("/") and append_slash:
-            raise ValueError("Cannot use append_slash=True when path ends with /")
+        if re.search(r"[^/]<[^/]+>|<[^/]+>[^/]", path):
+            raise ValueError("All URL parameters must be between slashes.")
+
+        if re.search(r"[^/.]\.\.\.\.?|\.?\.\.\.[^/.]", path):
+            raise ValueError("... and .... must be between slashes")
+
+        if "....." in path:
+            raise ValueError("Path cannot contain more than 4 dots in a row.")
 
     def matches(
         self, method: str, path: str
