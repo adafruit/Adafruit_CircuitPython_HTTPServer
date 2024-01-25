@@ -295,7 +295,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
         return request
 
-    def _find_handler(
+    def _find_handler(  # pylint: disable=cell-var-from-loop
         self, method: str, path: str
     ) -> Union[Callable[..., "Response"], None]:
         """
