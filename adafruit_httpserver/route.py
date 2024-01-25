@@ -23,6 +23,24 @@ from .methods import GET
 class Route:
     """Route definition for different paths, see `adafruit_httpserver.server.Server.route`."""
 
+    @staticmethod
+    def _prepare_path_pattern(path: str, append_slash: bool) -> str:
+        # Escape all dots
+        path = re.sub(r"\.", r"\\.", path)
+
+        # Replace url parameters with regex groups
+        path = re.sub(r"<\w+>", r"([^/]+)", path)
+
+        # Replace wildcards with corresponding regex
+        path = path.replace(r"\.\.\.\.", r".+").replace(r"\.\.\.", r"[^/]+")
+
+        # Add optional slash at the end if append_slash is True
+        if append_slash:
+            path += r"/?"
+
+        # Add start and end of string anchors
+        return f"^{path}$"
+
     def __init__(
         self,
         path: str = "",
@@ -33,22 +51,15 @@ class Route:
     ) -> None:
         self._validate_path(path, append_slash)
 
-        self.parameters_names = [
-            name[1:-1] for name in re.compile(r"/[^<>]*/?").split(path) if name != ""
-        ]
-        self.path_pattern = re.compile(
-            r"^"
-            + re.sub(r"<\w+>", r"([^/]+)", path)
-            .replace(r"....", r".+")
-            .replace(r"...", r"[^/]+")
-            + (r"/?" if append_slash else r"")
-            + r"$"
-        )
         self.path = path
         self.methods = (
             set(methods) if isinstance(methods, (set, list, tuple)) else set([methods])
         )
         self.handler = handler
+        self.parameters_names = [
+            name[1:-1] for name in re.compile(r"/[^<>]*/?").split(path) if name != ""
+        ]
+        self.path_pattern = re.compile(self._prepare_path_pattern(path, append_slash))
 
     @staticmethod
     def _validate_path(path: str, append_slash: bool) -> None:
