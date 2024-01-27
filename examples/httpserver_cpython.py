@@ -5,15 +5,13 @@
 # Simple example showing how to use httpserver in cpython (e.g., on a computer).
 
 import socket
+from adafruit_httpserver import Server, Request, Response
 
 
 # fake the wifi class, reduces changes required later in the code.
-class wifi:
-  class radio:
-    ipv4_address = '0.0.0.0'
-    
-
-from adafruit_httpserver import Server, Request, Response
+class wifi:  # pylint: disable=too-few-public-methods
+    class radio:  # pylint: disable=too-few-public-methods
+        ipv4_address = "0.0.0.0"
 
 
 pool = socket
