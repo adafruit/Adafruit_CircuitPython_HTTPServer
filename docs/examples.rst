@@ -5,7 +5,7 @@ Simple Test
 **This mode is useful for development, but it is not recommended to use it in production.**
 **More about Debug mode at the end of Examples section.**
 
-This is the minimal example of using the library.
+This is the minimal example of using the library with CircuitPython.
 This example is serving a simple static text message.
 
 It also manually connects to the WiFi network.
@@ -42,6 +42,17 @@ Note that we still need to import ``socketpool`` and ``wifi`` modules.
     :caption: examples/httpserver_simpletest_auto.py
     :emphasize-lines: 11
     :linenos:
+
+CPython usage
+--------------------
+
+Library can also be used in CPython, no changes other than changing the ``socket_source`` are necessary.
+
+.. literalinclude:: ../examples/httpserver_cpython.py
+    :caption: examples/httpserver_cpython.py
+    :emphasize-lines: 5,10
+    :linenos:
+
 
 Serving static files
 --------------------
