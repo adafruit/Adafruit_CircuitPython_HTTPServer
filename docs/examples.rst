@@ -5,7 +5,7 @@ Simple Test
 **This mode is useful for development, but it is not recommended to use it in production.**
 **More about Debug mode at the end of Examples section.**
 
-This is the minimal example of using the library.
+This is the minimal example of using the library with CircuitPython.
 This example is serving a simple static text message.
 
 It also manually connects to the WiFi network.
@@ -43,6 +43,17 @@ Note that we still need to import ``socketpool`` and ``wifi`` modules.
     :emphasize-lines: 11
     :linenos:
 
+CPython usage
+--------------------
+
+Library can also be used in CPython, no changes other than changing the ``socket_source`` are necessary.
+
+.. literalinclude:: ../examples/httpserver_cpython.py
+    :caption: examples/httpserver_cpython.py
+    :emphasize-lines: 5,10
+    :linenos:
+
+
 Serving static files
 --------------------
 
@@ -58,11 +69,15 @@ In order to save memory, we are unregistering unused MIME types and registering 
     :linenos:
 
 You can also serve a specific file from the handler.
-By default ``FileResponse`` looks for the file in the server's ``root_path`` directory, but you can change it.
+By default ``FileResponse`` looks for the file in the server's ``root_path`` directory
+(``/default-static-directory`` in the example below), but you can change it manually in every ``FileResponse``
+(to e.g. ``/other-static-directory``, as in example below).
+
+By doing that, you can serve files from multiple directories, and decide exactly which files are accessible.
 
 .. literalinclude:: ../examples/httpserver_handler_serves_file.py
     :caption: examples/httpserver_handler_serves_file.py
-    :emphasize-lines: 22
+    :emphasize-lines: 13,22
     :linenos:
 
 .. literalinclude:: ../examples/home.html

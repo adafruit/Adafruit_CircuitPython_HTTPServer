@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, List, Iterable, Union, Tuple, Dict, TYPE_CHECKING
+    from typing import Callable, Iterable, Union, Tuple, Literal, Dict, TYPE_CHECKING
 
     if TYPE_CHECKING:
         from .response import Response
@@ -23,6 +23,24 @@ from .methods import GET
 class Route:
     """Route definition for different paths, see `adafruit_httpserver.server.Server.route`."""
 
+    @staticmethod
+    def _prepare_path_pattern(path: str, append_slash: bool) -> str:
+        # Escape all dots
+        path = re.sub(r"\.", r"\\.", path)
+
+        # Replace url parameters with regex groups
+        path = re.sub(r"<\w+>", r"([^/]+)", path)
+
+        # Replace wildcards with corresponding regex
+        path = path.replace(r"\.\.\.\.", r".+").replace(r"\.\.\.", r"[^/]+")
+
+        # Add optional slash at the end if append_slash is True
+        if append_slash:
+            path += r"/?"
+
+        # Add start and end of string anchors
+        return f"^{path}$"
+
     def __init__(
         self,
         path: str = "",
@@ -33,80 +51,89 @@ class Route:
     ) -> None:
         self._validate_path(path, append_slash)
 
-        self.parameters_names = [
-            name[1:-1] for name in re.compile(r"/[^<>]*/?").split(path) if name != ""
-        ]
-        self.path = re.sub(r"<\w+>", r"([^/]+)", path).replace("....", r".+").replace(
-            "...", r"[^/]+"
-        ) + ("/?" if append_slash else "")
+        self.path = path
         self.methods = (
             set(methods) if isinstance(methods, (set, list, tuple)) else set([methods])
         )
-
         self.handler = handler
+        self.parameters_names = [
+            name[1:-1] for name in re.compile(r"/[^<>]*/?").split(path) if name != ""
+        ]
+        self.path_pattern = re.compile(self._prepare_path_pattern(path, append_slash))
 
     @staticmethod
     def _validate_path(path: str, append_slash: bool) -> None:
         if not path.startswith("/"):
             raise ValueError("Path must start with a slash.")
 
-        if "<>" in path:
-            raise ValueError("All URL parameters must be named.")
-
         if path.endswith("/") and append_slash:
             raise ValueError("Cannot use append_slash=True when path ends with /")
 
-    def match(self, other: "Route") -> Tuple[bool, Dict[str, str]]:
-        """
-        Checks if the route matches the other route.
+        if "//" in path:
+            raise ValueError("Path cannot contain double slashes.")
 
-        If the route contains parameters, it will check if the ``other`` route contains values for
+        if "<>" in path:
+            raise ValueError("All URL parameters must be named.")
+
+        if re.search(r"[^/]<[^/]+>|<[^/]+>[^/]", path):
+            raise ValueError("All URL parameters must be between slashes.")
+
+        if re.search(r"[^/.]\.\.\.\.?|\.?\.\.\.[^/.]", path):
+            raise ValueError("... and .... must be between slashes")
+
+        if "....." in path:
+            raise ValueError("Path cannot contain more than 4 dots in a row.")
+
+    def matches(
+        self, method: str, path: str
+    ) -> Union[Tuple[Literal[False], None], Tuple[Literal[True], Dict[str, str]]]:
+        """
+        Checks if the route matches given ``method`` and ``path``.
+
+        If the route contains parameters, it will check if the ``path`` contains values for
         them.
 
-        Returns tuple of a boolean and a list of strings. The boolean indicates if the routes match,
-        and the list contains the values of the url parameters from the ``other`` route.
+        Returns tuple of a boolean that indicates if the routes matches and a dict containing
+        values for url parameters.
+        If the route does not match ``path`` or ``method`` if will return ``None`` instead of dict.
 
         Examples::
 
-            route = Route("/example", GET, True)
+            route = Route("/example", GET, append_slash=True)
 
-            other1a = Route("/example", GET)
-            other1b = Route("/example/", GET)
-            route.matches(other1a) # True, {}
-            route.matches(other1b) # True, {}
+            route.matches(GET, "/example") # True, {}
+            route.matches(GET, "/example/") # True, {}
 
-            other2 = Route("/other-example", GET)
-            route.matches(other2) # False, {}
+            route.matches(GET, "/other-example") # False, None
+            route.matches(POST, "/example/") # False, None
 
             ...
 
             route = Route("/example/<parameter>", GET)
 
-            other1 = Route("/example/123", GET)
-            route.matches(other1) # True, {"parameter": "123"}
+            route.matches(GET, "/example/123") # True, {"parameter": "123"}
 
-            other2 = Route("/other-example", GET)
-            route.matches(other2) # False, {}
+            route.matches(GET, "/other-example") # False, None
 
             ...
 
-            route1 = Route("/example/.../something", GET)
-            other1 = Route("/example/123/something", GET)
-            route1.matches(other1) # True, {}
+            route = Route("/example/.../something", GET)
+            route.matches(GET, "/example/123/something") # True, {}
 
-            route2 = Route("/example/..../something", GET)
-            other2 = Route("/example/123/456/something", GET)
-            route2.matches(other2) # True, {}
+            route = Route("/example/..../something", GET)
+            route.matches(GET, "/example/123/456/something") # True, {}
         """
 
-        if not other.methods.issubset(self.methods):
-            return False, {}
+        if method not in self.methods:
+            return False, None
 
-        regex_match = re.match(f"^{self.path}$", other.path)
-        if regex_match is None:
-            return False, {}
+        path_match = self.path_pattern.match(path)
+        if path_match is None:
+            return False, None
 
-        return True, dict(zip(self.parameters_names, regex_match.groups()))
+        url_parameters_values = path_match.groups()
+
+        return True, dict(zip(self.parameters_names, url_parameters_values))
 
     def __repr__(self) -> str:
         path = repr(self.path)
@@ -168,51 +195,3 @@ def as_route(
         return Route(path, methods, func, append_slash=append_slash)
 
     return route_decorator
-
-
-class _Routes:
-    """A collection of routes and their corresponding handlers."""
-
-    def __init__(self) -> None:
-        self._routes: List[Route] = []
-
-    def add(self, route: Route):
-        """Adds a route and its handler to the collection."""
-        self._routes.append(route)
-
-    def find_handler(self, route: Route) -> Union[Callable["...", "Response"], None]:
-        """
-        Finds a handler for a given route.
-
-        If route used URL parameters, the handler will be wrapped to pass the parameters to the
-        handler.
-
-        Example::
-
-            @server.route("/example/<my_parameter>", GET)
-            def route_func(request, my_parameter):
-                ...
-                request.path == "/example/123" # True
-                my_parameter == "123" # True
-        """
-        found_route, _route = False, None
-
-        for _route in self._routes:
-            matches, keyword_parameters = _route.match(route)
-
-            if matches:
-                found_route = True
-                break
-
-        if not found_route:
-            return None
-
-        handler = _route.handler
-
-        def wrapped_handler(request):
-            return handler(request, **keyword_parameters)
-
-        return wrapped_handler
-
-    def __repr__(self) -> str:
-        return f"_Routes({repr(self._routes)})"
