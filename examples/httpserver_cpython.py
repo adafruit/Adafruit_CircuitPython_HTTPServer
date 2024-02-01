@@ -19,4 +19,5 @@ def base(request: Request):
     return Response(request, "Hello from the CircuitPython HTTP Server!")
 
 
-server.serve_forever("0.0.0.0")
+# runs on port 5000; ports < 1024 require sudo.
+server.serve_forever("0.0.0.0", 5000)
