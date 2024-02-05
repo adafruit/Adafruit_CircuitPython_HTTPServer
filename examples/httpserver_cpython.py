@@ -19,5 +19,6 @@ def base(request: Request):
     return Response(request, "Hello from the CircuitPython HTTP Server!")
 
 
-# runs on port 5000; ports < 1024 require sudo.
+# Ports below 1024 are reserved for root user only.
+# If you want to run this example on a port below 1024, you need to run it as root (or with `sudo`).
 server.serve_forever("0.0.0.0", 5000)

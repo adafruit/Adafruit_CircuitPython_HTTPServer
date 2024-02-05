@@ -210,9 +210,15 @@ class Server:  # pylint: disable=too-many-instance-attributes
         self._sock = self._socket_source.socket(
             self._socket_source.AF_INET, self._socket_source.SOCK_STREAM
         )
-        self._sock.bind((host, port))
-        self._sock.listen(10)
-        self._sock.setblocking(False)  # Non-blocking socket
+        try:
+            # Only for CPython, prevents "Address already in use" error
+            self._sock.setsockopt(
+                self._socket_source.SOL_SOCKET, self._socket_source.SO_REUSEADDR, 1
+            )
+        finally:
+            self._sock.bind((host, port))
+            self._sock.listen(10)
+            self._sock.setblocking(False)  # Non-blocking socket
 
         if self.debug:
             _debug_started_server(self)
