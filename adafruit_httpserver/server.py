@@ -196,7 +196,9 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 pass  # Ignore exceptions in handler function
 
     def _set_socket_level_to_reuse_address(self) -> None:
-        # Only for CPython, prevents "Address already in use" error
+        """
+        Only for CPython, prevents "Address already in use" error when restarting the server.
+        """
         self._sock.setsockopt(
             self._socket_source.SOL_SOCKET, self._socket_source.SO_REUSEADDR, 1
         )
