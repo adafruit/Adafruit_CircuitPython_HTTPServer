@@ -15,6 +15,7 @@ except ImportError:
     pass
 
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
+from sys import implementation
 from time import monotonic, sleep
 from traceback import print_exception
 
@@ -194,6 +195,14 @@ class Server:  # pylint: disable=too-many-instance-attributes
             except Exception:  # pylint: disable=broad-except
                 pass  # Ignore exceptions in handler function
 
+    def _set_socket_level_to_reuse_address(self) -> None:
+        """
+        Only for CPython, prevents "Address already in use" error when restarting the server.
+        """
+        self._sock.setsockopt(
+            self._socket_source.SOL_SOCKET, self._socket_source.SO_REUSEADDR, 1
+        )
+
     def start(self, host: str, port: int = 80) -> None:
         """
         Start the HTTP server at the given host and port. Requires calling
@@ -210,15 +219,13 @@ class Server:  # pylint: disable=too-many-instance-attributes
         self._sock = self._socket_source.socket(
             self._socket_source.AF_INET, self._socket_source.SOCK_STREAM
         )
-        try:
-            # Only for CPython, prevents "Address already in use" error
-            self._sock.setsockopt(
-                self._socket_source.SOL_SOCKET, self._socket_source.SO_REUSEADDR, 1
-            )
-        finally:
-            self._sock.bind((host, port))
-            self._sock.listen(10)
-            self._sock.setblocking(False)  # Non-blocking socket
+
+        if implementation.name != "circuitpython":
+            self._set_socket_level_to_reuse_address()
+
+        self._sock.bind((host, port))
+        self._sock.listen(10)
+        self._sock.setblocking(False)  # Non-blocking socket
 
         if self.debug:
             _debug_started_server(self)
