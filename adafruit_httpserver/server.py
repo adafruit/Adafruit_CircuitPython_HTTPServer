@@ -360,6 +360,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
         if self.stopped:
             raise ServerStoppedError
 
+        conn = None
         try:
             conn, client_address = self._sock.accept()
             conn.settimeout(self._timeout)
@@ -405,7 +406,8 @@ class Server:  # pylint: disable=too-many-instance-attributes
             if self.debug:
                 _debug_exception_in_handler(error)
 
-            conn.close()
+            if conn is not None:
+                conn.close()
             raise error  # Raise the exception again to be handled by the user.
 
     def require_authentication(self, auths: List[Union[Basic, Token, Bearer]]) -> None:
