@@ -9,8 +9,6 @@
 
 try:
     from typing import List, Dict, Tuple, Union, Any, TYPE_CHECKING
-    from socket import socket
-    from socketpool import SocketPool
 
     if TYPE_CHECKING:
         from .server import Server
@@ -20,7 +18,7 @@ except ImportError:
 import json
 
 from .headers import Headers
-from .interfaces import _IFieldStorage, _IXSSSafeFieldStorage
+from .interfaces import _ISocket, _IFieldStorage, _IXSSSafeFieldStorage
 from .methods import POST, PUT, PATCH, DELETE
 
 
@@ -274,7 +272,7 @@ class Request:  # pylint: disable=too-many-instance-attributes
     Server object that received the request.
     """
 
-    connection: Union["SocketPool.Socket", "socket.socket"]
+    connection: _ISocket
     """
     Socket object used to send and receive data on the connection.
     """
@@ -325,7 +323,7 @@ class Request:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         server: "Server",
-        connection: Union["SocketPool.Socket", "socket.socket"],
+        connection: _ISocket,
         client_address: Tuple[str, int],
         raw_request: bytes = None,
     ) -> None:

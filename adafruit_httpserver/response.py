@@ -9,8 +9,6 @@
 
 try:
     from typing import Optional, Dict, Union, Tuple, Generator, Any
-    from socket import socket
-    from socketpool import SocketPool
 except ImportError:
     pass
 
@@ -47,6 +45,7 @@ from .status import (
     PERMANENT_REDIRECT_308,
 )
 from .headers import Headers
+from .interfaces import _ISocket
 
 
 class Response:  # pylint: disable=too-few-public-methods
@@ -132,7 +131,7 @@ class Response:  # pylint: disable=too-few-public-methods
 
     def _send_bytes(
         self,
-        conn: Union["SocketPool.Socket", "socket.socket"],
+        conn: _ISocket,
         buffer: Union[bytes, bytearray, memoryview],
     ):
         bytes_sent: int = 0
@@ -708,7 +707,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
             length -= min(payload_length, length)
 
         if has_mask:
-            payload = bytes(x ^ mask[i % 4] for i, x in enumerate(payload))
+            payload = bytes(byte ^ mask[idx % 4] for idx, byte in enumerate(payload))
 
         return opcode, payload
 

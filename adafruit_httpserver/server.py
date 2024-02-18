@@ -8,9 +8,7 @@
 """
 
 try:
-    from typing import Callable, Protocol, Union, List, Tuple, Dict, Iterable
-    from socket import socket
-    from socketpool import SocketPool
+    from typing import Callable, Union, List, Tuple, Dict, Iterable
 except ImportError:
     pass
 
@@ -28,6 +26,7 @@ from .exceptions import (
     ServingFilesDisabledError,
 )
 from .headers import Headers
+from .interfaces import _ISocketPool, _ISocket
 from .methods import GET, HEAD
 from .request import Request
 from .response import Response, FileResponse
@@ -54,7 +53,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
     """Root directory to serve files from. ``None`` if serving files is disabled."""
 
     def __init__(
-        self, socket_source: Protocol, root_path: str = None, *, debug: bool = False
+        self, socket_source: _ISocketPool, root_path: str = None, *, debug: bool = False
     ) -> None:
         """Create a server, and get it ready to run.
 
@@ -244,9 +243,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
         if self.debug:
             _debug_stopped_server(self)
 
-    def _receive_header_bytes(
-        self, sock: Union["SocketPool.Socket", "socket.socket"]
-    ) -> bytes:
+    def _receive_header_bytes(self, sock: _ISocket) -> bytes:
         """Receive bytes until a empty line is received."""
         received_bytes = bytes()
         while b"\r\n\r\n" not in received_bytes:
@@ -263,7 +260,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
     def _receive_body_bytes(
         self,
-        sock: Union["SocketPool.Socket", "socket.socket"],
+        sock: _ISocket,
         received_body_bytes: bytes,
         content_length: int,
     ) -> bytes:
@@ -282,7 +279,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
     def _receive_request(
         self,
-        sock: Union["SocketPool.Socket", "socket.socket"],
+        sock: _ISocket,
         client_address: Tuple[str, int],
     ) -> Request:
         """Receive bytes from socket until the whole request is received."""
