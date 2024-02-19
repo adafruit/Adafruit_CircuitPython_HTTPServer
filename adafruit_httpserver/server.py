@@ -194,13 +194,23 @@ class Server:  # pylint: disable=too-many-instance-attributes
             except Exception:  # pylint: disable=broad-except
                 pass  # Ignore exceptions in handler function
 
-    def _set_socket_level_to_reuse_address(self) -> None:
-        """
-        Only for CPython, prevents "Address already in use" error when restarting the server.
-        """
-        self._sock.setsockopt(
-            self._socket_source.SOL_SOCKET, self._socket_source.SO_REUSEADDR, 1
-        )
+    @staticmethod
+    def _create_server_socket(
+        socket_source: _ISocketPool,
+        host: str,
+        port: int,
+    ) -> _ISocket:
+        sock = socket_source.socket(socket_source.AF_INET, socket_source.SOCK_STREAM)
+
+        # TODO: Temporary backwards compatibility, remove after CircuitPython 9.0.0 release
+        if implementation.version >= (9,) or implementation.name != "circuitpython":
+            sock.setsockopt(socket_source.SOL_SOCKET, socket_source.SO_REUSEADDR, 1)
+
+        sock.bind((host, port))
+        sock.listen(10)
+        sock.setblocking(False)  # Non-blocking socket
+
+        return sock
 
     def start(self, host: str, port: int = 80) -> None:
         """
@@ -215,16 +225,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
         self.host, self.port = host, port
 
         self.stopped = False
-        self._sock = self._socket_source.socket(
-            self._socket_source.AF_INET, self._socket_source.SOCK_STREAM
-        )
-
-        if implementation.name != "circuitpython":
-            self._set_socket_level_to_reuse_address()
-
-        self._sock.bind((host, port))
-        self._sock.listen(10)
-        self._sock.setblocking(False)  # Non-blocking socket
+        self._sock = self._create_server_socket(self._socket_source, host, port)
 
         if self.debug:
             _debug_started_server(self)
