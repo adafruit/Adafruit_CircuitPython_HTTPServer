@@ -171,7 +171,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
             raise RuntimeError(f"Cannot start server on {host}:{port}") from error
 
     def serve_forever(
-        self, host: str, port: int = 80, *, poll_interval: float = 0.1
+        self, host: str = "0.0.0.0", port: int = 5000, *, poll_interval: float = 0.1
     ) -> None:
         """
         Wait for HTTP requests at the given host and port. Does not return.
@@ -212,7 +212,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
         return sock
 
-    def start(self, host: str, port: int = 80) -> None:
+    def start(self, host: str = "0.0.0.0", port: int = 5000) -> None:
         """
         Start the HTTP server at the given host and port. Requires calling
         ``.poll()`` in a while loop to handle incoming requests.
