@@ -121,7 +121,7 @@ class _IFieldStorage:
         return key in self._storage
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({repr(self._storage)})"
+        return f"<{self.__class__.__name__} {repr(self._storage)}>"
 
 
 def _encode_html_entities(value: Union[str, None]) -> Union[str, None]:

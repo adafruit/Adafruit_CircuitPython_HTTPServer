@@ -528,6 +528,13 @@ class Server:  # pylint: disable=too-many-instance-attributes
         else:
             raise ValueError("Server.socket_timeout must be a positive numeric value.")
 
+    def __repr__(self) -> str:
+        host = self.host
+        port = self.port
+        root_path = self.root_path
+
+        return f"<Server {host=}, {port=}, {root_path=}>"
+
 
 def _debug_warning_exposed_files(root_path: str):
     """Warns about exposing all files on the device."""

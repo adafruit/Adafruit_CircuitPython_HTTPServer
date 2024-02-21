@@ -125,11 +125,11 @@ class File:
 
     def __repr__(self) -> str:
         filename, content_type, size = (
-            repr(self.filename),
-            repr(self.content_type),
-            repr(self.size),
+            self.filename,
+            self.content_type,
+            self.size,
         )
-        return f"{self.__class__.__name__}({filename=}, {content_type=}, {size=})"
+        return f"<{self.__class__.__name__} {filename=}, {content_type=}, {size=}>"
 
 
 class Files(_IFieldStorage):
@@ -258,7 +258,9 @@ class FormData(_IXSSSafeFieldStorage):
 
     def __repr__(self) -> str:
         class_name = self.__class__.__name__
-        return f"{class_name}({repr(self._storage)}, files={repr(self.files._storage)})"
+        return (
+            f"<{class_name} {repr(self._storage)}, files={repr(self.files._storage)}>"
+        )
 
 
 class Request:  # pylint: disable=too-many-instance-attributes
@@ -478,6 +480,10 @@ class Request:  # pylint: disable=too-many-instance-attributes
         headers = Headers(headers_string)
 
         return method, path, query_params, http_version, headers
+
+    def __repr__(self) -> str:
+        path = self.path + (f"?{self.query_params}" if self.query_params else "")
+        return f'<{self.__class__.__name__} "{self.method} {path}">'
 
 
 def _debug_unsupported_form_content_type(content_type: str) -> None:
