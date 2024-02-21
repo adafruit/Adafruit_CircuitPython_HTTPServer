@@ -216,6 +216,10 @@ class FileResponse(Response):  # pylint: disable=too-few-public-methods
         )
         self._filename = filename + "index.html" if filename.endswith("/") else filename
         self._root_path = root_path or self._request.server.root_path
+
+        if self._root_path is None:
+            raise ValueError("root_path must be provided in Server or in FileResponse")
+
         self._full_file_path = self._combine_path(self._root_path, self._filename)
         self._content_type = content_type or MIMETypes.get_for_filename(self._filename)
         self._file_length = self._get_file_length(self._full_file_path)
