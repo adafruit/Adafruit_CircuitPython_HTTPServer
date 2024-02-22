@@ -197,11 +197,15 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
     def _set_socket_level_to_reuse_address(self) -> None:
         """
-        Only for CPython, prevents "Address already in use" error when restarting the server.
+        On systems that have SO_REUSEADDR, prevents "Address already in use"
+        error when restarting the server.
         """
-        self._sock.setsockopt(
-            self._socket_source.SOL_SOCKET, self._socket_source.SO_REUSEADDR, 1
-        )
+        try:
+            self._sock.setsockopt(
+                self._socket_source.SOL_SOCKET, self._socket_source.SO_REUSEADDR, 1
+            )
+        except AttributeError:
+            pass
 
     def start(self, host: str, port: int = 80) -> None:
         """
@@ -220,8 +224,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
             self._socket_source.AF_INET, self._socket_source.SOCK_STREAM
         )
 
-        if implementation.name != "circuitpython":
-            self._set_socket_level_to_reuse_address()
+        self._set_socket_level_to_reuse_address()
 
         self._sock.bind((host, port))
         self._sock.listen(10)
