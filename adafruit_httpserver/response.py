@@ -9,8 +9,6 @@
 
 try:
     from typing import Optional, Dict, Union, Tuple, Generator, Any
-    from socket import socket
-    from socketpool import SocketPool
 except ImportError:
     pass
 
@@ -47,6 +45,7 @@ from .status import (
     PERMANENT_REDIRECT_308,
 )
 from .headers import Headers
+from .interfaces import _ISocket
 
 
 class Response:  # pylint: disable=too-few-public-methods
@@ -132,7 +131,7 @@ class Response:  # pylint: disable=too-few-public-methods
 
     def _send_bytes(
         self,
-        conn: Union["SocketPool.Socket", "socket.socket"],
+        conn: _ISocket,
         buffer: Union[bytes, bytearray, memoryview],
     ):
         bytes_sent: int = 0
@@ -217,6 +216,10 @@ class FileResponse(Response):  # pylint: disable=too-few-public-methods
         )
         self._filename = filename + "index.html" if filename.endswith("/") else filename
         self._root_path = root_path or self._request.server.root_path
+
+        if self._root_path is None:
+            raise ValueError("root_path must be provided in Server or in FileResponse")
+
         self._full_file_path = self._combine_path(self._root_path, self._filename)
         self._content_type = content_type or MIMETypes.get_for_filename(self._filename)
         self._file_length = self._get_file_length(self._full_file_path)
@@ -708,7 +711,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
             length -= min(payload_length, length)
 
         if has_mask:
-            payload = bytes(x ^ mask[i % 4] for i, x in enumerate(payload))
+            payload = bytes(byte ^ mask[idx % 4] for idx, byte in enumerate(payload))
 
         return opcode, payload
 

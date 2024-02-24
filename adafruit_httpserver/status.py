@@ -21,14 +21,17 @@ class Status:  # pylint: disable=too-few-public-methods
         self.code = code
         self.text = text
 
-    def __repr__(self):
-        return f'Status({self.code}, "{self.text}")'
+    def __eq__(self, other: "Status"):
+        return self.code == other.code and self.text == other.text
 
     def __str__(self):
         return f"{self.code} {self.text}"
 
-    def __eq__(self, other: "Status"):
-        return self.code == other.code and self.text == other.text
+    def __repr__(self):
+        code = self.code
+        text = self.text
+
+        return f'<Status {code}, "{text}">'
 
 
 SWITCHING_PROTOCOLS_101 = Status(101, "Switching Protocols")

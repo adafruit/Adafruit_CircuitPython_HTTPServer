@@ -9,8 +9,6 @@
 
 try:
     from typing import List, Dict, Tuple, Union, Any, TYPE_CHECKING
-    from socket import socket
-    from socketpool import SocketPool
 
     if TYPE_CHECKING:
         from .server import Server
@@ -20,7 +18,7 @@ except ImportError:
 import json
 
 from .headers import Headers
-from .interfaces import _IFieldStorage, _IXSSSafeFieldStorage
+from .interfaces import _ISocket, _IFieldStorage, _IXSSSafeFieldStorage
 from .methods import POST, PUT, PATCH, DELETE
 
 
@@ -127,11 +125,11 @@ class File:
 
     def __repr__(self) -> str:
         filename, content_type, size = (
-            repr(self.filename),
-            repr(self.content_type),
-            repr(self.size),
+            self.filename,
+            self.content_type,
+            self.size,
         )
-        return f"{self.__class__.__name__}({filename=}, {content_type=}, {size=})"
+        return f"<{self.__class__.__name__} {filename=}, {content_type=}, {size=}>"
 
 
 class Files(_IFieldStorage):
@@ -260,7 +258,9 @@ class FormData(_IXSSSafeFieldStorage):
 
     def __repr__(self) -> str:
         class_name = self.__class__.__name__
-        return f"{class_name}({repr(self._storage)}, files={repr(self.files._storage)})"
+        return (
+            f"<{class_name} {repr(self._storage)}, files={repr(self.files._storage)}>"
+        )
 
 
 class Request:  # pylint: disable=too-many-instance-attributes
@@ -274,7 +274,7 @@ class Request:  # pylint: disable=too-many-instance-attributes
     Server object that received the request.
     """
 
-    connection: Union["SocketPool.Socket", "socket.socket"]
+    connection: _ISocket
     """
     Socket object used to send and receive data on the connection.
     """
@@ -325,7 +325,7 @@ class Request:  # pylint: disable=too-many-instance-attributes
     def __init__(
         self,
         server: "Server",
-        connection: Union["SocketPool.Socket", "socket.socket"],
+        connection: _ISocket,
         client_address: Tuple[str, int],
         raw_request: bytes = None,
     ) -> None:
@@ -480,6 +480,10 @@ class Request:  # pylint: disable=too-many-instance-attributes
         headers = Headers(headers_string)
 
         return method, path, query_params, http_version, headers
+
+    def __repr__(self) -> str:
+        path = self.path + (f"?{self.query_params}" if self.query_params else "")
+        return f'<{self.__class__.__name__} "{self.method} {path}">'
 
 
 def _debug_unsupported_form_content_type(content_type: str) -> None:

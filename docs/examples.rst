@@ -27,6 +27,9 @@ Although there is nothing wrong with this approach, from the version 8.0.0 of Ci
 `it is possible to use the environment variables <https://docs.circuitpython.org/en/latest/docs/environment.html#circuitpython-behavior>`_
 defined in ``settings.toml`` file to store secrets and configure the WiFi network.
 
+By default the library uses ``0.0.0.0`` and port ``5000`` for the server, as port ``80`` is reserved for the CircuitPython Web Workflow.
+If you want to use port ``80`` , you need to set ``CIRCUITPY_WEB_API_PORT`` to any other port, and then set ``port`` parameter in ``Server`` constructor to ``80`` .
+
 This is the same example as above, but it uses the ``settings.toml`` file to configure the WiFi network.
 
 **From now on, all the examples will use the** ``settings.toml`` **file to configure the WiFi network.**
@@ -122,8 +125,8 @@ It is possible to use the MDNS protocol to make the server accessible via a host
 to an IP address. It is worth noting that it takes a bit longer to get the response from the server
 when accessing it via the hostname.
 
-In this example, the server is accessible via the IP and ``http://custom-mdns-hostname.local/``.
-On some routers it is also possible to use ``http://custom-mdns-hostname/``, but **this is not guaranteed to work**.
+In this example, the server is accessible via the IP and ``http://custom-mdns-hostname.local:5000/``.
+On some routers it is also possible to use ``http://custom-mdns-hostname:5000/``, but **this is not guaranteed to work**.
 
 .. literalinclude:: ../examples/httpserver_mdns.py
     :caption: examples/httpserver_mdns.py
@@ -412,7 +415,7 @@ occurs during handling of the request in ``.serve_forever()``.
 
 This is how the logs might look like when debug mode is enabled::
 
-    Started development server on http://192.168.0.100:80
+    Started development server on http://192.168.0.100:5000
     192.168.0.101 -- "GET /" 194 -- "200 OK" 154 -- 96ms
     192.168.0.101 -- "GET /example" 134 -- "404 Not Found" 172 -- 123ms
     192.168.0.102 -- "POST /api" 1241 -- "401 Unauthorized" 95 -- 64ms

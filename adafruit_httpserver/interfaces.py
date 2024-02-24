@@ -8,9 +8,68 @@
 """
 
 try:
-    from typing import List, Dict, Union, Any
+    from typing import List, Tuple, Dict, Union, Any
 except ImportError:
     pass
+
+
+class _ISocket:  # pylint: disable=missing-function-docstring,no-self-use,unused-argument
+    """A class for typing necessary methods for a socket object."""
+
+    def accept(self) -> Tuple["_ISocket", Tuple[str, int]]:
+        ...
+
+    def bind(self, address: Tuple[str, int]) -> None:
+        ...
+
+    def setblocking(self, flag: bool) -> None:
+        ...
+
+    def settimeout(self, value: "Union[float, None]") -> None:
+        ...
+
+    def setsockopt(self, level: int, optname: int, value: int) -> None:
+        ...
+
+    def listen(self, backlog: int) -> None:
+        ...
+
+    def send(self, data: bytes) -> int:
+        ...
+
+    def recv_into(self, buffer: memoryview, nbytes: int) -> int:
+        ...
+
+    def close(self) -> None:
+        ...
+
+
+class _ISocketPool:  # pylint: disable=missing-function-docstring,no-self-use,unused-argument
+    """A class to typing necessary methods and properties for a socket pool object."""
+
+    AF_INET: int
+    SO_REUSEADDR: int
+    SOCK_STREAM: int
+    SOL_SOCKET: int
+
+    def socket(  # pylint: disable=redefined-builtin
+        self,
+        family: int = ...,
+        type: int = ...,
+        proto: int = ...,
+    ) -> _ISocket:
+        ...
+
+    def getaddrinfo(  # pylint: disable=redefined-builtin,too-many-arguments
+        self,
+        host: str,
+        port: int,
+        family: int = ...,
+        type: int = ...,
+        proto: int = ...,
+        flags: int = ...,
+    ) -> Tuple[int, int, int, str, Tuple[str, int]]:
+        ...
 
 
 class _IFieldStorage:
@@ -62,7 +121,7 @@ class _IFieldStorage:
         return key in self._storage
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name__}({repr(self._storage)})"
+        return f"<{self.__class__.__name__} {repr(self._storage)}>"
 
 
 def _encode_html_entities(value: Union[str, None]) -> Union[str, None]:

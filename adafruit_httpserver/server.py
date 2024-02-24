@@ -8,9 +8,7 @@
 """
 
 try:
-    from typing import Callable, Protocol, Union, List, Tuple, Dict, Iterable
-    from socket import socket
-    from socketpool import SocketPool
+    from typing import Callable, Union, List, Tuple, Dict, Iterable
 except ImportError:
     pass
 
@@ -28,6 +26,7 @@ from .exceptions import (
     ServingFilesDisabledError,
 )
 from .headers import Headers
+from .interfaces import _ISocketPool, _ISocket
 from .methods import GET, HEAD
 from .request import Request
 from .response import Response, FileResponse
@@ -54,7 +53,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
     """Root directory to serve files from. ``None`` if serving files is disabled."""
 
     def __init__(
-        self, socket_source: Protocol, root_path: str = None, *, debug: bool = False
+        self, socket_source: _ISocketPool, root_path: str = None, *, debug: bool = False
     ) -> None:
         """Create a server, and get it ready to run.
 
@@ -172,7 +171,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
             raise RuntimeError(f"Cannot start server on {host}:{port}") from error
 
     def serve_forever(
-        self, host: str, port: int = 80, *, poll_interval: float = 0.1
+        self, host: str = "0.0.0.0", port: int = 5000, *, poll_interval: float = 0.1
     ) -> None:
         """
         Wait for HTTP requests at the given host and port. Does not return.
@@ -195,15 +194,25 @@ class Server:  # pylint: disable=too-many-instance-attributes
             except Exception:  # pylint: disable=broad-except
                 pass  # Ignore exceptions in handler function
 
-    def _set_socket_level_to_reuse_address(self) -> None:
-        """
-        Only for CPython, prevents "Address already in use" error when restarting the server.
-        """
-        self._sock.setsockopt(
-            self._socket_source.SOL_SOCKET, self._socket_source.SO_REUSEADDR, 1
-        )
+    @staticmethod
+    def _create_server_socket(
+        socket_source: _ISocketPool,
+        host: str,
+        port: int,
+    ) -> _ISocket:
+        sock = socket_source.socket(socket_source.AF_INET, socket_source.SOCK_STREAM)
 
-    def start(self, host: str, port: int = 80) -> None:
+        # TODO: Temporary backwards compatibility, remove after CircuitPython 9.0.0 release
+        if implementation.version >= (9,) or implementation.name != "circuitpython":
+            sock.setsockopt(socket_source.SOL_SOCKET, socket_source.SO_REUSEADDR, 1)
+
+        sock.bind((host, port))
+        sock.listen(10)
+        sock.setblocking(False)  # Non-blocking socket
+
+        return sock
+
+    def start(self, host: str = "0.0.0.0", port: int = 5000) -> None:
         """
         Start the HTTP server at the given host and port. Requires calling
         ``.poll()`` in a while loop to handle incoming requests.
@@ -216,16 +225,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
         self.host, self.port = host, port
 
         self.stopped = False
-        self._sock = self._socket_source.socket(
-            self._socket_source.AF_INET, self._socket_source.SOCK_STREAM
-        )
-
-        if implementation.name != "circuitpython":
-            self._set_socket_level_to_reuse_address()
-
-        self._sock.bind((host, port))
-        self._sock.listen(10)
-        self._sock.setblocking(False)  # Non-blocking socket
+        self._sock = self._create_server_socket(self._socket_source, host, port)
 
         if self.debug:
             _debug_started_server(self)
@@ -244,9 +244,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
         if self.debug:
             _debug_stopped_server(self)
 
-    def _receive_header_bytes(
-        self, sock: Union["SocketPool.Socket", "socket.socket"]
-    ) -> bytes:
+    def _receive_header_bytes(self, sock: _ISocket) -> bytes:
         """Receive bytes until a empty line is received."""
         received_bytes = bytes()
         while b"\r\n\r\n" not in received_bytes:
@@ -263,7 +261,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
     def _receive_body_bytes(
         self,
-        sock: Union["SocketPool.Socket", "socket.socket"],
+        sock: _ISocket,
         received_body_bytes: bytes,
         content_length: int,
     ) -> bytes:
@@ -282,7 +280,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
     def _receive_request(
         self,
-        sock: Union["SocketPool.Socket", "socket.socket"],
+        sock: _ISocket,
         client_address: Tuple[str, int],
     ) -> Request:
         """Receive bytes from socket until the whole request is received."""
@@ -529,6 +527,13 @@ class Server:  # pylint: disable=too-many-instance-attributes
             self._timeout = value
         else:
             raise ValueError("Server.socket_timeout must be a positive numeric value.")
+
+    def __repr__(self) -> str:
+        host = self.host
+        port = self.port
+        root_path = self.root_path
+
+        return f"<Server {host=}, {port=}, {root_path=}>"
 
 
 def _debug_warning_exposed_files(root_path: str):

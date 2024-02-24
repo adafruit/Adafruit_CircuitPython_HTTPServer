@@ -136,11 +136,11 @@ class Route:
         return True, dict(zip(self.parameters_names, url_parameters_values))
 
     def __repr__(self) -> str:
-        path = repr(self.path)
-        methods = repr(self.methods)
-        handler = repr(self.handler)
+        path = self.path
+        methods = self.methods
+        handler = self.handler
 
-        return f"Route({path=}, {methods=}, {handler=})"
+        return f"<Route {path=}, {methods=}, {handler=}>"
 
 
 def as_route(
