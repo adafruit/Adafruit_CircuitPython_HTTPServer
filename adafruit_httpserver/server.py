@@ -106,6 +106,8 @@ class Server:  # pylint: disable=too-many-instance-attributes
         if https:
             self._validate_https_cert_provided(certfile, keyfile)
             self._ssl_context = self._create_ssl_context(certfile, keyfile)
+        else:
+            self._ssl_context = None
 
         if root_path in ["", "/"] and debug:
             _debug_warning_exposed_files(root_path)
@@ -233,7 +235,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def _create_server_socket(
         socket_source: _ISocketPool,
-        ssl_context: SSLContext,
+        ssl_context: "SSLContext | None",
         host: str,
         port: int,
     ) -> _ISocket:
