@@ -12,8 +12,8 @@ import wifi
 from adafruit_httpserver import Server, Request, Response
 
 # Get WiFi details, ensure these are setup in settings.toml
-ssid = os.getenv("CIRCUITPY_WIFI_SSID")
-password = os.getenv("CIRCUITPY_WIFI_PASSWORD")
+ssid = os.getenv("WIFI_SSID")
+password = os.getenv("WIFI_PASSWORD")
 
 print("Connecting to WiFi...")
 wifi.radio.connect(ssid, password)
@@ -21,7 +21,6 @@ print("✅ Wifi!")
 
 # Initalize Wifi, Socket Pool, Request Session
 pool = adafruit_connection_manager.get_radio_socketpool(wifi.radio)
-ssl_context = adafruit_connection_manager.get_radio_ssl_context(wifi.radio)
 server = Server(pool, "/static", debug=True)
 
 
