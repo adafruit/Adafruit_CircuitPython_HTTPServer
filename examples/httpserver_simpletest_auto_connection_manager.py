@@ -1,22 +1,14 @@
-# SPDX-FileCopyrightText: 2022 Dan Halbert for Adafruit Industries
+# SPDX-FileCopyrightText: 2024 DJDevon3
 #
-# SPDX-License-Identifier: Unlicense
+# SPDX-License-Identifier: MIT
 
-import os
-
-import socketpool
 import wifi
 
+from adafruit_connection_manager import get_radio_socketpool
 from adafruit_httpserver import Server, Request, Response
 
-ssid = os.getenv("WIFI_SSID")
-password = os.getenv("WIFI_PASSWORD")
 
-print("Connecting to", ssid)
-wifi.radio.connect(ssid, password)
-print("Connected to", ssid)
-
-pool = socketpool.SocketPool(wifi.radio)
+pool = get_radio_socketpool(wifi.radio)
 server = Server(pool, "/static", debug=True)
 
 
