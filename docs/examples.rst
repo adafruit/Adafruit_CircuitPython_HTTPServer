@@ -1,50 +1,21 @@
-Simple Test
------------
+.. note::
+    All examples in this document are using ``Server`` in ``debug`` mode.
+    This mode is useful for development, but it is not recommended to use it in production.
+    More about Debug mode at the end of Examples section.
 
-**All examples in this document are using** ``Server`` **in** ``debug`` **mode.**
-**This mode is useful for development, but it is not recommended to use it in production.**
-**More about Debug mode at the end of Examples section.**
+Different ways of starting the server
+-------------------------------------
 
-This is the minimal example of using the library with CircuitPython.
-This example is serving a simple static text message.
+There are several ways to start the server on CircuitPython, mostly depending on the device you are using and
+whether you have access to external network.
 
-It also manually connects to the WiFi network.
+Functionally, all of them are the same, not features of the server are limited or disabled in any way.
 
-.. literalinclude:: ../examples/httpserver_simpletest_manual.py
-    :caption: examples/httpserver_simpletest_manual.py
-    :emphasize-lines: 12-17
-    :linenos:
+Below you can find examples of different ways to start the server:
 
-It is also possible to use Ethernet instead of WiFi.
-The only difference in usage is related to configuring the ``socket_source`` differently.
+.. toctree::
 
-.. literalinclude:: ../examples/httpserver_ethernet_simpletest.py
-    :caption: examples/httpserver_ethernet_simpletest.py
-    :emphasize-lines: 13-23
-    :linenos:
-
-Although there is nothing wrong with this approach, from the version 8.0.0 of CircuitPython,
-`it is possible to use the environment variables <https://docs.circuitpython.org/en/latest/docs/environment.html#circuitpython-behavior>`_
-defined in ``settings.toml`` file to store secrets and configure the WiFi network.
-
-By default the library uses ``0.0.0.0`` and port ``5000`` for the server, as port ``80`` is reserved for the CircuitPython Web Workflow.
-If you want to use port ``80`` , you need to set ``CIRCUITPY_WEB_API_PORT`` to any other port, and then set ``port`` parameter in ``Server`` constructor to ``80`` .
-
-This is the same example as above, but it uses the ``settings.toml`` file to configure the WiFi network.
-
-**From now on, all the examples will use the** ``settings.toml`` **file to configure the WiFi network.**
-
-.. literalinclude:: ../examples/settings.toml
-    :caption: settings.toml
-    :lines: 5-
-    :linenos:
-
-Note that we still need to import ``socketpool`` and ``wifi`` modules.
-
-.. literalinclude:: ../examples/httpserver_simpletest_auto.py
-    :caption: examples/httpserver_simpletest_auto.py
-    :emphasize-lines: 11
-    :linenos:
+    starting_methods
 
 CPython usage
 --------------------
@@ -210,7 +181,7 @@ You can find more information about the template syntax in the
 
 .. literalinclude:: ../examples/httpserver_templates.py
     :caption: examples/httpserver_templates.py
-    :emphasize-lines: 12-15,49-55
+    :emphasize-lines: 12-15,51-59
     :linenos:
 
 Form data parsing
