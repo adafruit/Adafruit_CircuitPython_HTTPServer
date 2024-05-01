@@ -35,7 +35,7 @@ from .route import Route
 from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
 if implementation.name != "circuitpython":
-    from ssl import Purpose, CERT_NONE, SSLError
+    from ssl import Purpose, CERT_NONE, SSLError  # pylint: disable=ungrouped-imports
 
 
 NO_REQUEST = "no_request"
@@ -453,7 +453,9 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 name, value
             )
 
-    def poll(self) -> str:
+    def poll(  # pylint: disable=too-many-branches,too-many-return-statements
+        self,
+    ) -> str:
         """
         Call this method inside your main loop to get the server to check for new incoming client
         requests. When a request comes in, it will be handled by the handler function.
