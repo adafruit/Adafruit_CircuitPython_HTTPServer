@@ -34,6 +34,9 @@ from .response import Response, FileResponse
 from .route import Route
 from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
+if implementation.name != "circuitpython":
+    from ssl import Purpose, CERT_NONE, SSLError
+
 
 NO_REQUEST = "no_request"
 CONNECTION_TIMED_OUT = "connection_timed_out"
@@ -62,12 +65,32 @@ class Server:  # pylint: disable=too-many-instance-attributes
             raise ValueError("Both certfile and keyfile must be specified for HTTPS")
 
     @staticmethod
-    def _create_ssl_context(certfile: str, keyfile: str) -> SSLContext:
+    def __create_circuitpython_ssl_context(certfile: str, keyfile: str) -> SSLContext:
         ssl_context = create_default_context()
+
         ssl_context.load_verify_locations(cadata="")
         ssl_context.load_cert_chain(certfile, keyfile)
 
         return ssl_context
+
+    @staticmethod
+    def __create_cpython_ssl_context(certfile: str, keyfile: str) -> SSLContext:
+        ssl_context = create_default_context(purpose=Purpose.CLIENT_AUTH)
+
+        ssl_context.load_cert_chain(certfile, keyfile)
+
+        ssl_context.verify_mode = CERT_NONE
+        ssl_context.check_hostname = False
+
+        return ssl_context
+
+    @classmethod
+    def _create_ssl_context(cls, certfile: str, keyfile: str) -> SSLContext:
+        return (
+            cls.__create_circuitpython_ssl_context(certfile, keyfile)
+            if implementation.name == "circuitpython"
+            else cls.__create_cpython_ssl_context(certfile, keyfile)
+        )
 
     def __init__(
         self,
@@ -483,7 +506,14 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 # Connection reset by peer, try again later.
                 if error.errno == ECONNRESET:
                     return NO_REQUEST
+                # Handshake failed, try again later.
                 if error.errno == MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE:
+                    return NO_REQUEST
+
+            # CPython specific SSL related errors
+            if implementation.name != "circuitpython" and isinstance(error, SSLError):
+                # Ignore unknown SSL certificate errors
+                if getattr(error, "reason", None) == "SSLV3_ALERT_CERTIFICATE_UNKNOWN":
                     return NO_REQUEST
 
             if self.debug:
