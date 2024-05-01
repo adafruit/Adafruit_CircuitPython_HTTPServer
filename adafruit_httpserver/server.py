@@ -443,10 +443,11 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
         conn = None
         try:
+            if self.debug:
+                _debug_start_time = monotonic()
+
             conn, client_address = self._sock.accept()
             conn.settimeout(self._timeout)
-
-            _debug_start_time = monotonic()
 
             # Receive the whole request
             if (request := self._receive_request(conn, client_address)) is None:
@@ -468,9 +469,8 @@ class Server:  # pylint: disable=too-many-instance-attributes
             # Send the response
             response._send()  # pylint: disable=protected-access
 
-            _debug_end_time = monotonic()
-
             if self.debug:
+                _debug_end_time = monotonic()
                 _debug_response_sent(response, _debug_end_time - _debug_start_time)
 
             return REQUEST_HANDLED_RESPONSE_SENT
