@@ -352,6 +352,35 @@ This might change in the future, but for now, it is recommended to use Websocket
     :emphasize-lines: 12,20,65-72,88,99
     :linenos:
 
+SSL/TLS (HTTPS)
+---------------
+
+.. warning::
+    For now HTTPS on CircuitPython is **only supported on ESP32-S3 boards**.
+
+When you want to expose your server to the internet or an untrusted network, it is recommended to use HTTPS.
+Together with authentication, it provides a secure way to communicate with the server, without the risk of eavesdropping.
+
+.. note::
+    Using HTTPS slows down the server, because of additional work with encryption and decryption.
+
+Enabling HTTPS is straightforward and comes down to passing the path to the certificate and key files to the ``Server`` constructor
+and setting ``https=True``.
+
+.. literalinclude:: ../examples/httpserver_https.py
+    :caption: examples/httpserver_https.py
+    :emphasize-lines: 15-17
+    :linenos:
+
+
+To create your own certificate, you can use the following command:
+
+.. code-block:: bash
+
+  sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout key.pem -out cert.pem
+
+You might have to change permissions of the files, so that the server can read them.
+
 Multiple servers
 ----------------
 
