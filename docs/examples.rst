@@ -322,8 +322,10 @@ This can be overcomed by periodically polling the server, but it is not an elega
 Response is initialized on ``return``, events can be sent using ``.send_event()`` method. Due to the nature of SSE, it is necessary to store the
 response object somewhere, so that it can be accessed later.
 
-**Because of the limited number of concurrently open sockets, it is not possible to process more than one SSE response at the same time.
-This might change in the future, but for now, it is recommended to use SSE only with one client at a time.**
+
+.. warning::
+    Because of the limited number of concurrently open sockets, it is **not possible to process more than one SSE response at the same time**.
+    This might change in the future, but for now, it is recommended to use SSE **only with one client at a time.**.
 
 .. literalinclude:: ../examples/httpserver_sse.py
     :caption: examples/httpserver_sse.py
@@ -344,13 +346,43 @@ This is anologous to calling ``.poll()`` on the ``Server`` object.
 The following example uses ``asyncio``, which has to be installed separately. It is not necessary to use ``asyncio`` to use Websockets,
 but it is recommended as it makes it easier to handle multiple tasks. It can be used in any of the examples, but here it is particularly useful.
 
-**Because of the limited number of concurrently open sockets, it is not possible to process more than one Websocket response at the same time.
-This might change in the future, but for now, it is recommended to use Websocket only with one client at a time.**
+.. warning::
+    Because of the limited number of concurrently open sockets, it is **not possible to process more than one Websocket response at the same time**.
+    This might change in the future, but for now, it is recommended to use Websocket **only with one client at a time**.
 
 .. literalinclude:: ../examples/httpserver_websocket.py
     :caption: examples/httpserver_websocket.py
     :emphasize-lines: 12,20,65-72,88,99
     :linenos:
+
+SSL/TLS (HTTPS)
+---------------
+
+.. warning::
+    For now HTTPS on CircuitPython is **only supported on ESP32-S3 boards**.
+
+When you want to expose your server to the internet or an untrusted network, it is recommended to use HTTPS.
+Together with authentication, it provides a secure way to communicate with the server, without the risk of eavesdropping.
+
+.. note::
+    Using HTTPS slows down the server, because of additional work with encryption and decryption.
+
+Enabling HTTPS is straightforward and comes down to passing the path to the certificate and key files to the ``Server`` constructor
+and setting ``https=True``.
+
+.. literalinclude:: ../examples/httpserver_https.py
+    :caption: examples/httpserver_https.py
+    :emphasize-lines: 15-17
+    :linenos:
+
+
+To create your own certificate, you can use the following command:
+
+.. code-block:: bash
+
+  sudo openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout key.pem -out cert.pem
+
+You might have to change permissions of the files, so that the server can read them.
 
 Multiple servers
 ----------------
@@ -361,7 +393,7 @@ Using ``.serve_forever()`` for this is not possible because of it's blocking beh
 
 Each server **must have a different port number**.
 
-In order to distinguish between responses from different servers a 'X-Server' header is added to each response.
+To distinguish between responses from different servers a 'X-Server' header is added to each response.
 **This is an optional step**, both servers will work without it.
 
 In combination with separate authentication and diffrent ``root_path`` this allows creating moderately complex setups.
@@ -404,5 +436,5 @@ This is the default format of the logs::
 If you need more information about the server or request, or you want it in a different format you can modify
 functions at the bottom of ``adafruit_httpserver/server.py`` that start with ``_debug_...``.
 
-NOTE:
-*This is an advanced usage that might change in the future. It is not recommended to modify other parts of the code.*
+.. note::
+    This is an advanced usage that might change in the future. It is not recommended to modify other parts of the code.
