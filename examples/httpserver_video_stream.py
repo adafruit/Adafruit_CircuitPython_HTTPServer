@@ -37,14 +37,12 @@ class XMixedReplaceResponse(Response):
         status: Union[Status, Tuple[int, str]] = OK_200,
         headers: Union[Headers, Dict[str, str]] = None,
         cookies: Dict[str, str] = None,
-        content_type: str = None,
     ) -> None:
         super().__init__(
             request=request,
             headers=headers,
             cookies=cookies,
             status=status,
-            content_type=content_type,
         )
         self._boundary = self._get_random_boundary()
         self._headers.setdefault(
