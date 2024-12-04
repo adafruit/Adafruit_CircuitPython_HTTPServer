@@ -42,11 +42,11 @@ def home(request: Request):
     return Response(request, "Hello from home!")
 
 
-id_address = str(wifi.radio.ipv4_address)
+ip_address = str(wifi.radio.ipv4_address)
 
 # Start the servers.
-bedroom_server.start(id_address, 5000)
-office_server.start(id_address, 8000)
+bedroom_server.start(ip_address, 5000)
+office_server.start(ip_address, 8000)
 
 while True:
     try:
