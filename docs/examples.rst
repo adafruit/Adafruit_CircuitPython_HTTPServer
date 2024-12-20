@@ -355,6 +355,23 @@ but it is recommended as it makes it easier to handle multiple tasks. It can be 
     :emphasize-lines: 12,20,65-72,88,99
     :linenos:
 
+Custom response types e.g. video streaming
+------------------------------------------
+
+The built-in response types may not always meet your specific requirements. In such cases, you can define custom response types and implement
+the necessary logic.
+
+The example below demonstrates a ``XMixedReplaceResponse`` class, which uses the ``multipart/x-mixed-replace`` content type to stream video frames
+from a camera, similar to a CCTV system.
+
+To ensure the server remains responsive, a global list of open connections is maintained. By running tasks asynchronously, the server can stream
+video to multiple clients while simultaneously handling other requests.
+
+.. literalinclude:: ../examples/httpserver_video_stream.py
+    :caption: examples/httpserver_video_stream.py
+    :emphasize-lines: 31-77,92
+    :linenos:
+
 SSL/TLS (HTTPS)
 ---------------
 
