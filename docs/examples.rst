@@ -196,7 +196,7 @@ It is important to use correct ``enctype``, depending on the type of data you wa
 - ``application/x-www-form-urlencoded`` - For sending simple text data without any special characters including spaces.
     If you use it, values will be automatically parsed as strings, but special characters will be URL encoded
     e.g. ``"Hello World! ^-$%"`` will be saved as ``"Hello+World%21+%5E-%24%25"``
-- ``multipart/form-data`` - For sending textwith special characters and files
+- ``multipart/form-data`` - For sending text with special characters and files
     When used, non-file values will be automatically parsed as strings and non plain text files will be saved as ``bytes``.
     e.g. ``"Hello World! ^-$%"`` will be saved as ``'Hello World! ^-$%'``, and e.g. a PNG file will be saved as ``b'\x89PNG\r\n\x1a\n\x00\...``.
 - ``text/plain`` - For sending text data with special characters.
@@ -325,7 +325,7 @@ response object somewhere, so that it can be accessed later.
 
 .. warning::
     Because of the limited number of concurrently open sockets, it is **not possible to process more than one SSE response at the same time**.
-    This might change in the future, but for now, it is recommended to use SSE **only with one client at a time.**.
+    This might change in the future, but for now, it is recommended to use SSE **only with one client at a time**.
 
 .. literalinclude:: ../examples/httpserver_sse.py
     :caption: examples/httpserver_sse.py
