@@ -60,12 +60,14 @@ class Server:  # pylint: disable=too-many-instance-attributes
     """Root directory to serve files from. ``None`` if serving files is disabled."""
 
     @staticmethod
-    def _validate_https_cert_provided(certfile: str, keyfile: str) -> None:
-        if not certfile or not keyfile:
+    def _validate_https_cert_provided(
+        certfile: Union[str, None], keyfile: Union[str, None]
+    ) -> None:
+        if certfile is None or keyfile is None:
             raise ValueError("Both certfile and keyfile must be specified for HTTPS")
 
     @staticmethod
-    def __create_circuitpython_ssl_context(certfile: str, keyfile: str) -> SSLContext:
+    def _create_circuitpython_ssl_context(certfile: str, keyfile: str) -> SSLContext:
         ssl_context = create_default_context()
 
         ssl_context.load_verify_locations(cadata="")
@@ -74,7 +76,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
         return ssl_context
 
     @staticmethod
-    def __create_cpython_ssl_context(certfile: str, keyfile: str) -> SSLContext:
+    def _create_cpython_ssl_context(certfile: str, keyfile: str) -> SSLContext:
         ssl_context = create_default_context(purpose=Purpose.CLIENT_AUTH)
 
         ssl_context.load_cert_chain(certfile, keyfile)
@@ -87,9 +89,9 @@ class Server:  # pylint: disable=too-many-instance-attributes
     @classmethod
     def _create_ssl_context(cls, certfile: str, keyfile: str) -> SSLContext:
         return (
-            cls.__create_circuitpython_ssl_context(certfile, keyfile)
+            cls._create_circuitpython_ssl_context(certfile, keyfile)
             if implementation.name == "circuitpython"
-            else cls.__create_cpython_ssl_context(certfile, keyfile)
+            else cls._create_cpython_ssl_context(certfile, keyfile)
         )
 
     def __init__(

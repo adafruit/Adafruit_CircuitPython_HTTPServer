@@ -372,14 +372,14 @@ video to multiple clients while simultaneously handling other requests.
     :emphasize-lines: 31-77,92
     :linenos:
 
-SSL/TLS (HTTPS)
----------------
+HTTPS
+-----
 
 .. warning::
-    For now HTTPS on CircuitPython is **only supported on ESP32-S3 boards**.
+    HTTPS on CircuitPython **works only on boards with enough memory e.g. ESP32-S3**.
 
 When you want to expose your server to the internet or an untrusted network, it is recommended to use HTTPS.
-Together with authentication, it provides a secure way to communicate with the server, without the risk of eavesdropping.
+Together with authentication, it provides a relatively secure way to communicate with the server.
 
 .. note::
     Using HTTPS slows down the server, because of additional work with encryption and decryption.

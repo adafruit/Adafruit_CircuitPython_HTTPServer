@@ -32,7 +32,7 @@ HTTP Server for CircuitPython.
 - Supports URL parameters and wildcard URLs.
 - Supports HTTP Basic and Bearer Authentication on both server and route per level.
 - Supports Websockets and Server-Sent Events.
-- Limited support for HTTPS (only on selected microcontrollers e.g. ESP32-S3).
+- Limited support for HTTPS (only on selected microcontrollers with enough memory e.g. ESP32-S3).
 
 
 Dependencies
