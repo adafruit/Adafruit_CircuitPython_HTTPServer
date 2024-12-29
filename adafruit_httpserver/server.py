@@ -12,6 +12,7 @@ try:
 except ImportError:
     pass
 
+from ssl import SSLContext, create_default_context
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
 from sys import implementation
 from time import monotonic, sleep
@@ -33,11 +34,17 @@ from .response import Response, FileResponse
 from .route import Route
 from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
+if implementation.name != "circuitpython":
+    from ssl import Purpose, CERT_NONE, SSLError  # pylint: disable=ungrouped-imports
+
 
 NO_REQUEST = "no_request"
 CONNECTION_TIMED_OUT = "connection_timed_out"
 REQUEST_HANDLED_NO_RESPONSE = "request_handled_no_response"
 REQUEST_HANDLED_RESPONSE_SENT = "request_handled_response_sent"
+
+# CircuitPython does not have these error codes
+MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE = -30592
 
 
 class Server:  # pylint: disable=too-many-instance-attributes
@@ -52,8 +59,50 @@ class Server:  # pylint: disable=too-many-instance-attributes
     root_path: str
     """Root directory to serve files from. ``None`` if serving files is disabled."""
 
+    @staticmethod
+    def _validate_https_cert_provided(
+        certfile: Union[str, None], keyfile: Union[str, None]
+    ) -> None:
+        if certfile is None or keyfile is None:
+            raise ValueError("Both certfile and keyfile must be specified for HTTPS")
+
+    @staticmethod
+    def _create_circuitpython_ssl_context(certfile: str, keyfile: str) -> SSLContext:
+        ssl_context = create_default_context()
+
+        ssl_context.load_verify_locations(cadata="")
+        ssl_context.load_cert_chain(certfile, keyfile)
+
+        return ssl_context
+
+    @staticmethod
+    def _create_cpython_ssl_context(certfile: str, keyfile: str) -> SSLContext:
+        ssl_context = create_default_context(purpose=Purpose.CLIENT_AUTH)
+
+        ssl_context.load_cert_chain(certfile, keyfile)
+
+        ssl_context.verify_mode = CERT_NONE
+        ssl_context.check_hostname = False
+
+        return ssl_context
+
+    @classmethod
+    def _create_ssl_context(cls, certfile: str, keyfile: str) -> SSLContext:
+        return (
+            cls._create_circuitpython_ssl_context(certfile, keyfile)
+            if implementation.name == "circuitpython"
+            else cls._create_cpython_ssl_context(certfile, keyfile)
+        )
+
     def __init__(
-        self, socket_source: _ISocketPool, root_path: str = None, *, debug: bool = False
+        self,
+        socket_source: _ISocketPool,
+        root_path: str = None,
+        *,
+        https: bool = False,
+        certfile: str = None,
+        keyfile: str = None,
+        debug: bool = False,
     ) -> None:
         """Create a server, and get it ready to run.
 
@@ -61,16 +110,30 @@ class Server:  # pylint: disable=too-many-instance-attributes
           in CircuitPython or the `socket` module in CPython.
         :param str root_path: Root directory to serve files from
         :param bool debug: Enables debug messages useful during development
+        :param bool https: If True, the server will use HTTPS
+        :param str certfile: Path to the certificate file, required if ``https`` is True
+        :param str keyfile: Path to the private key file, required if ``https`` is True
         """
-        self._auths = []
         self._buffer = bytearray(1024)
         self._timeout = 1
+
+        self._auths = []
         self._routes: "List[Route]" = []
+        self.headers = Headers()
+
         self._socket_source = socket_source
         self._sock = None
-        self.headers = Headers()
+
         self.host, self.port = None, None
         self.root_path = root_path
+        self.https = https
+
+        if https:
+            self._validate_https_cert_provided(certfile, keyfile)
+            self._ssl_context = self._create_ssl_context(certfile, keyfile)
+        else:
+            self._ssl_context = None
+
         if root_path in ["", "/"] and debug:
             _debug_warning_exposed_files(root_path)
         self.stopped = True
@@ -197,6 +260,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
     @staticmethod
     def _create_server_socket(
         socket_source: _ISocketPool,
+        ssl_context: "SSLContext | None",
         host: str,
         port: int,
     ) -> _ISocket:
@@ -205,6 +269,9 @@ class Server:  # pylint: disable=too-many-instance-attributes
         # TODO: Temporary backwards compatibility, remove after CircuitPython 9.0.0 release
         if implementation.version >= (9,) or implementation.name != "circuitpython":
             sock.setsockopt(socket_source.SOL_SOCKET, socket_source.SO_REUSEADDR, 1)
+
+        if ssl_context is not None:
+            sock = ssl_context.wrap_socket(sock, server_side=True)
 
         sock.bind((host, port))
         sock.listen(10)
@@ -225,7 +292,9 @@ class Server:  # pylint: disable=too-many-instance-attributes
         self.host, self.port = host, port
 
         self.stopped = False
-        self._sock = self._create_server_socket(self._socket_source, host, port)
+        self._sock = self._create_server_socket(
+            self._socket_source, self._ssl_context, host, port
+        )
 
         if self.debug:
             _debug_started_server(self)
@@ -386,7 +455,9 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 name, value
             )
 
-    def poll(self) -> str:
+    def poll(  # pylint: disable=too-many-branches,too-many-return-statements
+        self,
+    ) -> str:
         """
         Call this method inside your main loop to get the server to check for new incoming client
         requests. When a request comes in, it will be handled by the handler function.
@@ -399,10 +470,11 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
         conn = None
         try:
+            if self.debug:
+                _debug_start_time = monotonic()
+
             conn, client_address = self._sock.accept()
             conn.settimeout(self._timeout)
-
-            _debug_start_time = monotonic()
 
             # Receive the whole request
             if (request := self._receive_request(conn, client_address)) is None:
@@ -424,9 +496,8 @@ class Server:  # pylint: disable=too-many-instance-attributes
             # Send the response
             response._send()  # pylint: disable=protected-access
 
-            _debug_end_time = monotonic()
-
             if self.debug:
+                _debug_end_time = monotonic()
                 _debug_response_sent(response, _debug_end_time - _debug_start_time)
 
             return REQUEST_HANDLED_RESPONSE_SENT
@@ -438,6 +509,15 @@ class Server:  # pylint: disable=too-many-instance-attributes
                     return NO_REQUEST
                 # Connection reset by peer, try again later.
                 if error.errno == ECONNRESET:
+                    return NO_REQUEST
+                # Handshake failed, try again later.
+                if error.errno == MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE:
+                    return NO_REQUEST
+
+            # CPython specific SSL related errors
+            if implementation.name != "circuitpython" and isinstance(error, SSLError):
+                # Ignore unknown SSL certificate errors
+                if getattr(error, "reason", None) == "SSLV3_ALERT_CERTIFICATE_UNKNOWN":
                     return NO_REQUEST
 
             if self.debug:
@@ -547,9 +627,10 @@ def _debug_warning_exposed_files(root_path: str):
 
 def _debug_started_server(server: "Server"):
     """Prints a message when the server starts."""
+    scheme = "https" if server.https else "http"
     host, port = server.host, server.port
 
-    print(f"Started development server on http://{host}:{port}")
+    print(f"Started development server on {scheme}://{host}:{port}")
 
 
 def _debug_response_sent(response: "Response", time_elapsed: float):
