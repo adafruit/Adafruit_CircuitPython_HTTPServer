@@ -70,10 +70,10 @@ Helper for socket pool using ``adafruit_connection_manager``
 ------------------------------------------------------------
 
 If you do not want to configure the socket pool manually, you can use the ``adafruit_connection_manager`` library,
-which provides helpers for getting socker pool and SSL context for common boards.
+which provides helpers for getting socket pool and SSL context for common boards.
 
 Note that it is not installed by default.
-You can read `more about the it here <https://docs.circuitpython.org/projects/connectionmanager/en/latest/index.html>`_.
+You can read `more about it here <https://docs.circuitpython.org/projects/connectionmanager/en/latest/index.html>`_.
 
 
 .. literalinclude:: ../examples/httpserver_simpletest_auto_connection_manager.py
