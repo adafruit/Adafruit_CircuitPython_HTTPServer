@@ -619,8 +619,8 @@ class Server:  # pylint: disable=too-many-instance-attributes
 def _debug_warning_exposed_files(root_path: str):
     """Warns about exposing all files on the device."""
     print(
-        f"WARNING: Setting root_path to '{root_path}' will expose all files on your device through"
-        " the webserver, including potentially sensitive files like settings.toml or secrets.py. "
+        f"WARNING: Setting root_path to '{root_path}' will expose all files on your device "
+        "through the webserver, including potentially sensitive files like settings.toml. "
         "Consider making a sub-directory on your device and using that for your root_path instead."
     )
 
