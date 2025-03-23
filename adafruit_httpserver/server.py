@@ -12,7 +12,6 @@ try:
 except ImportError:
     pass
 
-from ssl import SSLContext, create_default_context
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
 from sys import implementation
 from time import monotonic, sleep
@@ -34,8 +33,20 @@ from .response import Response, FileResponse
 from .route import Route
 from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
 
-if implementation.name != "circuitpython":
-    from ssl import Purpose, CERT_NONE, SSLError  # pylint: disable=ungrouped-imports
+try:
+    from ssl import SSLContext, create_default_context
+
+    try:  # ssl imports for C python
+        from ssl import (
+            Purpose,
+            CERT_NONE,
+            SSLError,
+        )  # pylint: disable=ungrouped-imports
+    except ImportError:
+        pass
+    SSL_AVAILABLE = True
+except ImportError:
+    SSL_AVAILABLE = False
 
 
 NO_REQUEST = "no_request"
@@ -129,6 +140,8 @@ class Server:  # pylint: disable=too-many-instance-attributes
         self.https = https
 
         if https:
+            if not SSL_AVAILABLE:
+                raise NotImplementedError("SSL not available on this platform")
             self._validate_https_cert_provided(certfile, keyfile)
             self._ssl_context = self._create_ssl_context(certfile, keyfile)
         else:
