@@ -4,11 +4,10 @@
 
 import board
 import digitalio
-
-from adafruit_wiznet5k.adafruit_wiznet5k import WIZNET5K
 from adafruit_wiznet5k import adafruit_wiznet5k_socket as socket
-from adafruit_httpserver import Server, Request, Response
+from adafruit_wiznet5k.adafruit_wiznet5k import WIZNET5K
 
+from adafruit_httpserver import Request, Response, Server
 
 # For Adafruit Ethernet FeatherWing
 cs = digitalio.DigitalInOut(board.D10)

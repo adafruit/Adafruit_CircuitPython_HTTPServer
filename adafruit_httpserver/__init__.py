@@ -25,70 +25,70 @@ __repo__ = "https://github.com/adafruit/Adafruit_CircuitPython_HTTPServer.git"
 
 from .authentication import (
     Basic,
-    Token,
     Bearer,
+    Token,
     check_authentication,
     require_authentication,
 )
 from .exceptions import (
-    ServerStoppedError,
     AuthenticationError,
+    BackslashInPathError,
+    FileNotExistsError,
     InvalidPathError,
     ParentDirectoryReferenceError,
-    BackslashInPathError,
+    ServerStoppedError,
     ServingFilesDisabledError,
-    FileNotExistsError,
 )
 from .headers import Headers
 from .methods import (
-    GET,
-    POST,
-    PUT,
+    CONNECT,
     DELETE,
-    PATCH,
+    GET,
     HEAD,
     OPTIONS,
+    PATCH,
+    POST,
+    PUT,
     TRACE,
-    CONNECT,
 )
 from .mime_types import MIMETypes
-from .request import QueryParams, FormData, Request
+from .request import FormData, QueryParams, Request
 from .response import (
-    Response,
-    FileResponse,
     ChunkedResponse,
+    FileResponse,
     JSONResponse,
     Redirect,
+    Response,
     SSEResponse,
     Websocket,
 )
 from .route import Route, as_route
 from .server import (
-    Server,
-    NO_REQUEST,
     CONNECTION_TIMED_OUT,
+    NO_REQUEST,
     REQUEST_HANDLED_NO_RESPONSE,
     REQUEST_HANDLED_RESPONSE_SENT,
+    Server,
 )
 from .status import (
-    Status,
-    SWITCHING_PROTOCOLS_101,
-    OK_200,
-    CREATED_201,
     ACCEPTED_202,
-    NO_CONTENT_204,
-    PARTIAL_CONTENT_206,
-    MOVED_PERMANENTLY_301,
-    FOUND_302,
-    TEMPORARY_REDIRECT_307,
-    PERMANENT_REDIRECT_308,
     BAD_REQUEST_400,
-    UNAUTHORIZED_401,
+    CREATED_201,
     FORBIDDEN_403,
-    NOT_FOUND_404,
-    METHOD_NOT_ALLOWED_405,
-    TOO_MANY_REQUESTS_429,
+    FOUND_302,
     INTERNAL_SERVER_ERROR_500,
+    METHOD_NOT_ALLOWED_405,
+    MOVED_PERMANENTLY_301,
+    NO_CONTENT_204,
+    NOT_FOUND_404,
     NOT_IMPLEMENTED_501,
+    OK_200,
+    PARTIAL_CONTENT_206,
+    PERMANENT_REDIRECT_308,
     SERVICE_UNAVAILABLE_503,
+    SWITCHING_PROTOCOLS_101,
+    TEMPORARY_REDIRECT_307,
+    TOO_MANY_REQUESTS_429,
+    UNAUTHORIZED_401,
+    Status,
 )

@@ -4,8 +4,7 @@
 
 import socket
 
-from adafruit_httpserver import Server, Request, Response
-
+from adafruit_httpserver import Request, Response, Server
 
 pool = socket
 server = Server(pool, "/static", debug=True)

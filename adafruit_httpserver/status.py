@@ -8,7 +8,7 @@
 """
 
 
-class Status:  # pylint: disable=too-few-public-methods
+class Status:
     """HTTP status code."""
 
     def __init__(self, code: int, text: str):

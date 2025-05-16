@@ -7,7 +7,7 @@ import re
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response, FileResponse
+from adafruit_httpserver import FileResponse, Request, Response, Server
 
 try:
     from adafruit_templateengine import render_template

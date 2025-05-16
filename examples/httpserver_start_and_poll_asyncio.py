@@ -2,17 +2,18 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-from asyncio import create_task, gather, run, sleep as async_sleep
+from asyncio import create_task, gather, run
+from asyncio import sleep as async_sleep
+
 import socketpool
 import wifi
 
 from adafruit_httpserver import (
-    Server,
     REQUEST_HANDLED_RESPONSE_SENT,
-    Request,
     FileResponse,
+    Request,
+    Server,
 )
-
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, "/static", debug=True)

@@ -5,22 +5,21 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response
-
+from adafruit_httpserver import Request, Response, Server
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)
 
 
 class Device:
-    def turn_on(self):  # pylint: disable=no-self-use
+    def turn_on(self):
         print("Turning on device.")
 
-    def turn_off(self):  # pylint: disable=no-self-use
+    def turn_off(self):
         print("Turning off device.")
 
 
-def get_device(device_id: str) -> Device:  # pylint: disable=unused-argument
+def get_device(device_id: str) -> Device:
     """
     This is a **made up** function that returns a `Device` object.
     """
@@ -29,25 +28,21 @@ def get_device(device_id: str) -> Device:  # pylint: disable=unused-argument
 
 @server.route("/device/<device_id>/action/<action>")
 @server.route("/device/emergency-power-off/<device_id>")
-def perform_action(
-    request: Request, device_id: str, action: str = "emergency_power_off"
-):
+def perform_action(request: Request, device_id: str, action: str = "emergency_power_off"):
     """
     Performs an "action" on a specified device.
     """
 
     device = get_device(device_id)
 
-    if action in ["turn_on"]:
+    if action in {"turn_on"}:
         device.turn_on()
-    elif action in ["turn_off", "emergency_power_off"]:
+    elif action in {"turn_off", "emergency_power_off"}:
         device.turn_off()
     else:
         return Response(request, f"Unknown action ({action})")
 
-    return Response(
-        request, f"Action ({action}) performed on device with ID: {device_id}"
-    )
+    return Response(request, f"Action ({action}) performed on device with ID: {device_id}")
 
 
 @server.route("/device/<device_id>/status/<date>")

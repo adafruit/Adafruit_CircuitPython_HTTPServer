@@ -5,8 +5,7 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response
-
+from adafruit_httpserver import Request, Response, Server
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, "/static", debug=True)

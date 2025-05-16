@@ -93,9 +93,7 @@ class Headers(_IFieldStorage):
             return default
         return header_value.split(";")[0].strip('" ')
 
-    def get_parameter(
-        self, name: str, parameter: str, default: str = None
-    ) -> Union[str, None]:
+    def get_parameter(self, name: str, parameter: str, default: str = None) -> Union[str, None]:
         """
         Returns the value of the given parameter for the given header name, or default if not found.
 
@@ -124,16 +122,12 @@ class Headers(_IFieldStorage):
 
     def update(self, headers: Dict[str, str]):
         """Updates the headers with the given dict."""
-        return self._storage.update(
-            {key.lower(): [value] for key, value in headers.items()}
-        )
+        return self._storage.update({key.lower(): [value] for key, value in headers.items()})
 
     def copy(self):
         """Returns a copy of the headers."""
         return Headers(
-            "\r\n".join(
-                f"{key}: {value}" for key in self.fields for value in self.get_list(key)
-            )
+            "\r\n".join(f"{key}: {value}" for key in self.fields for value in self.get_list(key))
         )
 
     def __getitem__(self, name: str):

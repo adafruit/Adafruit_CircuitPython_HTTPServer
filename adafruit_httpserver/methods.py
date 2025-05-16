@@ -7,7 +7,6 @@
 * Author(s): Michał Pokusa
 """
 
-
 GET = "GET"
 
 POST = "POST"

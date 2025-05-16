@@ -5,8 +5,7 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, ChunkedResponse
-
+from adafruit_httpserver import ChunkedResponse, Request, Server
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)

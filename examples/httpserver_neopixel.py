@@ -7,8 +7,7 @@ import neopixel
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Route, as_route, Request, Response, GET, POST
-
+from adafruit_httpserver import GET, POST, Request, Response, Route, Server, as_route
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, "/static", debug=True)
