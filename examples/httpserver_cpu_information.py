@@ -6,8 +6,7 @@ import microcontroller
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, JSONResponse
-
+from adafruit_httpserver import JSONResponse, Request, Server
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)

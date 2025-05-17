@@ -5,16 +5,15 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response, UNAUTHORIZED_401
+from adafruit_httpserver import UNAUTHORIZED_401, Request, Response, Server
 from adafruit_httpserver.authentication import (
     AuthenticationError,
     Basic,
-    Token,
     Bearer,
+    Token,
     check_authentication,
     require_authentication,
 )
-
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)

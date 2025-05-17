@@ -6,15 +6,14 @@ import socketpool
 import wifi
 
 from adafruit_httpserver import (
-    Server,
+    MOVED_PERMANENTLY_301,
+    NOT_FOUND_404,
+    POST,
+    Redirect,
     Request,
     Response,
-    Redirect,
-    POST,
-    NOT_FOUND_404,
-    MOVED_PERMANENTLY_301,
+    Server,
 )
-
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)

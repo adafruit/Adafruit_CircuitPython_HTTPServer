@@ -3,12 +3,12 @@
 # SPDX-License-Identifier: Unlicense
 
 from time import monotonic
+
 import microcontroller
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response, SSEResponse, GET
-
+from adafruit_httpserver import GET, Request, Response, Server, SSEResponse
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)
@@ -43,7 +43,7 @@ def client(request: Request):
 
 @server.route("/connect-client", GET)
 def connect_client(request: Request):
-    global sse_response  # pylint: disable=global-statement
+    global sse_response
 
     if sse_response is not None:
         sse_response.close()  # Close any existing connection

@@ -22,7 +22,7 @@ it may not be able to access the internet.
 
 .. literalinclude:: ../examples/httpserver_simpletest_manual_ap.py
     :caption: examples/httpserver_simpletest_manual_ap.py
-    :emphasize-lines: 11-16,30
+    :emphasize-lines: 10-15,29
     :linenos:
 
 Manual Ethernet
@@ -34,7 +34,7 @@ The only difference in usage is related to configuring the ``socket_source`` dif
 
 .. literalinclude:: ../examples/httpserver_simpletest_manual_ethernet.py
     :caption: examples/httpserver_simpletest_manual_ethernet.py
-    :emphasize-lines: 9-10,13-25,38
+    :emphasize-lines: 7,10,12-24,37
     :linenos:
 
 Automatic WiFi using ``settings.toml``
@@ -62,7 +62,7 @@ Note that we still need to import ``socketpool`` and ``wifi`` modules.
 
 .. literalinclude:: ../examples/httpserver_simpletest_auto_settings_toml.py
     :caption: examples/httpserver_simpletest_auto_settings_toml.py
-    :emphasize-lines: 11
+    :emphasize-lines: 10
     :linenos:
 
 
@@ -78,5 +78,5 @@ You can read `more about it here <https://docs.circuitpython.org/projects/connec
 
 .. literalinclude:: ../examples/httpserver_simpletest_auto_connection_manager.py
     :caption: examples/httpserver_simpletest_auto_connection_manager.py
-    :emphasize-lines: 7,11
+    :emphasize-lines: 6,10
     :linenos:

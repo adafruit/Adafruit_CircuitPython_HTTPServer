@@ -8,43 +8,34 @@
 """
 
 try:
-    from typing import List, Tuple, Dict, Union, Any
+    from typing import Any, Dict, List, Tuple, Union
 except ImportError:
     pass
 
 
-class _ISocket:  # pylint: disable=missing-function-docstring,no-self-use,unused-argument
+class _ISocket:
     """A class for typing necessary methods for a socket object."""
 
-    def accept(self) -> Tuple["_ISocket", Tuple[str, int]]:
-        ...
+    def accept(self) -> Tuple["_ISocket", Tuple[str, int]]: ...
 
-    def bind(self, address: Tuple[str, int]) -> None:
-        ...
+    def bind(self, address: Tuple[str, int]) -> None: ...
 
-    def setblocking(self, flag: bool) -> None:
-        ...
+    def setblocking(self, flag: bool) -> None: ...
 
-    def settimeout(self, value: "Union[float, None]") -> None:
-        ...
+    def settimeout(self, value: "Union[float, None]") -> None: ...
 
-    def setsockopt(self, level: int, optname: int, value: int) -> None:
-        ...
+    def setsockopt(self, level: int, optname: int, value: int) -> None: ...
 
-    def listen(self, backlog: int) -> None:
-        ...
+    def listen(self, backlog: int) -> None: ...
 
-    def send(self, data: bytes) -> int:
-        ...
+    def send(self, data: bytes) -> int: ...
 
-    def recv_into(self, buffer: memoryview, nbytes: int) -> int:
-        ...
+    def recv_into(self, buffer: memoryview, nbytes: int) -> int: ...
 
-    def close(self) -> None:
-        ...
+    def close(self) -> None: ...
 
 
-class _ISocketPool:  # pylint: disable=missing-function-docstring,no-self-use,unused-argument
+class _ISocketPool:
     """A class to typing necessary methods and properties for a socket pool object."""
 
     AF_INET: int
@@ -52,15 +43,14 @@ class _ISocketPool:  # pylint: disable=missing-function-docstring,no-self-use,un
     SOCK_STREAM: int
     SOL_SOCKET: int
 
-    def socket(  # pylint: disable=redefined-builtin
+    def socket(
         self,
         family: int = ...,
         type: int = ...,
         proto: int = ...,
-    ) -> _ISocket:
-        ...
+    ) -> _ISocket: ...
 
-    def getaddrinfo(  # pylint: disable=redefined-builtin,too-many-arguments
+    def getaddrinfo(
         self,
         host: str,
         port: int,
@@ -68,8 +58,7 @@ class _ISocketPool:  # pylint: disable=missing-function-docstring,no-self-use,un
         type: int = ...,
         proto: int = ...,
         flags: int = ...,
-    ) -> Tuple[int, int, int, str, Tuple[str, int]]:
-        ...
+    ) -> Tuple[int, int, int, str, Tuple[str, int]]: ...
 
 
 class _IFieldStorage:
@@ -140,9 +129,7 @@ def _encode_html_entities(value: Union[str, None]) -> Union[str, None]:
 
 
 class _IXSSSafeFieldStorage(_IFieldStorage):
-    def get(
-        self, field_name: str, default: Any = None, *, safe=True
-    ) -> Union[Any, None]:
+    def get(self, field_name: str, default: Any = None, *, safe=True) -> Union[Any, None]:
         if safe:
             return _encode_html_entities(super().get(field_name, default))
 
@@ -151,9 +138,7 @@ class _IXSSSafeFieldStorage(_IFieldStorage):
 
     def get_list(self, field_name: str, *, safe=True) -> List[Any]:
         if safe:
-            return [
-                _encode_html_entities(value) for value in super().get_list(field_name)
-            ]
+            return [_encode_html_entities(value) for value in super().get_list(field_name)]
 
         _debug_warning_nonencoded_output()
         return super().get_list(field_name)

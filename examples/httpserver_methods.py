@@ -5,8 +5,7 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, JSONResponse, GET, POST, PUT, DELETE
-
+from adafruit_httpserver import DELETE, GET, POST, PUT, JSONResponse, Request, Server
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)
@@ -27,7 +26,7 @@ def api(request: Request):
         return JSONResponse(request, objects)
 
     # Upload or update objects
-    if request.method in [POST, PUT]:
+    if request.method in {POST, PUT}:
         uploaded_object = request.json()
 
         # Find object with same ID
@@ -41,9 +40,7 @@ def api(request: Request):
 
         # If not found, add it
         objects.append(uploaded_object)
-        return JSONResponse(
-            request, {"message": "Object added", "object": uploaded_object}
-        )
+        return JSONResponse(request, {"message": "Object added", "object": uploaded_object})
 
     # Delete objects
     if request.method == DELETE:
@@ -59,9 +56,7 @@ def api(request: Request):
                 )
 
         # If not found, return error
-        return JSONResponse(
-            request, {"message": "Object not found", "object": deleted_object}
-        )
+        return JSONResponse(request, {"message": "Object not found", "object": deleted_object})
 
     # If we get here, something went wrong
     return JSONResponse(request, {"message": "Something went wrong"})

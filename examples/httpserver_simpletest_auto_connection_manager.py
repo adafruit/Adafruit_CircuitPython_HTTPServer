@@ -3,10 +3,9 @@
 # SPDX-License-Identifier: MIT
 
 import wifi
-
 from adafruit_connection_manager import get_radio_socketpool
-from adafruit_httpserver import Server, Request, Response
 
+from adafruit_httpserver import Request, Response, Server
 
 pool = get_radio_socketpool(wifi.radio)
 server = Server(pool, "/static", debug=True)

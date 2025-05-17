@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Union, List
+    from typing import List, Union
 except ImportError:
     pass
 
@@ -40,15 +40,13 @@ class Token:
         return f"{self.prefix} {self._value}"
 
 
-class Bearer(Token):  # pylint: disable=too-few-public-methods
+class Bearer(Token):
     """Represents HTTP Bearer Token Authentication."""
 
     prefix = "Bearer"
 
 
-def check_authentication(
-    request: Request, auths: List[Union[Basic, Token, Bearer]]
-) -> bool:
+def check_authentication(request: Request, auths: List[Union[Basic, Token, Bearer]]) -> bool:
     """
     Returns ``True`` if request is authorized by any of the authentications, ``False`` otherwise.
 
@@ -65,9 +63,7 @@ def check_authentication(
     return any(auth_header == str(auth) for auth in auths)
 
 
-def require_authentication(
-    request: Request, auths: List[Union[Basic, Token, Bearer]]
-) -> None:
+def require_authentication(request: Request, auths: List[Union[Basic, Token, Bearer]]) -> None:
     """
     Checks if the request is authorized and raises ``AuthenticationError`` if not.
 

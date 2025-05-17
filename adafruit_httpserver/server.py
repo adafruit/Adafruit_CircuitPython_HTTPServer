@@ -8,34 +8,34 @@
 """
 
 try:
-    from typing import Callable, Union, List, Tuple, Dict, Iterable
+    from typing import Callable, Dict, Iterable, List, Tuple, Union
 except ImportError:
     pass
 
-from ssl import SSLContext, create_default_context
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
+from ssl import SSLContext, create_default_context
 from sys import implementation
 from time import monotonic, sleep
 from traceback import print_exception
 
-from .authentication import Basic, Token, Bearer, require_authentication
+from .authentication import Basic, Bearer, Token, require_authentication
 from .exceptions import (
-    ServerStoppedError,
     AuthenticationError,
     FileNotExistsError,
     InvalidPathError,
+    ServerStoppedError,
     ServingFilesDisabledError,
 )
 from .headers import Headers
-from .interfaces import _ISocketPool, _ISocket
+from .interfaces import _ISocket, _ISocketPool
 from .methods import GET, HEAD
 from .request import Request
-from .response import Response, FileResponse
+from .response import FileResponse, Response
 from .route import Route
-from .status import BAD_REQUEST_400, UNAUTHORIZED_401, FORBIDDEN_403, NOT_FOUND_404
+from .status import BAD_REQUEST_400, FORBIDDEN_403, NOT_FOUND_404, UNAUTHORIZED_401
 
 if implementation.name != "circuitpython":
-    from ssl import Purpose, CERT_NONE, SSLError  # pylint: disable=ungrouped-imports
+    from ssl import CERT_NONE, Purpose, SSLError
 
 
 NO_REQUEST = "no_request"
@@ -47,7 +47,7 @@ REQUEST_HANDLED_RESPONSE_SENT = "request_handled_response_sent"
 MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE = -30592
 
 
-class Server:  # pylint: disable=too-many-instance-attributes
+class Server:
     """A basic socket-based HTTP server."""
 
     host: str
@@ -134,7 +134,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
         else:
             self._ssl_context = None
 
-        if root_path in ["", "/"] and debug:
+        if root_path in {"", "/"} and debug:
             _debug_warning_exposed_files(root_path)
         self.stopped = True
 
@@ -254,7 +254,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
             except KeyboardInterrupt:  # Exit on Ctrl-C e.g. during development
                 self.stop()
                 return
-            except Exception:  # pylint: disable=broad-except
+            except Exception:
                 pass  # Ignore exceptions in handler function
 
     @staticmethod
@@ -292,9 +292,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
         self.host, self.port = host, port
 
         self.stopped = False
-        self._sock = self._create_server_socket(
-            self._socket_source, self._ssl_context, host, port
-        )
+        self._sock = self._create_server_socket(self._socket_source, self._ssl_context, host, port)
 
         if self.debug:
             _debug_started_server(self)
@@ -315,7 +313,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
     def _receive_header_bytes(self, sock: _ISocket) -> bytes:
         """Receive bytes until a empty line is received."""
-        received_bytes = bytes()
+        received_bytes = b""
         while b"\r\n\r\n" not in received_bytes:
             try:
                 length = sock.recv_into(self._buffer, len(self._buffer))
@@ -367,15 +365,11 @@ class Server:  # pylint: disable=too-many-instance-attributes
         received_body_bytes = request.body
 
         # Receiving remaining body bytes
-        request.body = self._receive_body_bytes(
-            sock, received_body_bytes, content_length
-        )
+        request.body = self._receive_body_bytes(sock, received_body_bytes, content_length)
 
         return request
 
-    def _find_handler(  # pylint: disable=cell-var-from-loop
-        self, method: str, path: str
-    ) -> Union[Callable[..., "Response"], None]:
+    def _find_handler(self, method: str, path: str) -> Union[Callable[..., "Response"], None]:
         """
         Finds a handler for a given route.
 
@@ -419,7 +413,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
                 raise ServingFilesDisabledError
 
             # Method is GET or HEAD, try to serve a file from the filesystem.
-            if request.method in (GET, HEAD):
+            if request.method in {GET, HEAD}:
                 return FileResponse(
                     request,
                     filename=request.path,
@@ -451,11 +445,9 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
     def _set_default_server_headers(self, response: Response) -> None:
         for name, value in self.headers.items():
-            response._headers.setdefault(  # pylint: disable=protected-access
-                name, value
-            )
+            response._headers.setdefault(name, value)
 
-    def poll(  # pylint: disable=too-many-branches,too-many-return-statements
+    def poll(
         self,
     ) -> str:
         """
@@ -494,7 +486,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
             self._set_default_server_headers(response)
 
             # Send the response
-            response._send()  # pylint: disable=protected-access
+            response._send()
 
             if self.debug:
                 _debug_end_time = monotonic()
@@ -502,7 +494,7 @@ class Server:  # pylint: disable=too-many-instance-attributes
 
             return REQUEST_HANDLED_RESPONSE_SENT
 
-        except Exception as error:  # pylint: disable=broad-except
+        except Exception as error:
             if isinstance(error, OSError):
                 # There is no data available right now, try again later.
                 if error.errno == EAGAIN:
@@ -635,7 +627,6 @@ def _debug_started_server(server: "Server"):
 
 def _debug_response_sent(response: "Response", time_elapsed: float):
     """Prints a message after a response is sent."""
-    # pylint: disable=protected-access
     client_ip = response._request.client_address[0]
     method = response._request.method
     query_params = response._request.query_params
@@ -650,7 +641,7 @@ def _debug_response_sent(response: "Response", time_elapsed: float):
     )
 
 
-def _debug_stopped_server(server: "Server"):  # pylint: disable=unused-argument
+def _debug_stopped_server(server: "Server"):
     """Prints a message after the server stops."""
     print("Stopped development server")
 

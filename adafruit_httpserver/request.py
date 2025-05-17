@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import List, Dict, Tuple, Union, Any, TYPE_CHECKING
+    from typing import TYPE_CHECKING, Any, Dict, List, Tuple, Union
 
     if TYPE_CHECKING:
         from .server import Server
@@ -18,8 +18,8 @@ except ImportError:
 import json
 
 from .headers import Headers
-from .interfaces import _ISocket, _IFieldStorage, _IXSSSafeFieldStorage
-from .methods import POST, PUT, PATCH, DELETE
+from .interfaces import _IFieldStorage, _ISocket, _IXSSSafeFieldStorage
+from .methods import DELETE, PATCH, POST, PUT
 
 
 class QueryParams(_IXSSSafeFieldStorage):
@@ -54,9 +54,7 @@ class QueryParams(_IXSSSafeFieldStorage):
     def _add_field_value(self, field_name: str, value: str) -> None:
         super()._add_field_value(field_name, value)
 
-    def get(
-        self, field_name: str, default: str = None, *, safe=True
-    ) -> Union[str, None]:
+    def get(self, field_name: str, default: str = None, *, safe=True) -> Union[str, None]:
         return super().get(field_name, default, safe=safe)
 
     def get_list(self, field_name: str, *, safe=True) -> List[str]:
@@ -92,9 +90,7 @@ class File:
     content: Union[str, bytes]
     """Content of the file."""
 
-    def __init__(
-        self, filename: str, content_type: str, content: Union[str, bytes]
-    ) -> None:
+    def __init__(self, filename: str, content_type: str, content: Union[str, bytes]) -> None:
         self.filename = filename
         self.content_type = content_type
         self.content = content
@@ -112,11 +108,7 @@ class File:
             with open(file.filename, "wb") as f:
                 f.write(file.content_bytes)
         """
-        return (
-            self.content.encode("utf-8")
-            if isinstance(self.content, str)
-            else self.content
-        )
+        return self.content.encode("utf-8") if isinstance(self.content, str) else self.content
 
     @property
     def size(self) -> int:
@@ -177,11 +169,11 @@ class FormData(_IXSSSafeFieldStorage):
 
     @staticmethod
     def _check_is_supported_content_type(content_type: str) -> None:
-        return content_type in (
+        return content_type in {
             "application/x-www-form-urlencoded",
             "multipart/form-data",
             "text/plain",
-        )
+        }
 
     def __init__(self, data: bytes, headers: Headers, *, debug: bool = False) -> None:
         self._storage = {}
@@ -231,9 +223,7 @@ class FormData(_IXSSSafeFieldStorage):
             # TODO: Other text content types (e.g. application/json) should be decoded as well and
 
             if filename is not None:
-                self.files._add_field_value(  # pylint: disable=protected-access
-                    field_name, File(filename, content_type, value)
-                )
+                self.files._add_field_value(field_name, File(filename, content_type, value))
             else:
                 self._add_field_value(field_name, value)
 
@@ -258,12 +248,10 @@ class FormData(_IXSSSafeFieldStorage):
 
     def __repr__(self) -> str:
         class_name = self.__class__.__name__
-        return (
-            f"<{class_name} {repr(self._storage)}, files={repr(self.files._storage)}>"
-        )
+        return f"<{class_name} {repr(self._storage)}, files={repr(self.files._storage)}>"
 
 
-class Request:  # pylint: disable=too-many-instance-attributes
+class Request:
     """
     Incoming request, constructed from raw incoming bytes.
     It is passed as first argument to all route handlers.
@@ -367,9 +355,7 @@ class Request:  # pylint: disable=too-many-instance-attributes
 
         return {
             name: value.strip('"')
-            for name, value in [
-                cookie.strip().split("=", 1) for cookie in cookie_header.split(";")
-            ]
+            for name, value in [cookie.strip().split("=", 1) for cookie in cookie_header.split(";")]
         }
 
     @property
@@ -443,7 +429,7 @@ class Request:  # pylint: disable=too-many-instance-attributes
         """
         return (
             json.loads(self.body)
-            if (self.body and self.method in (POST, PUT, PATCH, DELETE))
+            if (self.body and self.method in {POST, PUT, PATCH, DELETE})
             else None
         )
 
@@ -467,9 +453,7 @@ class Request:  # pylint: disable=too-many-instance-attributes
     ) -> Tuple[str, str, QueryParams, str, Headers]:
         """Parse HTTP Start line to method, path, query_params and http_version."""
 
-        start_line, headers_string = (
-            header_bytes.decode("utf-8").strip().split("\r\n", 1)
-        )
+        start_line, headers_string = header_bytes.decode("utf-8").strip().split("\r\n", 1)
 
         method, path, http_version = start_line.strip().split()
 

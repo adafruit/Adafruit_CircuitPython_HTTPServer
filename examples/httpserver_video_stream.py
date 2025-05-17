@@ -12,10 +12,9 @@ from random import choice
 
 import socketpool
 import wifi
-
 from adafruit_pycamera import PyCamera
-from adafruit_httpserver import Server, Request, Response, Headers, Status, OK_200
 
+from adafruit_httpserver import OK_200, Headers, Request, Response, Server, Status
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)
@@ -56,13 +55,9 @@ class XMixedReplaceResponse(Response):
         return "--" + "".join([choice(symbols) for _ in range(16)])
 
     def send_frame(self, frame: Union[str, bytes] = "") -> None:
-        encoded_frame = bytes(
-            frame.encode("utf-8") if isinstance(frame, str) else frame
-        )
+        encoded_frame = bytes(frame.encode("utf-8") if isinstance(frame, str) else frame)
 
-        self._send_bytes(
-            self._request.connection, bytes(f"{self._boundary}\r\n", "utf-8")
-        )
+        self._send_bytes(self._request.connection, bytes(f"{self._boundary}\r\n", "utf-8"))
         self._send_bytes(
             self._request.connection,
             bytes(f"Content-Type: {self._frame_content_type}\r\n\r\n", "utf-8"),

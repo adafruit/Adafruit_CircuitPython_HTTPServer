@@ -8,7 +8,7 @@
 """
 
 try:
-    from typing import Callable, Iterable, Union, Tuple, Literal, Dict, TYPE_CHECKING
+    from typing import TYPE_CHECKING, Callable, Dict, Iterable, Literal, Tuple, Union
 
     if TYPE_CHECKING:
         from .response import Response
@@ -52,9 +52,7 @@ class Route:
         self._validate_path(path, append_slash)
 
         self.path = path
-        self.methods = (
-            set(methods) if isinstance(methods, (set, list, tuple)) else set([methods])
-        )
+        self.methods = set(methods) if isinstance(methods, (set, list, tuple)) else set([methods])
         self.handler = handler
         self.parameters_names = [
             name[1:-1] for name in re.compile(r"/[^<>]*/?").split(path) if name != ""

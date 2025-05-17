@@ -6,8 +6,7 @@ import mdns
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, FileResponse
-
+from adafruit_httpserver import FileResponse, Request, Server
 
 mdns_server = mdns.Server(wifi.radio)
 mdns_server.hostname = "custom-mdns-hostname"

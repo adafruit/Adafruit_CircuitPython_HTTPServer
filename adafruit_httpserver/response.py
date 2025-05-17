@@ -8,14 +8,14 @@
 """
 
 try:
-    from typing import Optional, Dict, Union, Tuple, Generator, Any
+    from typing import Any, Dict, Generator, Optional, Tuple, Union
 except ImportError:
     pass
 
-import os
 import json
+import os
 from binascii import b2a_base64
-from errno import EAGAIN, ECONNRESET, ETIMEDOUT, ENOTCONN
+from errno import EAGAIN, ECONNRESET, ENOTCONN, ETIMEDOUT
 
 try:
     try:
@@ -33,22 +33,22 @@ from .exceptions import (
     FileNotExistsError,
     ParentDirectoryReferenceError,
 )
+from .headers import Headers
+from .interfaces import _ISocket
 from .mime_types import MIMETypes
 from .request import Request
 from .status import (
-    Status,
-    SWITCHING_PROTOCOLS_101,
-    OK_200,
-    MOVED_PERMANENTLY_301,
     FOUND_302,
-    TEMPORARY_REDIRECT_307,
+    MOVED_PERMANENTLY_301,
+    OK_200,
     PERMANENT_REDIRECT_308,
+    SWITCHING_PROTOCOLS_101,
+    TEMPORARY_REDIRECT_307,
+    Status,
 )
-from .headers import Headers
-from .interfaces import _ISocket
 
 
-class Response:  # pylint: disable=too-few-public-methods
+class Response:
     """
     Response to a given `Request`. Use in `Server.route` handler functions.
 
@@ -62,7 +62,7 @@ class Response:  # pylint: disable=too-few-public-methods
             return Response(request, body='Some content', content_type="text/plain")
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
         self,
         request: Request,
         body: Union[str, bytes] = "",
@@ -84,9 +84,7 @@ class Response:  # pylint: disable=too-few-public-methods
         self._request = request
         self._body = body
         self._status = status if isinstance(status, Status) else Status(*status)
-        self._headers = (
-            headers.copy() if isinstance(headers, Headers) else Headers(headers)
-        )
+        self._headers = headers.copy() if isinstance(headers, Headers) else Headers(headers)
         self._cookies = cookies.copy() if cookies else {}
         self._content_type = content_type
         self._size = 0
@@ -98,13 +96,9 @@ class Response:  # pylint: disable=too-few-public-methods
     ) -> None:
         headers = self._headers.copy()
 
-        response_message_header = (
-            f"HTTP/1.1 {self._status.code} {self._status.text}\r\n"
-        )
+        response_message_header = f"HTTP/1.1 {self._status.code} {self._status.text}\r\n"
 
-        headers.setdefault(
-            "Content-Type", content_type or self._content_type or MIMETypes.DEFAULT
-        )
+        headers.setdefault("Content-Type", content_type or self._content_type or MIMETypes.DEFAULT)
         headers.setdefault("Content-Length", content_length)
         headers.setdefault("Connection", "close")
 
@@ -116,14 +110,10 @@ class Response:  # pylint: disable=too-few-public-methods
                 response_message_header += f"{header}: {value}\r\n"
         response_message_header += "\r\n"
 
-        self._send_bytes(
-            self._request.connection, response_message_header.encode("utf-8")
-        )
+        self._send_bytes(self._request.connection, response_message_header.encode("utf-8"))
 
     def _send(self) -> None:
-        encoded_body = (
-            self._body.encode("utf-8") if isinstance(self._body, str) else self._body
-        )
+        encoded_body = self._body.encode("utf-8") if isinstance(self._body, str) else self._body
 
         self._send_headers(len(encoded_body), self._content_type)
         self._send_bytes(self._request.connection, encoded_body)
@@ -155,7 +145,7 @@ class Response:  # pylint: disable=too-few-public-methods
             pass
 
 
-class FileResponse(Response):  # pylint: disable=too-few-public-methods
+class FileResponse(Response):
     """
     Specialized version of `Response` class for sending files.
 
@@ -173,7 +163,7 @@ class FileResponse(Response):  # pylint: disable=too-few-public-methods
             return FileResponse(request, filename='index.html', root_path='/www')
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
         self,
         request: Request,
         filename: str = "index.html",
@@ -243,7 +233,7 @@ class FileResponse(Response):  # pylint: disable=too-few-public-methods
         """
 
         # Check for backslashes
-        if "\\" in file_path:  # pylint: disable=anomalous-backslash-in-string
+        if "\\" in file_path:
             raise BackslashInPathError(file_path)
 
         # Check each component of the path for parent directory references
@@ -276,7 +266,7 @@ class FileResponse(Response):  # pylint: disable=too-few-public-methods
             assert (st_mode & 0o170000) == 0o100000  # Check if it is a regular file
             return st_size
         except (OSError, AssertionError):
-            raise FileNotExistsError(file_path)  # pylint: disable=raise-missing-from
+            raise FileNotExistsError(file_path)
 
     def _send(self) -> None:
         self._send_headers(self._file_length, self._content_type)
@@ -288,7 +278,7 @@ class FileResponse(Response):  # pylint: disable=too-few-public-methods
         self._close_connection()
 
 
-class ChunkedResponse(Response):  # pylint: disable=too-few-public-methods
+class ChunkedResponse(Response):
     """
     Specialized version of `Response` class for sending data using chunked transfer encoding.
 
@@ -308,7 +298,7 @@ class ChunkedResponse(Response):  # pylint: disable=too-few-public-methods
             return ChunkedResponse(request, body, content_type="text/plain")
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
         self,
         request: Request,
         body: Generator[Union[str, bytes], Any, Any],
@@ -356,7 +346,7 @@ class ChunkedResponse(Response):  # pylint: disable=too-few-public-methods
         self._close_connection()
 
 
-class JSONResponse(Response):  # pylint: disable=too-few-public-methods
+class JSONResponse(Response):
     """
     Specialized version of `Response` class for sending JSON data.
 
@@ -403,7 +393,7 @@ class JSONResponse(Response):  # pylint: disable=too-few-public-methods
         self._close_connection()
 
 
-class Redirect(Response):  # pylint: disable=too-few-public-methods
+class Redirect(Response):
     """
     Specialized version of `Response` class for redirecting to another URL.
 
@@ -448,9 +438,7 @@ class Redirect(Response):  # pylint: disable=too-few-public-methods
         """
 
         if status is not None and (permanent or preserve_method):
-            raise ValueError(
-                "Cannot specify both status and permanent/preserve_method argument"
-            )
+            raise ValueError("Cannot specify both status and permanent/preserve_method argument")
 
         if status is None:
             if preserve_method:
@@ -466,7 +454,7 @@ class Redirect(Response):  # pylint: disable=too-few-public-methods
         self._close_connection()
 
 
-class SSEResponse(Response):  # pylint: disable=too-few-public-methods
+class SSEResponse(Response):
     """
     Specialized version of `Response` class for sending Server-Sent Events.
 
@@ -500,7 +488,7 @@ class SSEResponse(Response):  # pylint: disable=too-few-public-methods
         sse.close()
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
         self,
         request: Request,
         headers: Union[Headers, Dict[str, str]] = None,
@@ -523,11 +511,11 @@ class SSEResponse(Response):  # pylint: disable=too-few-public-methods
     def _send(self) -> None:
         self._send_headers()
 
-    def send_event(  # pylint: disable=too-many-arguments
+    def send_event(
         self,
         data: str,
         event: str = None,
-        id: int = None,  # pylint: disable=redefined-builtin,invalid-name
+        id: int = None,
         retry: int = None,
         custom_fields: Dict[str, str] = None,
     ) -> None:
@@ -564,7 +552,7 @@ class SSEResponse(Response):  # pylint: disable=too-few-public-methods
         self._close_connection()
 
 
-class Websocket(Response):  # pylint: disable=too-few-public-methods
+class Websocket(Response):
     """
     Specialized version of `Response` class for creating a websocket connection.
 
@@ -635,7 +623,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
 
         return b2a_base64(response_key.digest()).strip().decode()
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(
         self,
         request: Request,
         headers: Union[Headers, Dict[str, str]] = None,
@@ -693,7 +681,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
         if fin != Websocket.FIN and opcode == Websocket.CONT:
             return Websocket.CONT, None
 
-        payload = bytes()
+        payload = b""
         if fin == Websocket.FIN and opcode == Websocket.CLOSE:
             return Websocket.CLOSE, payload
 
@@ -746,9 +734,7 @@ class Websocket(Response):  # pylint: disable=too-few-public-methods
         if self.closed:
             if fail_silently:
                 return None
-            raise RuntimeError(
-                "Websocket connection is closed, cannot receive messages"
-            )
+            raise RuntimeError("Websocket connection is closed, cannot receive messages")
 
         try:
             opcode, payload = self._read_frame()

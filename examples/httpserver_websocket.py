@@ -2,15 +2,16 @@
 #
 # SPDX-License-Identifier: Unlicense
 
-from asyncio import create_task, gather, run, sleep as async_sleep
+from asyncio import create_task, gather, run
+from asyncio import sleep as async_sleep
+
 import board
 import microcontroller
 import neopixel
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, Request, Response, Websocket, GET
-
+from adafruit_httpserver import GET, Request, Response, Server, Websocket
 
 pool = socketpool.SocketPool(wifi.radio)
 server = Server(pool, debug=True)
@@ -62,7 +63,7 @@ def client(request: Request):
 
 @server.route("/connect-websocket", GET)
 def connect_client(request: Request):
-    global websocket  # pylint: disable=global-statement
+    global websocket
 
     if websocket is not None:
         websocket.close()  # Close any existing connection

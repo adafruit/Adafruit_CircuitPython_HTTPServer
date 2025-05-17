@@ -6,8 +6,7 @@
 import socketpool
 import wifi
 
-from adafruit_httpserver import Server, MIMETypes
-
+from adafruit_httpserver import MIMETypes, Server
 
 MIMETypes.configure(
     default_to="text/plain",
