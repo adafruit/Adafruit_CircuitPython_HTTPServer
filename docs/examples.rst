@@ -39,7 +39,7 @@ In order to save memory, we are unregistering unused MIME types and registering 
 
 .. literalinclude:: ../examples/httpserver_static_files_serving.py
     :caption: examples/httpserver_static_files_serving.py
-    :emphasize-lines: 12-18,23-26
+    :emphasize-lines: 11-17,22-25
     :linenos:
 
 You can also serve a specific file from the handler.
@@ -51,7 +51,7 @@ By doing that, you can serve files from multiple directories, and decide exactly
 
 .. literalinclude:: ../examples/httpserver_handler_serves_file.py
     :caption: examples/httpserver_handler_serves_file.py
-    :emphasize-lines: 13,22
+    :emphasize-lines: 12,21
     :linenos:
 
 .. literalinclude:: ../examples/home.html
@@ -74,7 +74,7 @@ a running total of the last 10 samples.
 
 .. literalinclude:: ../examples/httpserver_start_and_poll.py
     :caption: examples/httpserver_start_and_poll.py
-    :emphasize-lines: 29,38
+    :emphasize-lines: 28,37
     :linenos:
 
 
@@ -86,7 +86,7 @@ without needing to manually manage the timing of each task.
 
 .. literalinclude:: ../examples/httpserver_start_and_poll_asyncio.py
     :caption: examples/httpserver_start_and_poll_asyncio.py
-    :emphasize-lines: 5,33,42,45,50,55-62
+    :emphasize-lines: 5,6,34,43,46,51,56-63
     :linenos:
 
 Server with MDNS
@@ -101,7 +101,7 @@ On some routers it is also possible to use ``http://custom-mdns-hostname:5000/``
 
 .. literalinclude:: ../examples/httpserver_mdns.py
     :caption: examples/httpserver_mdns.py
-    :emphasize-lines: 12-14
+    :emphasize-lines: 11-13
     :linenos:
 
 Get CPU information
@@ -115,7 +115,7 @@ More info: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
 
 .. literalinclude:: ../examples/httpserver_cpu_information.py
     :caption: examples/httpserver_cpu_information.py
-    :emphasize-lines: 9,15-18,33
+    :emphasize-lines: 9,14-17,32
     :linenos:
 
 Handling different methods
@@ -134,7 +134,7 @@ In example below, handler for ``/api`` and ``/api/`` route will be called when a
 
 .. literalinclude:: ../examples/httpserver_methods.py
     :caption: examples/httpserver_methods.py
-    :emphasize-lines: 8,19,26,30,49
+    :emphasize-lines: 8,18,25,29,46
     :linenos:
 
 Change NeoPixel color
@@ -156,7 +156,7 @@ Tested on ESP32-S2 Feather.
 
 .. literalinclude:: ../examples/httpserver_neopixel.py
     :caption: examples/httpserver_neopixel.py
-    :emphasize-lines: 26-28,41,52,68,74
+    :emphasize-lines: 25-27,40,51,67,73
     :linenos:
 
 Templates
@@ -209,7 +209,7 @@ return only the first one.
 
 .. literalinclude:: ../examples/httpserver_form_data.py
     :caption: examples/httpserver_form_data.py
-    :emphasize-lines: 32,47,50
+    :emphasize-lines: 31,46,49
     :linenos:
 
 Cookies
@@ -223,7 +223,7 @@ In order to set cookies,  pass ``cookies`` dictionary to ``Response`` constructo
 
 .. literalinclude:: ../examples/httpserver_cookies.py
     :caption: examples/httpserver_cookies.py
-    :emphasize-lines: 70,74-75,82
+    :emphasize-lines: 69,73-74,81
     :linenos:
 
 Chunked response
@@ -235,7 +235,7 @@ constructor.
 
 .. literalinclude:: ../examples/httpserver_chunked.py
     :caption: examples/httpserver_chunked.py
-    :emphasize-lines: 8,21-26,28
+    :emphasize-lines: 8,20-25,27
     :linenos:
 
 URL parameters and wildcards
@@ -271,7 +271,7 @@ In both cases, wildcards will not match empty path segment, so ``/api/.../users`
 
 .. literalinclude:: ../examples/httpserver_url_parameters.py
     :caption: examples/httpserver_url_parameters.py
-    :emphasize-lines: 30-34,53-54,65-66
+    :emphasize-lines: 29-31,48-49,60-61
     :linenos:
 
 Authentication
@@ -284,7 +284,7 @@ If you want to apply authentication to the whole server, you need to call ``.req
 
 .. literalinclude:: ../examples/httpserver_authentication_server.py
     :caption: examples/httpserver_authentication_server.py
-    :emphasize-lines: 8,11-16,20
+    :emphasize-lines: 8,10-15,19
     :linenos:
 
 On the other hand, if you want to apply authentication to a set of routes, you need to call ``require_authentication`` function.
@@ -292,7 +292,7 @@ In both cases you can check if ``request`` is authenticated by calling ``check_a
 
 .. literalinclude:: ../examples/httpserver_authentication_handlers.py
     :caption: examples/httpserver_authentication_handlers.py
-    :emphasize-lines: 9-16,22-27,35,49,61
+    :emphasize-lines: 9-16,21-26,34,48,60
     :linenos:
 
 Redirects
@@ -309,7 +309,7 @@ Alternatively, you can pass a ``status`` object directly to ``Redirect`` constru
 
 .. literalinclude:: ../examples/httpserver_redirects.py
     :caption: examples/httpserver_redirects.py
-    :emphasize-lines: 22-26,32,38,50,62
+    :emphasize-lines: 21-25,31,37,49,61
     :linenos:
 
 Server-Sent Events
@@ -329,7 +329,7 @@ response object somewhere, so that it can be accessed later.
 
 .. literalinclude:: ../examples/httpserver_sse.py
     :caption: examples/httpserver_sse.py
-    :emphasize-lines: 10,17,46-53,63
+    :emphasize-lines: 11,17,46-53,63
     :linenos:
 
 Websockets
@@ -352,7 +352,7 @@ but it is recommended as it makes it easier to handle multiple tasks. It can be 
 
 .. literalinclude:: ../examples/httpserver_websocket.py
     :caption: examples/httpserver_websocket.py
-    :emphasize-lines: 12,20,65-72,88,99
+    :emphasize-lines: 14,21,66-73,89,100
     :linenos:
 
 Custom response types e.g. video streaming
@@ -369,7 +369,7 @@ video to multiple clients while simultaneously handling other requests.
 
 .. literalinclude:: ../examples/httpserver_video_stream.py
     :caption: examples/httpserver_video_stream.py
-    :emphasize-lines: 31-77,92
+    :emphasize-lines: 30-72,87
     :linenos:
 
 HTTPS
@@ -389,7 +389,7 @@ and setting ``https=True``.
 
 .. literalinclude:: ../examples/httpserver_https.py
     :caption: examples/httpserver_https.py
-    :emphasize-lines: 15-17
+    :emphasize-lines: 14-16
     :linenos:
 
 
@@ -418,7 +418,7 @@ You can share same handler functions between servers or use different ones for e
 
 .. literalinclude:: ../examples/httpserver_multiple_servers.py
     :caption: examples/httpserver_multiple_servers.py
-    :emphasize-lines: 13-14,16-17,20,28,36-37,48-49,54-55
+    :emphasize-lines: 12-13,15-16,19,27,35-36,47-48,53-54
     :linenos:
 
 Debug mode
