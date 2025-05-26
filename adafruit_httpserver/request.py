@@ -418,7 +418,7 @@ class Request:
             request.form_data["foo"]           # "bar"
             request.form_data.get_list("baz")  # ["qux"]
         """
-        if self._form_data is None and self.method == "POST":
+        if self._form_data is None and (self.method == "POST" or self.method == "PUT"):
             self._form_data = FormData(self.body, self.headers, debug=self.server.debug)
         return self._form_data
 
