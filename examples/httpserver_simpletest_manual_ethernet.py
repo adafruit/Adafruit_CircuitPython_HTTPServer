@@ -2,9 +2,9 @@
 #
 # SPDX-License-Identifier: MIT
 
+import adafruit_connection_manager
 import board
 import digitalio
-from adafruit_wiznet5k import adafruit_wiznet5k_socket as socket
 from adafruit_wiznet5k.adafruit_wiznet5k import WIZNET5K
 
 from adafruit_httpserver import Request, Response, Server
@@ -20,10 +20,9 @@ spi_bus = board.SPI()
 # Initialize ethernet interface with DHCP
 eth = WIZNET5K(spi_bus, cs)
 
-# Set the interface on the socket source
-socket.set_interface(eth)
+pool = adafruit_connection_manager.get_radio_socketpool(eth)
 
-server = Server(socket, "/static", debug=True)
+server = Server(pool, "/static", debug=True)
 
 
 @server.route("/")
