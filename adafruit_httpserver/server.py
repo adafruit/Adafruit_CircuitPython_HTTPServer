@@ -13,7 +13,6 @@ except ImportError:
     pass
 
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
-from ssl import SSLContext, create_default_context
 from sys import implementation
 from time import monotonic, sleep
 from traceback import print_exception
