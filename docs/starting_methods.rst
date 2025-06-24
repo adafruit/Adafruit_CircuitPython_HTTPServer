@@ -28,13 +28,11 @@ it may not be able to access the internet.
 Manual Ethernet
 ---------------
 
-Most of the time, the WiFi will be a preferred way of connecting to the network.
-Nevertheless it is also possible to use Ethernet instead of WiFi.
-The only difference in usage is related to configuring the ``socket_source`` differently.
+Ethernet can also be used to connect to the location network.
 
 .. literalinclude:: ../examples/httpserver_simpletest_manual_ethernet.py
     :caption: examples/httpserver_simpletest_manual_ethernet.py
-    :emphasize-lines: 7,10,12-24,37
+    :emphasize-lines: 11-20
     :linenos:
 
 Automatic WiFi using ``settings.toml``
