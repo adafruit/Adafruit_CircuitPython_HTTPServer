@@ -13,7 +13,6 @@ except ImportError:
     pass
 
 from errno import EAGAIN, ECONNRESET, ETIMEDOUT
-from ssl import SSLContext, create_default_context
 from sys import implementation
 from time import monotonic, sleep
 from traceback import print_exception
@@ -34,8 +33,20 @@ from .response import FileResponse, Response
 from .route import Route
 from .status import BAD_REQUEST_400, FORBIDDEN_403, NOT_FOUND_404, UNAUTHORIZED_401
 
-if implementation.name != "circuitpython":
-    from ssl import CERT_NONE, Purpose, SSLError
+try:
+    from ssl import SSLContext, create_default_context
+
+    try:  # ssl imports for C python
+        from ssl import (
+            CERT_NONE,
+            Purpose,
+            SSLError,
+        )
+    except ImportError:
+        pass
+    SSL_AVAILABLE = True
+except ImportError:
+    SSL_AVAILABLE = False
 
 
 NO_REQUEST = "no_request"
@@ -129,6 +140,8 @@ class Server:
         self.https = https
 
         if https:
+            if not SSL_AVAILABLE:
+                raise NotImplementedError("SSL not available on this platform")
             self._validate_https_cert_provided(certfile, keyfile)
             self._ssl_context = self._create_ssl_context(certfile, keyfile)
         else:
