@@ -36,12 +36,8 @@ from .status import BAD_REQUEST_400, FORBIDDEN_403, NOT_FOUND_404, UNAUTHORIZED_
 try:
     from ssl import SSLContext, create_default_context
 
-    try:  # ssl imports for C python
-        from ssl import (
-            CERT_NONE,
-            Purpose,
-            SSLError,
-        )
+    try:  # ssl imports for CPython
+        from ssl import CERT_NONE, Purpose, SSLError
     except ImportError:
         pass
     SSL_AVAILABLE = True
