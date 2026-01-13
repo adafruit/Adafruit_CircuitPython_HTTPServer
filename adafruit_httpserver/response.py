@@ -755,7 +755,7 @@ class Websocket(Response):
         return fin, opcode, payload
 
     def _is_control_frame(self, opcode: int) -> bool:
-        return opcode in (Websocket.CLOSE, Websocket.PING, Websocket.PONG)
+        return opcode in {Websocket.CLOSE, Websocket.PING, Websocket.PONG}
 
     def _handle_control_frame(self, fin: int, opcode: int, payload: bytes):
         if 125 < len(payload):
@@ -766,9 +766,7 @@ class Websocket(Response):
 
         if opcode == Websocket.CLOSE:
             if len(payload) == 1:
-                raise WebsocketError(
-                    "Invalid close payload length", self.PROTOCOL_ERROR
-                )
+                raise WebsocketError("Invalid close payload length", self.PROTOCOL_ERROR)
             close_code = None
             close_reason = None
             if 2 <= len(payload):
@@ -788,15 +786,12 @@ class Websocket(Response):
         elif opcode == Websocket.PONG:
             return
 
-    def _handle_frame(
-        self, fin: int, opcode: int, payload: bytes
-    ) -> Union[str, bytes, None]:
-
+    def _handle_frame(self, fin: int, opcode: int, payload: bytes) -> Union[str, bytes, None]:
         if self._is_control_frame(opcode):
             return self._handle_control_frame(fin, opcode, payload)
 
         if not self._fragmented_message_in_progress():
-            if opcode not in (Websocket.TEXT, Websocket.BINARY):
+            if opcode not in {Websocket.TEXT, Websocket.BINARY}:
                 raise WebsocketError(
                     "Invalid frame received when no fragmented message in progress",
                     self.PROTOCOL_ERROR,
@@ -819,7 +814,7 @@ class Websocket(Response):
                 self._start_fragmented_message(opcode, payload)
                 return None
 
-        if opcode not in (Websocket.CONT,):
+        if opcode != Websocket.CONT:
             raise WebsocketError(
                 "New data frame received while fragmented message in progress",
                 self.PROTOCOL_ERROR,
@@ -862,13 +857,10 @@ class Websocket(Response):
             return None
         except OSError as error:
             if error.errno == EAGAIN:  # No message/frame available
-
                 if not self._fragmented_message_in_progress():
                     return None
 
-                time_since_last_frame = (
-                    monotonic_ns() - self._message_last_frame_timestamp
-                )
+                time_since_last_frame = monotonic_ns() - self._message_last_frame_timestamp
 
                 if time_since_last_frame > self.MESSAGE_FRAGMENT_TIMEOUT_NS:
                     self.close(code=self.POLICY_VIOLATION)
