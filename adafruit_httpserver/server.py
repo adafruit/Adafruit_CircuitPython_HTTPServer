@@ -327,6 +327,8 @@ class Server:
             try:
                 length = sock.recv_into(self._buffer, len(self._buffer))
                 received_bytes += self._buffer[:length]
+            except TimeoutError:
+                break
             except OSError as ex:
                 if ex.errno == ETIMEDOUT:
                     break
@@ -346,6 +348,8 @@ class Server:
             try:
                 length = sock.recv_into(self._buffer, len(self._buffer))
                 received_body_bytes += self._buffer[:length]
+            except TimeoutError:
+                break
             except OSError as ex:
                 if ex.errno == ETIMEDOUT:
                     break
