@@ -660,27 +660,27 @@ class Websocket(Response):
         self._headers.setdefault("Connection", "Upgrade")
         self._headers.setdefault("Sec-WebSocket-Accept", sec_accept_key)
         self._headers.setdefault("Content-Type", None)
-        self._buffer_size = buffer_size
+        self._buffer = bytearray(buffer_size)
         self.closed = False
 
         self._reset_fragmented_message()
 
         request.connection.setblocking(False)
 
-    def _start_fragmented_message(self, opcode: int | None, payload: bytes | None):
+    def _start_fragmented_message(self, opcode: Union[int, None], payload: Union[bytes, None]):
         if self.MESSAGE_MAX_FRAGMENTS < 2:
             raise WebsocketError("Too many fragments in message", self.POLICY_VIOLATION)
 
         if len(payload) > self.MESSAGE_MAX_SIZE_BYTES:
             raise WebsocketError("Message size too big", self.MESSAGE_TOO_BIG)
 
-        self._message_opcode: int | None = opcode
-        self._message_payload: bytes | None = payload
-        self._message_fragments: int | None = 1
+        self._message_opcode: Union[int, None] = opcode
+        self._message_payload: Union[bytes, None] = payload
+        self._message_fragments: Union[int, None] = 1
 
         now = monotonic_ns()
-        self._message_start_timestamp: float | None = now
-        self._message_last_frame_timestamp: float | None = now
+        self._message_start_timestamp: Union[float, None] = now
+        self._message_last_frame_timestamp: Union[float, None] = now
 
     def _reset_fragmented_message(self):
         self._message_opcode = None
@@ -709,48 +709,87 @@ class Websocket(Response):
     def _fragmented_message_in_progress(self):
         return self._message_opcode is not None
 
-    @staticmethod
-    def _parse_frame_header(header):
-        fin = header[0] & Websocket.FIN
-        opcode = header[0] & 0b00001111
-        has_mask = header[1] & 0b10000000
-        length = header[1] & 0b01111111
+    def _recv_exact(self, buffer: bytearray, size: int) -> bytes:
+        received = 0
+        view = memoryview(buffer)
+        while received < size:
+            remaining = size - received
+            try:
+                count = self._request.connection.recv_into(view[received : received + remaining])
+            except OSError as error:
+                if error.errno == EAGAIN and received == 0:
+                    raise
+                if error.errno == EAGAIN:
+                    continue
+                raise
+            if count == 0:
+                if received == 0:
+                    raise OSError(ENOTCONN)
+                break
+            received += count
+        return bytes(view[:received])
 
-        if length == 0b01111110:
-            length = -2
-        elif length == 0b01111111:
-            length = -8
+    def _read_frame_header(self):
+        header_bytes = self._recv_exact(self._buffer, 2)
 
-        return fin, opcode, has_mask, length
+        if len(header_bytes) < 2:
+            raise OSError(ENOTCONN)
+
+        fin = header_bytes[0] & Websocket.FIN
+        opcode = header_bytes[0] & 0b00001111
+
+        mask = header_bytes[1] & 0b10000000
+        if not mask:
+            raise WebsocketError("Client frame not masked", self.PROTOCOL_ERROR)
+
+        payload_length = header_bytes[1] & 0b01111111
+
+        if 125 < payload_length:
+            if payload_length == 126:
+                payload_length_bytes = self._recv_exact(self._buffer, 2)  # Read next 16 bits
+                if len(payload_length_bytes) < 2:
+                    raise WebsocketError("Incomplete payload length", self.PROTOCOL_ERROR)
+
+            elif payload_length == 127:
+                payload_length_bytes = self._recv_exact(self._buffer, 8)  # Read next 64 bits
+                if len(payload_length_bytes) < 8:
+                    raise WebsocketError("Incomplete payload length", self.PROTOCOL_ERROR)
+            else:
+                raise WebsocketError("Invalid payload length", self.PROTOCOL_ERROR)
+
+            payload_length = int.from_bytes(payload_length_bytes, "big")
+
+            # In 64-bit payload length, most significant bit must be 0
+            if payload_length & (1 << 63):
+                raise WebsocketError("Invalid payload length", self.PROTOCOL_ERROR)
+
+        if opcode == Websocket.CONT and self._fragmented_message_in_progress():
+            if len(self._message_payload) + payload_length > self.MESSAGE_MAX_SIZE_BYTES:
+                raise WebsocketError("Message size too big", self.MESSAGE_TOO_BIG)
+
+        elif opcode in {Websocket.TEXT, Websocket.BINARY}:
+            if payload_length > self.MESSAGE_MAX_SIZE_BYTES:
+                raise WebsocketError("Message size too big", self.MESSAGE_TOO_BIG)
+
+        return fin, opcode, payload_length
 
     def _read_frame(self):
-        buffer = bytearray(self._buffer_size)
+        fin, opcode, payload_length = self._read_frame_header()
 
-        header_length = self._request.connection.recv_into(buffer, 2)
-        header_bytes = buffer[:header_length]
-
-        fin, opcode, has_mask, length = self._parse_frame_header(header_bytes)
-
-        if not has_mask:
-            raise WebsocketError("Client frame not masked", self.PROTOCOL_ERROR)
+        masking_key = self._recv_exact(self._buffer, 4)
+        if len(masking_key) < 4:
+            raise WebsocketError("Incomplete mask", self.PROTOCOL_ERROR)
 
         payload = b""
 
-        if length < 0:
-            length = self._request.connection.recv_into(buffer, -length)
-            length = int.from_bytes(buffer[:length], "big")
+        while 0 < payload_length:
+            chunk = self._recv_exact(self._buffer, min(payload_length, len(self._buffer)))
+            if not chunk:
+                break
+            payload += chunk
+            payload_length -= len(chunk)
 
-        if has_mask:
-            mask_length = self._request.connection.recv_into(buffer, 4)
-            mask = buffer[:mask_length]
-
-        while 0 < length:
-            payload_length = self._request.connection.recv_into(buffer, length)
-            payload += buffer[: min(payload_length, length)]
-            length -= min(payload_length, length)
-
-        if has_mask:
-            payload = bytes(byte ^ mask[idx % 4] for idx, byte in enumerate(payload))
+        payload = bytes(byte ^ masking_key[idx % 4] for idx, byte in enumerate(payload))
 
         return fin, opcode, payload
 
@@ -957,6 +996,9 @@ class Websocket(Response):
         self._reset_fragmented_message()
 
         payload = self._prepare_close_payload(code, reason)
-        self.send_message(payload, Websocket.CLOSE, fail_silently=True)
+        try:
+            self.send_message(payload, Websocket.CLOSE, fail_silently=True)
+        except (BrokenPipeError, OSError):
+            pass
         self._close_connection()
         self.closed = True
