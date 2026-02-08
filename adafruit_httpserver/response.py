@@ -669,7 +669,7 @@ class Websocket(Response):
 
     def _start_fragmented_message(self, opcode: Union[int, None], payload: Union[bytes, None]):
         if self.MESSAGE_MAX_FRAGMENTS < 2:
-            raise WebsocketError("Too many fragments in message", self.POLICY_VIOLATION)
+            raise WebsocketError("Fragmented messages not allowed", self.POLICY_VIOLATION)
 
         if len(payload) > self.MESSAGE_MAX_SIZE_BYTES:
             raise WebsocketError("Message size too big", self.MESSAGE_TOO_BIG)

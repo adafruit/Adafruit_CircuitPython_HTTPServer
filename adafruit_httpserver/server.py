@@ -125,7 +125,7 @@ class Server:
         self._timeout = 1
 
         self._auths = []
-        self._routes: "List[Route]" = []
+        self._routes: List[Route] = []
         self.headers = Headers()
 
         self._socket_source = socket_source
@@ -647,7 +647,7 @@ def _debug_response_sent(response: "Response", time_elapsed: float):
     req_size = len(response._request.raw_request)
     status = response._status
     res_size = response._size
-    time_elapsed_ms = f"{round(time_elapsed*1000)}ms"
+    time_elapsed_ms = f"{round(time_elapsed * 1000)}ms"
 
     print(
         f'{client_ip} -- "{method} {path}" {req_size} -- "{status}" {res_size} -- {time_elapsed_ms}'
