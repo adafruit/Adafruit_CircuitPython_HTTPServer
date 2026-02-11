@@ -62,3 +62,16 @@ class FileNotExistsError(Exception):
         Creates a new ``FileNotExistsError`` for the file at ``path``.
         """
         super().__init__(f"File does not exist: {path}")
+
+
+class WebsocketError(Exception):
+    """
+    Raised when there is a error in WebSocket communication.
+    """
+
+    def __init__(self, message: str, code: int = None) -> None:
+        """
+        Creates a new ``WebsocketError`` with the given ``message``.
+        """
+        self.code = code
+        super().__init__(f"WebSocket error: {message}")

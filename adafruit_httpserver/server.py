@@ -36,12 +36,8 @@ from .status import BAD_REQUEST_400, FORBIDDEN_403, NOT_FOUND_404, UNAUTHORIZED_
 try:
     from ssl import SSLContext, create_default_context
 
-    try:  # ssl imports for C python
-        from ssl import (
-            CERT_NONE,
-            Purpose,
-            SSLError,
-        )
+    try:  # ssl imports for CPython
+        from ssl import CERT_NONE, Purpose, SSLError
     except ImportError:
         pass
     SSL_AVAILABLE = True
@@ -129,7 +125,7 @@ class Server:
         self._timeout = 1
 
         self._auths = []
-        self._routes: "List[Route]" = []
+        self._routes: List[Route] = []
         self.headers = Headers()
 
         self._socket_source = socket_source
@@ -331,6 +327,8 @@ class Server:
             try:
                 length = sock.recv_into(self._buffer, len(self._buffer))
                 received_bytes += self._buffer[:length]
+            except TimeoutError:
+                break
             except OSError as ex:
                 if ex.errno == ETIMEDOUT:
                     break
@@ -350,6 +348,8 @@ class Server:
             try:
                 length = sock.recv_into(self._buffer, len(self._buffer))
                 received_body_bytes += self._buffer[:length]
+            except TimeoutError:
+                break
             except OSError as ex:
                 if ex.errno == ETIMEDOUT:
                     break
@@ -647,7 +647,7 @@ def _debug_response_sent(response: "Response", time_elapsed: float):
     req_size = len(response._request.raw_request)
     status = response._status
     res_size = response._size
-    time_elapsed_ms = f"{round(time_elapsed*1000)}ms"
+    time_elapsed_ms = f"{round(time_elapsed * 1000)}ms"
 
     print(
         f'{client_ip} -- "{method} {path}" {req_size} -- "{status}" {res_size} -- {time_elapsed_ms}'
