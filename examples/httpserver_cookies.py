@@ -34,14 +34,14 @@ def themed_template(user_preferred_theme: str):
             <title>Cookie Example</title>
             <style>
                 body {{
-                    background-color: {theme['background-color']};
-                    color: {theme['color']};
+                    background-color: {theme["background-color"]};
+                    color: {theme["color"]};
                 }}
 
                 button {{
-                    background-color: {theme['button-color']};
-                    color: {theme['color']};
-                    border: 1px solid {theme['color']};
+                    background-color: {theme["button-color"]};
+                    color: {theme["color"]};
+                    border: 1px solid {theme["color"]};
                     padding: 10px;
                     margin: 10px;
                 }}
