@@ -53,6 +53,15 @@ REQUEST_HANDLED_RESPONSE_SENT = "request_handled_response_sent"
 # CircuitPython does not have these error codes
 MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE = -30592
 
+# Errors after which poll() closes the connection and returns NO_REQUEST.
+#
+# Built once here so poll() does not allocate a new tuple on every error.
+_RETRYABLE_ERRNOS = (
+    EAGAIN,  # No data available right now, try again later.
+    ECONNRESET,  # Connection reset by peer, try again later.
+    MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE,  # Handshake failed, try again later.
+)
+
 
 class Server:
     """A basic socket-based HTTP server."""
@@ -326,6 +335,8 @@ class Server:
         while b"\r\n\r\n" not in received_bytes:
             try:
                 length = sock.recv_into(self._buffer, len(self._buffer))
+                if length == 0:
+                    break
                 received_bytes += self._buffer[:length]
             except TimeoutError:
                 break
@@ -347,6 +358,8 @@ class Server:
         while len(received_body_bytes) < content_length:
             try:
                 length = sock.recv_into(self._buffer, len(self._buffer))
+                if length == 0:
+                    break
                 received_body_bytes += self._buffer[:length]
             except TimeoutError:
                 break
@@ -508,22 +521,15 @@ class Server:
             return REQUEST_HANDLED_RESPONSE_SENT
 
         except Exception as error:
-            if isinstance(error, OSError):
-                # There is no data available right now, try again later.
-                if error.errno == EAGAIN:
-                    return NO_REQUEST
-                # Connection reset by peer, try again later.
-                if error.errno == ECONNRESET:
-                    return NO_REQUEST
-                # Handshake failed, try again later.
-                if error.errno == MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE:
-                    return NO_REQUEST
-
-            # CPython specific SSL related errors
-            if implementation.name != "circuitpython" and isinstance(error, SSLError):
-                # Ignore unknown SSL certificate errors
-                if getattr(error, "reason", None) == "SSLV3_ALERT_CERTIFICATE_UNKNOWN":
-                    return NO_REQUEST
+            if (isinstance(error, OSError) and error.errno in _RETRYABLE_ERRNOS) or (
+                # CPython-specific: ignore unknown SSL certificate errors.
+                implementation.name != "circuitpython"
+                and isinstance(error, SSLError)
+                and getattr(error, "reason", None) == "SSLV3_ALERT_CERTIFICATE_UNKNOWN"
+            ):
+                if conn is not None:
+                    conn.close()
+                return NO_REQUEST
 
             if self.debug:
                 _debug_exception_in_handler(error)
