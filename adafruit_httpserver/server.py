@@ -326,6 +326,8 @@ class Server:
         while b"\r\n\r\n" not in received_bytes:
             try:
                 length = sock.recv_into(self._buffer, len(self._buffer))
+                if length == 0:
+                    break
                 received_bytes += self._buffer[:length]
             except TimeoutError:
                 break
@@ -347,6 +349,8 @@ class Server:
         while len(received_body_bytes) < content_length:
             try:
                 length = sock.recv_into(self._buffer, len(self._buffer))
+                if length == 0:
+                    break
                 received_body_bytes += self._buffer[:length]
             except TimeoutError:
                 break
@@ -511,18 +515,26 @@ class Server:
             if isinstance(error, OSError):
                 # There is no data available right now, try again later.
                 if error.errno == EAGAIN:
+                    if conn is not None:
+                        conn.close()
                     return NO_REQUEST
                 # Connection reset by peer, try again later.
                 if error.errno == ECONNRESET:
+                    if conn is not None:
+                        conn.close()
                     return NO_REQUEST
                 # Handshake failed, try again later.
                 if error.errno == MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE:
+                    if conn is not None:
+                        conn.close()
                     return NO_REQUEST
 
             # CPython specific SSL related errors
             if implementation.name != "circuitpython" and isinstance(error, SSLError):
                 # Ignore unknown SSL certificate errors
                 if getattr(error, "reason", None) == "SSLV3_ALERT_CERTIFICATE_UNKNOWN":
+                    if conn is not None:
+                        conn.close()
                     return NO_REQUEST
 
             if self.debug:
