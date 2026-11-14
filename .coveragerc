@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Dan Halbert for Adafruit Industries
+#
+# SPDX-License-Identifier: MIT
+
+# Coverage settings for the tests, which run on CPython. From the repository root:
+#
+#     python -m coverage run -m pytest
+#     python -m coverage report
+
+[run]
+branch = True
+source = adafruit_httpserver
+
+[report]
+show_missing = True
+
+# Code that cannot run on CPython. Excluded from the count.
+exclude_also =
+    # Fallbacks for CircuitPython, which lacks typing and may lack hashlib or ssl.
+    except ImportError:
+    raise NotImplementedError\("SSL not available
+    # SSL context setup used only on CircuitPython.
+    def _create_circuitpython_ssl_context
+    # Server._receive_header_bytes() and _receive_body_bytes() check for ETIMEDOUT
+    # (connection timed out). On CPython an OSError with that errno is always a
+    # TimeoutError, which an earlier except clause already catches.
+    if ex.errno == ETIMEDOUT:
+
+# Branches that always go the same way on CPython. Not reported as partial.
+partial_also =
+    # Server._create_server_socket(): CircuitPython version check.
+    implementation\.name != "circuitpython"
+
+# Lines still counted as missed, on purpose. Each becomes reachable once a known bug is
+# fixed, or is dead code that could be deleted:
+#
+# - Websocket.receive(): the ENOTCONN (not connected) branch. _recv_exact() raises
+#   OSError(ENOTCONN) with one argument, which leaves errno as None on CPython. Covered
+#   once these tests in tests/test_websocket.py stop being xfails:
+#   test_client_disconnect_closes, and the in-header case of
+#   test_client_closes_partway_through_frame.
+# - MIMETypes.get_for_filename(): "except IndexError". rsplit()[-1] cannot raise it.
+# - Websocket._process_sec_websocket_key(): the missing-key check. The handshake check has
+#   already required the header.
+# - Websocket._start_fragmented_message(), _cont_fragmented_message() and _handle_frame():
+#   "Message size too big". _read_frame_header() rejects these first.
+# - Websocket._read_frame_header(): "else: Invalid payload length". A 7-bit length above 125
+#   is always 126 or 127.
+# - Websocket._read_frame(): "if not chunk: break". _recv_exact() never returns empty.
+# - Websocket._handle_control_frame(): falling through after the PONG branch. Only control
+#   opcodes reach it.
+# - Server._receive_header_bytes() and _receive_body_bytes(): "except Exception as ex:
+#   raise ex". It only re-raises.
