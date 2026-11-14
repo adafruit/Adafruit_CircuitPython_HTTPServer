@@ -56,11 +56,21 @@ MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE = -30592
 # Errors after which poll() closes the connection and returns NO_REQUEST.
 #
 # Built once here so poll() does not allocate a new tuple on every error.
-_RETRYABLE_ERRNOS = (
-    EAGAIN,  # No data available right now, try again later.
-    ECONNRESET,  # Connection reset by peer, try again later.
-    MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE,  # Handshake failed, try again later.
+_IGNORED_ERRNOS = (
+    EAGAIN,  # No data available right now.
+    ECONNRESET,  # Connection reset by peer.
+    MBEDTLS_ERR_SSL_FATAL_ALERT_MESSAGE,  # The client sent a fatal TLS alert.
 )
+
+
+def _is_tls_error(error: OSError) -> bool:
+    """True if the error came from the TLS layer, such as a failed handshake."""
+    # CircuitPython's ssl module has no SSLError. It raises OSError with a negative
+    # mbedTLS error code, and other OSErrors have positive errnos.
+    # CPython raises ssl.SSLError, whose errno is positive.
+    if implementation.name == "circuitpython":
+        return isinstance(error.errno, int) and error.errno < 0
+    return isinstance(error, SSLError)
 
 
 class Server:
@@ -491,7 +501,14 @@ class Server:
             if self.debug:
                 _debug_start_time = monotonic()
 
-            conn, client_address = self._sock.accept()
+            try:
+                conn, client_address = self._sock.accept()
+            except OSError as error:
+                # On an HTTPS server, accept() also does the TLS handshake.
+                # If it fails, drop this client and keep serving others.
+                if self.https and _is_tls_error(error):
+                    return NO_REQUEST
+                raise
             conn.settimeout(self._timeout)
 
             # Receive the whole request
@@ -521,7 +538,7 @@ class Server:
             return REQUEST_HANDLED_RESPONSE_SENT
 
         except Exception as error:
-            if (isinstance(error, OSError) and error.errno in _RETRYABLE_ERRNOS) or (
+            if (isinstance(error, OSError) and error.errno in _IGNORED_ERRNOS) or (
                 # CPython-specific: ignore unknown SSL certificate errors.
                 implementation.name != "circuitpython"
                 and isinstance(error, SSLError)
