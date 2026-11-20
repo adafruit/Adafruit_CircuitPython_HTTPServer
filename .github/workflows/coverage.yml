@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Dan Halbert for Adafruit Industries
+#
+# SPDX-License-Identifier: MIT
+
+# Runs the tests under coverage and puts the report in the job summary. Kept separate from
+# build.yml so that file stays identical to the standard library workflow.
+#
+# Settings, exclusions and known misses are in .coveragerc.
+
+name: Coverage
+
+on: [pull_request, push]
+
+jobs:
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v7
+      with:
+        show-progress: false
+    - name: Set up Python
+      uses: actions/setup-python@v7
+      with:
+        python-version: "3.12"
+    - name: Install pytest and coverage
+      run: pip install pytest coverage
+    - name: Run tests under coverage
+      run: python -m coverage run -m pytest
+    - name: Report coverage
+      run: |
+        python -m coverage report
+        python -m coverage report --format=markdown >> "$GITHUB_STEP_SUMMARY"

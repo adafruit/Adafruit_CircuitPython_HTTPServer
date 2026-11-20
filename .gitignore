@@ -46,3 +46,6 @@ _build
 .idea
 .vscode
 *~
+
+# coverage-specific files
+.coverage
